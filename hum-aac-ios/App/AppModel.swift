@@ -27,13 +27,14 @@ struct BoardSnapshot: Equatable {
         var image: CGImage?
         var linkedBoardID: UUID?
         var linkedBoardExists: Bool
-        var hasRecording: Bool
+        /// Key of the decoded recording, if the parent recorded this phrase. Changes when re-recorded.
+        var recordingKey: String?
 
         static func == (a: Cell, b: Cell) -> Bool {
             a.id == b.id && a.label == b.label && a.spokenText == b.spokenText && a.function == b.function
                 && a.colorHex == b.colorHex && a.symbol == b.symbol && a.image === b.image
                 && a.linkedBoardID == b.linkedBoardID && a.linkedBoardExists == b.linkedBoardExists
-                && a.hasRecording == b.hasRecording
+                && a.recordingKey == b.recordingKey
         }
     }
 
@@ -62,6 +63,7 @@ final class AppModel {
         didSet {
             if mode == .parent {
                 editingBoardID = currentBoardID
+                showNextPendingChange()
             } else if oldValue == .parent {
                 // Leaving parent mode: show the latest edits right away (the child isn't tapping yet).
                 rebuildSnapshot()
@@ -75,7 +77,31 @@ final class AppModel {
     @ObservationIgnored private(set) lazy var store = BoardStore(context: context)
 
     /// An import waiting for the parent's preview (Merge / Replace everything).
-    var pendingImport: PendingImport?
+    var pendingImport: PendingImport? {
+        didSet {
+            // The parent decided (applied or cancelled) on a queued change: drop it, show the next one.
+            if pendingImport == nil, let done = oldValue?.queueFile {
+                PendingChanges.remove(done)
+                showNextPendingChange()
+            }
+        }
+    }
+
+    /// Changes queued by Shortcuts/Siri surface one at a time, only in parent mode.
+    func showNextPendingChange() {
+        guard mode == .parent, pendingImport == nil else { return }
+        for url in PendingChanges.all() {
+            do {
+                var pending = try ImportService(model: self).prepare(url: url)
+                pending = PendingImport(fileName: PendingChanges.displayName(url), loaded: pending.loaded,
+                                        merge: pending.merge, replace: pending.replace, queueFile: url)
+                pendingImport = pending
+                return
+            } catch {
+                PendingChanges.remove(url)  // a broken queued file must not block the others
+            }
+        }
+    }
     var importError: String?
 
     /// Every way a file arrives (Files, AirDrop, "Open in Hum", drag and drop) ends here. Nothing
@@ -173,7 +199,8 @@ final class AppModel {
     /// Called from the touch handler. Sound first, everything else after.
     func tap(_ cell: BoardSnapshot.Cell, tapTime: UInt64) {
         lastTouch = .now
-        speech.speak(cell.spokenText, recordingID: cell.hasRecording ? recordingKey(cell.id) : nil, tapTime: tapTime)
+        speech.speak(cell.spokenText, recordingID: cell.recordingKey, tapTime: tapTime)
+        if settings.sentenceStrip { strip.append(cell) }
         #if os(iOS)
         if settings.haptics { haptic.impactOccurred(intensity: 0.5) }
         #endif
@@ -198,13 +225,14 @@ final class AppModel {
         var recordings: [(id: String, data: Data)] = []
         for tile in board.placedTiles where !tile.isHidden {
             guard let r = tile.row, let c = tile.column, r < board.rows, c < board.columns, cells[r][c] == nil else { continue }
-            if let audio = tile.audioData { recordings.append((recordingKey(tile.id), audio)) }
+            let key = tile.audioData.map { Self.recordingKey(tile.id, $0) }
+            if let key, let audio = tile.audioData { recordings.append((key, audio)) }
             cells[r][c] = BoardSnapshot.Cell(
                 id: tile.id, label: tile.label, spokenText: tile.spokenText, function: tile.function,
                 colorHex: tile.colorHex, symbol: tile.symbol, image: image(for: tile),
                 linkedBoardID: tile.linkedBoardID,
                 linkedBoardExists: tile.linkedBoardID.map(allBoardIDs.contains) ?? false,
-                hasRecording: tile.audioData != nil)
+                recordingKey: key)
         }
         snapshot = BoardSnapshot(boardID: board.id, name: board.name, rows: board.rows, columns: board.columns, isHome: board.isHome, cells: cells)
         speech.prepareRecordings(recordings)
@@ -241,7 +269,25 @@ final class AppModel {
         return try? context.fetch(descriptor).first
     }
 
-    private func recordingKey(_ id: UUID) -> String { id.uuidString }
+    /// Tile ID + size + a cheap content hash, so a new recording never plays the old one.
+    static func recordingKey(_ id: UUID, _ data: Data) -> String {
+        var hash: UInt64 = 1469598103934665603
+        for byte in data.prefix(4096) { hash = (hash ^ UInt64(byte)) &* 1099511628211 }
+        return "\(id.uuidString)-\(data.count)-\(hash)"
+    }
+
+    // MARK: Sentence strip (off by default; for NLA Stage 3+)
+
+    /// Tiles tapped while the strip is on. Each tile still speaks on its own when tapped.
+    var strip: [BoardSnapshot.Cell] = []
+
+    func speakStrip() {
+        guard !strip.isEmpty else { return }
+        lastTouch = .now
+        speech.speak(strip.map(\.spokenText).joined(separator: " "))
+    }
+
+    func clearStrip() { strip.removeAll() }
 
     /// Decodes a tile photo at display size (≤ 512 px) once and caches it.
     private func image(for tile: Tile) -> CGImage? {

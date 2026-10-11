@@ -9,6 +9,12 @@ public struct LoadedConfig: Sendable {
     /// Media files keyed by their relative path (e.g. "media/snack.jpg"). Empty for a plain hum.json.
     public var media: [String: Data]
     public var warnings: [ValidationIssue]
+
+    public init(document: HumDocument, media: [String: Data] = [:], warnings: [ValidationIssue] = []) {
+        self.document = document
+        self.media = media
+        self.warnings = warnings
+    }
 }
 
 /// Reads `hum.json` or `.hum` data in four steps: version check → migrate → schema → semantic checks.

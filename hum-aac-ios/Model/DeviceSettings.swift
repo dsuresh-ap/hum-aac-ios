@@ -42,6 +42,8 @@ final class DeviceSettings {
     // Off until a parent turns them on (M4 / M5).
     var iCloudSyncEnabled: Bool { didSet { defaults.set(iCloudSyncEnabled, forKey: Keys.iCloud) } }
     var aiEnabled: Bool { didSet { defaults.set(aiEnabled, forKey: Keys.ai) } }
+    /// false = on-device model (default when AI is on), true = Apple Private Cloud Compute.
+    var aiUsePrivateCloud: Bool { didSet { defaults.set(aiUsePrivateCloud, forKey: Keys.aiPCC) } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -61,6 +63,7 @@ final class DeviceSettings {
         hasSeenGuidedAccessTip = defaults.bool(forKey: Keys.guidedAccessTip)
         iCloudSyncEnabled = defaults.bool(forKey: Keys.iCloud)
         aiEnabled = defaults.bool(forKey: Keys.ai)
+        aiUsePrivateCloud = defaults.bool(forKey: Keys.aiPCC)
     }
 
     /// Applies display/voice settings from an imported file. Never touches iCloud or AI.
@@ -85,6 +88,6 @@ final class DeviceSettings {
         static let showLabels = "display.showLabels", labelPosition = "display.labelPosition"
         static let sentenceStrip = "display.sentenceStrip", appearance = "display.appearance"
         static let editGate = "parent.editGate", setupDone = "parent.setupDone", guidedAccessTip = "parent.guidedAccessTip"
-        static let iCloud = "sync.iCloud", ai = "ai.enabled"
+        static let iCloud = "sync.iCloud", ai = "ai.enabled", aiPCC = "ai.privateCloud"
     }
 }

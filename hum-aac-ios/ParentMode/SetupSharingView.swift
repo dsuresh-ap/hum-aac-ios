@@ -16,6 +16,7 @@ struct SetupSharingView: View {
     @State private var showExporter = false
     @State private var showImporter = false
     @State private var errorMessage: String?
+    @State private var showAI = false
 
     var body: some View {
         NavigationStack {
@@ -43,6 +44,15 @@ struct SetupSharingView: View {
                     Text("You'll see what changes before anything happens. Tiles already on your boards never move.")
                 }
 
+                // Hidden entirely on devices without Apple Intelligence.
+                if AIHelper.isSupportedOnThisDevice {
+                    Section {
+                        Button("Help me set up", systemImage: "sparkles") { showAI = true }
+                    } footer: {
+                        Text("Describe what your child needs, or paste phrases they say, and get suggested tiles to preview. Off until you turn it on.")
+                    }
+                }
+
                 Section {
                     Button("How to make boards with a coding agent", systemImage: "doc.text") {
                         if let url = URL(string: "https://github.com/dsuresh-ap/hum-aac-ios/blob/main/docs/CONFIG.md") { openURL(url) }
@@ -56,6 +66,7 @@ struct SetupSharingView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
+            .sheet(isPresented: $showAI) { AIHelperView() }
             .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: .humPackage, defaultFilename: exportName) { result in
                 if case .failure(let error) = result { errorMessage = error.localizedDescription }
             }

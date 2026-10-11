@@ -14,6 +14,9 @@ struct ChildBoardView: View {
     var body: some View {
         VStack(spacing: 0) {
             topBar
+            if model.settings.sentenceStrip {
+                SentenceStrip()
+            }
             if let snapshot = model.snapshot {
                 BoardGrid(snapshot: snapshot)
                     .padding(Theme.gridPadding)
@@ -110,5 +113,47 @@ struct HomeButton: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Home")
         .accessibilityIdentifier("home")
+    }
+}
+
+/// Optional sentence strip (off by default, for NLA Stage 3+). Tapped tiles collect here; tap the strip
+/// to hear them together. Tiles still speak on their own when tapped.
+private struct SentenceStrip: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button {
+                model.speakStrip()
+            } label: {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 6) {
+                        ForEach(Array(model.strip.enumerated()), id: \.offset) { _, cell in
+                            Text(cell.label)
+                                .font(.system(.title3, design: .rounded, weight: .semibold))
+                                .padding(.horizontal, 12).padding(.vertical, 6)
+                                .background(Theme.tileColor(function: cell.function, hex: cell.colorHex), in: .capsule)
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                }
+                .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                .background(Theme.chrome, in: .rect(cornerRadius: 14))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Speak all: " + model.strip.map(\.spokenText).joined(separator: " "))
+
+            Button {
+                model.clearStrip()
+            } label: {
+                Image(systemName: "xmark.circle.fill").font(.system(size: 30))
+                    .foregroundStyle(Theme.tileText.opacity(0.5))
+                    .frame(width: 52, height: 52)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Clear")
+        }
+        .padding(.horizontal, Theme.gridPadding)
+        .padding(.bottom, 4)
     }
 }

@@ -68,18 +68,23 @@ struct SettingsView: View {
                     Text("Every tap always makes a sound, even very fast repeated taps. Repeated tapping is communication too.")
                 }
 
-                Section("Tiles") {
+                Section {
                     Toggle("Show labels", isOn: $settings.showLabels)
                     Picker("Label position", selection: $settings.labelPosition) {
                         Text("Below the picture").tag(HumSettings.LabelPosition.bottom)
                         Text("Above the picture").tag(HumSettings.LabelPosition.top)
                     }
                     .disabled(!settings.showLabels)
+                    Toggle("Sentence strip", isOn: $settings.sentenceStrip)
                     Picker("Appearance", selection: $settings.appearance) {
                         Text("Match this device").tag(HumSettings.Appearance.system)
                         Text("Light").tag(HumSettings.Appearance.light)
                         Text("Dark").tag(HumSettings.Appearance.dark)
                     }
+                } header: {
+                    Text("Tiles")
+                } footer: {
+                    Text("The sentence strip collects tapped tiles so your child can play them together. It's for later stages of language, so it's off at first. Each tile still speaks on its own.")
                 }
 
                 Section {

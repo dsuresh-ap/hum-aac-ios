@@ -26,6 +26,8 @@ struct TileEditorSheet: View {
     @State private var isHidden = false
     @State private var symbol = ""
     @State private var imageData: Data?
+    @State private var audioData: Data?
+    @State private var recorder = PhraseRecorder()
     @State private var photoItem: PhotosPickerItem?
     @State private var showCamera = false
     @State private var showFileImporter = false
@@ -67,6 +69,8 @@ struct TileEditorSheet: View {
                 } footer: {
                     Text("Type the whole phrase, just the way your child says it, even if it's from a show or a song. Keep it whole. Don't split it into single words.")
                 }
+
+                recordingSection
 
                 Section {
                     TextField("Label", text: $label)
@@ -213,6 +217,40 @@ struct TileEditorSheet: View {
         }
     }
 
+    private var recordingSection: some View {
+        Section {
+            HStack(spacing: 12) {
+                if recorder.state == .recording {
+                    Button("Stop", systemImage: "stop.circle.fill") {
+                        if let data = recorder.finish() { audioData = data }
+                        model.speech.engine.restart()
+                    }
+                    .foregroundStyle(.red)
+                    Text(String(format: "%.1f s", recorder.elapsed)).monospacedDigit().foregroundStyle(.secondary)
+                } else {
+                    Button(audioData == nil ? "Record" : "Record again", systemImage: "mic.circle") {
+                        Task { await recorder.start() }
+                    }
+                    if let audioData {
+                        Button("Play", systemImage: "play.circle") { recorder.play(audioData) }
+                        Spacer()
+                        Button("Remove", systemImage: "trash", role: .destructive) { self.audioData = nil }
+                            .labelStyle(.iconOnly)
+                    }
+                }
+            }
+            .buttonStyle(.borderless)
+            if recorder.state == .denied {
+                Text("Hum isn't allowed to use the microphone. You can allow it in Settings → Privacy & Security → Microphone.")
+                    .font(.footnote).foregroundStyle(.orange)
+            }
+        } header: {
+            Text("Say it in your own voice (optional)")
+        } footer: {
+            Text("Record the phrase the way your child hears it, with the same tune. The tile plays your recording instead of the computer voice. It stays on this device.")
+        }
+    }
+
     private var currentBoardID: UUID? {
         switch request.kind {
         case .new(let boardID, _, _): return boardID
@@ -243,6 +281,7 @@ struct TileEditorSheet: View {
         isHidden = tile.isHidden
         symbol = tile.symbol ?? ""
         imageData = tile.imageData
+        audioData = tile.audioData
     }
 
     private func save() {
@@ -257,6 +296,7 @@ struct TileEditorSheet: View {
             tile.isHidden = isHidden
             tile.symbol = symbol.isEmpty ? nil : symbol
             tile.imageData = imageData
+            tile.audioData = audioData
         }
         switch request.kind {
         case .new(let boardID, let row, let column):

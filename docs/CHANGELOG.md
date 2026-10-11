@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased: Milestones 2–5 (in progress)
+
+- **M2 Parent mode:** `BoardStore` (undoable edits; tiles move only by explicit drag; grids grow freely and
+  shrink only when nothing is cut off), parent editor with drag-to-move and a "needs a spot" tray, tile editor
+  (photo, camera, file/drag on Mac, play preview, label, color/function, links, hide, delete), board manager,
+  settings (voices, Personal Voice, speech, tapping, display, gate), first-run setup, two-finger triple-tap
+  gate (iOS), Guided Access tip, optional haptics.
+- **M3 Import/export:** import preview (Merge default / Replace everything with automatic backup), undo,
+  `.hum` export (whole setup or one board), `.hum` UTType and document type, Open in Hum, Mac drag-and-drop,
+  per-tile parent recordings (mic asked only on Record), sentence strip (off by default).
+- **M4 (partial):** App Intents (Add a Tile, Import a Setup, Export Setup) that queue changes for the parent's
+  preview instead of applying them. iCloud sync and OBF/OBZ are still to do.
+- **M5 AI helper:** Foundation Models (on-device on 26+, Private Cloud Compute on 27+ behind availability
+  and compiler checks), guided generation, `ProposalChecker` code-level GLP rules (praise/compliance removed,
+  split gestalts rejoined, dedupe, short labels, protest tiles also offered on Home, add-only placement),
+  the same import preview as files. Verified live on-device on macOS 27.
+
 ## Unreleased: Milestone 1 (in progress)
 
 **Done**

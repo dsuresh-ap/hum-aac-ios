@@ -18,6 +18,8 @@ struct PendingImport: Identifiable {
     let loaded: LoadedConfig
     let merge: MergePlanner.Plan
     let replace: MergePlanner.Plan
+    /// Set when this came from the Shortcuts/Siri queue; the file is removed once the parent decides.
+    var queueFile: URL? = nil
 }
 
 /// Reads, previews and applies imports; writes exports and backups.
