@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased: tests and iCloud sync
+
+- **App tests:** `HumTests` (41 Swift Testing tests: motor-plan rules for every edit path and undo,
+  SwiftData config round-trips including golden files and unknown fields, merge never moving or deleting,
+  folders/Back/Home and link loops, history, sync conflict repair, and the audio sampler: 600 taps at
+  20/s with none dropped, click-free retrigger, restart/finish/overlap, cache LRU/disk, engine restarts)
+  and `HumUITests` (6 flows: first run, tap → history, short hold doesn't unlock, gate → add tile → undo,
+  folder → Back, import preview → apply → undo). App unit tests run in CI on an iOS Simulator.
+- **Fixed (found by tests):** undo steps were recorded outside their group, so one Undo could revert
+  more than the last change; the starter board could be undone away after setup.
+- **iCloud sync (off by default):** SwiftData + CloudKit private database `iCloud.dhananjaysuresh.hum-aac`,
+  same store file on or off, falls back to local if iCloud is unavailable. `SyncResolver` repairs
+  duplicates, extra Home boards and spot collisions after remote changes: the tile placed first keeps
+  its spot; the other waits in "needs a spot". Child view refreshes only after 2 s without touches.
+  Remote-notification background mode on iOS.
+
 ## Unreleased: folders, grid size, history
 
 - **Folders and navigation:** a Back button next to Home (fixed slot, so nothing shifts), loop-safe

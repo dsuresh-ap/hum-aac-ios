@@ -16,7 +16,7 @@ struct HumApp: App {
         let testing = ProcessInfo.processInfo.arguments.contains("-uiTesting")
         let defaults = testing ? UserDefaults(suiteName: "HumUITests-\(UUID().uuidString)")! : .standard
         _model = State(initialValue: AppModel(
-            container: Persistence.makeContainer(inMemory: testing),
+            container: Persistence.makeContainer(inMemory: testing, iCloud: !testing && DeviceSettings(defaults: defaults).iCloudSyncEnabled),
             settings: DeviceSettings(defaults: defaults),
             history: SpeechHistory(fileURL: testing ? nil : SpeechHistory.defaultURL)))
     }
@@ -35,6 +35,7 @@ struct HumApp: App {
                             model.settings.hasSeenGuidedAccessTip = true
                             model.finishFirstRun(.starter)
                         }
+                        if args.contains("-demoPendingImport") { UITestFixtures.queueImport(model) }
                         if args.contains("-startInParent") { model.mode = .parent }
                         if args.contains("-darkMode") { model.settings.appearance = .dark }
                         if args.contains("-demoFolder") { UITestFixtures.addFoodFolder(model) }
@@ -136,6 +137,14 @@ enum UITestFixtures {
             }
         }
         model.goHome()
+    }
+
+    /// An import of one new tile ("All aboard!") into Home's free spot, waiting for the preview.
+    static func queueImport(_ model: AppModel) {
+        var doc = ConfigBridge.export(boards: model.store.boards()).document
+        guard let home = doc.boards.firstIndex(where: \.isHome) else { return }
+        doc.boards[home].tiles = [HumTile(label: "all aboard", spokenText: "All aboard!", row: 3, column: 3, function: .request)]
+        model.pendingImport = ImportService(model: model).prepare(loaded: LoadedConfig(document: doc), fileName: "Trains.hum")
     }
 
     static func addHistory(_ model: AppModel) {

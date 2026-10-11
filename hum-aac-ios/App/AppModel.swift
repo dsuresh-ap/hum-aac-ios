@@ -4,6 +4,7 @@
 import Foundation
 import Observation
 import SwiftData
+import CoreData
 import HumConfig
 import CoreGraphics
 import ImageIO
@@ -52,7 +53,7 @@ struct BoardSnapshot: Equatable {
 final class AppModel {
     enum Mode: Equatable { case child, parent }
 
-    let container: ModelContainer
+    private(set) var container: ModelContainer
     var context: ModelContext { container.mainContext }
     let settings: DeviceSettings
     let speech: SpeechService
@@ -76,6 +77,37 @@ final class AppModel {
     /// True until a parent finishes first-run setup.
     var needsFirstRun: Bool
     @ObservationIgnored private(set) lazy var store = BoardStore(context: context)
+    @ObservationIgnored private var remoteChangeObserver: NSObjectProtocol?
+
+    // MARK: iCloud sync
+
+    /// Turns iCloud sync on or off (parent action). Re-opens the same store with or without CloudKit.
+    func setICloudSync(_ on: Bool) {
+        settings.iCloudSyncEnabled = on
+        container = Persistence.makeContainer(iCloud: on)
+        store = BoardStore(context: container.mainContext)
+        observeRemoteChanges()
+        if on { SyncResolver.resolve(in: context) }
+        editingBoardID = nil
+        goHome()
+    }
+
+    var iCloudActive: Bool { Persistence.activeMode == .iCloud }
+
+    /// When another device's changes arrive: repair conflicts (never moving tiles), then refresh the
+    /// child's board only once they haven't touched it for a moment.
+    func observeRemoteChanges() {
+        if let remoteChangeObserver { NotificationCenter.default.removeObserver(remoteChangeObserver) }
+        remoteChangeObserver = NotificationCenter.default.addObserver(
+            forName: .NSPersistentStoreRemoteChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                SyncResolver.resolve(in: self.context)
+                self.scheduleSnapshotRefresh()
+            }
+        }
+    }
 
     /// An import waiting for the parent's preview (Merge / Replace everything).
     var pendingImport: PendingImport? {
@@ -137,6 +169,7 @@ final class AppModel {
 
     func launch() {
         speech.start()
+        observeRemoteChanges()
         if !needsFirstRun, ((try? context.fetchCount(FetchDescriptor<Board>())) ?? 0) == 0 {
             // Every board was deleted outside first run: never leave the child with nothing.
             try? loadStarterBoard()
@@ -158,6 +191,7 @@ final class AppModel {
         }
         settings.hasCompletedSetup = true
         needsFirstRun = false
+        store.clearUndo()
         goHome()
     }
 

@@ -51,3 +51,20 @@ jobs:
           xcodebuild -project hum-aac-ios.xcodeproj -scheme Hum \
             -destination "${{ matrix.destination }}" \
             CODE_SIGNING_ALLOWED=NO build
+
+  app-tests:
+    runs-on: macos-26
+    name: App unit tests (iOS Simulator)
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+      - name: Run HumTests
+        run: |
+          UDID=$(xcrun simctl list devices available | grep -m1 -E "iPad|iPhone" | grep -oE "[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}")
+          echo "Simulator: $UDID"
+          xcodebuild -project hum-aac-ios.xcodeproj -scheme Hum -destination "id=$UDID" \
+            -only-testing:HumTests CODE_SIGNING_ALLOWED=NO test

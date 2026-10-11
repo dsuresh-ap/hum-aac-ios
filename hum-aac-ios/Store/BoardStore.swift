@@ -25,11 +25,18 @@ final class BoardStore {
     func change(_ name: String, _ body: () throws -> Void) rethrows {
         undoManager?.beginUndoGrouping()
         defer {
-            undoManager?.endUndoGrouping()
-            undoManager?.setActionName(name)
+            // Save *inside* the group: SwiftData records undo steps when it processes changes, so a
+            // save after closing the group would put this change into some other undo step.
             try? context.save()
+            undoManager?.setActionName(name)
+            undoManager?.endUndoGrouping()
         }
         try body()
+    }
+
+    /// Forgets all undo steps (after first-run setup, so the starter board can't be undone away).
+    func clearUndo() {
+        undoManager?.removeAllActions()
     }
 
     func undo() {

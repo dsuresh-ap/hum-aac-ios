@@ -10,14 +10,43 @@
 		000000000000000150000001 /* HumConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000160000001 /* HumConfig */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		0000000000000001A0000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 000000000000000100000000;
+			remoteInfo = "hum-aac-ios";
+		};
+		0000000000000001A0000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 000000000000000100000000;
+			remoteInfo = "hum-aac-ios";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* Hum.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hum.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A2F385A307B49E30017BDE8 /* HumTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HumTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A2F3865307B49E70017BDE8 /* HumUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HumUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		000000000000000000000010 /* hum-aac-ios */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "hum-aac-ios";
+			sourceTree = "<group>";
+		};
+		1A2F385B307B49E30017BDE8 /* HumTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = HumTests;
+			sourceTree = "<group>";
+		};
+		1A2F3866307B49E70017BDE8 /* HumUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = HumUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -29,6 +58,16 @@
 				000000000000000150000001 /* HumConfig in Frameworks */,
 			);
 		};
+		1A2F3857307B49E30017BDE8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		1A2F3862307B49E70017BDE8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -36,6 +75,8 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000010 /* hum-aac-ios */,
+				1A2F385B307B49E30017BDE8 /* HumTests */,
+				1A2F3866307B49E70017BDE8 /* HumUITests */,
 				000000000000000000000020 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -44,6 +85,8 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000120 /* Hum.app */,
+				1A2F385A307B49E30017BDE8 /* HumTests.xctest */,
+				1A2F3865307B49E70017BDE8 /* HumUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -72,6 +115,48 @@
 			productReference = 000000000000000000000120 /* Hum.app */;
 			productType = "com.apple.product-type.application";
 		};
+		1A2F3859307B49E30017BDE8 /* HumTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1A2F3860307B49E30017BDE8 /* Build configuration list for PBXNativeTarget "HumTests" */;
+			buildPhases = (
+				1A2F3856307B49E30017BDE8 /* Sources */,
+				1A2F3857307B49E30017BDE8 /* Frameworks */,
+				1A2F3858307B49E30017BDE8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0000000000000001B0000001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1A2F385B307B49E30017BDE8 /* HumTests */,
+			);
+			name = HumTests;
+			productName = HumTests;
+			productReference = 1A2F385A307B49E30017BDE8 /* HumTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		1A2F3864307B49E70017BDE8 /* HumUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1A2F3869307B49E70017BDE8 /* Build configuration list for PBXNativeTarget "HumUITests" */;
+			buildPhases = (
+				1A2F3861307B49E70017BDE8 /* Sources */,
+				1A2F3862307B49E70017BDE8 /* Frameworks */,
+				1A2F3863307B49E70017BDE8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0000000000000001B0000002 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1A2F3866307B49E70017BDE8 /* HumUITests */,
+			);
+			name = HumUITests;
+			productName = HumUITests;
+			productReference = 1A2F3865307B49E70017BDE8 /* HumUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -79,11 +164,17 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2630;
+				LastSwiftUpdateCheck = 2700;
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					000000000000000100000000 = {
 						CreatedOnToolsVersion = 26.3;
+					};
+					1A2F3859307B49E30017BDE8 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					1A2F3864307B49E70017BDE8 = {
+						CreatedOnToolsVersion = 27.0;
 					};
 				};
 			};
@@ -105,12 +196,24 @@
 			projectRoot = "";
 			targets = (
 				000000000000000100000000 /* hum-aac-ios */,
+				1A2F3859307B49E30017BDE8 /* HumTests */,
+				1A2F3864307B49E70017BDE8 /* HumUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		000000000000000140000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		1A2F3858307B49E30017BDE8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		1A2F3863307B49E70017BDE8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -123,7 +226,30 @@
 			files = (
 			);
 		};
+		1A2F3856307B49E30017BDE8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		1A2F3861307B49E70017BDE8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0000000000000001B0000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 000000000000000100000000 /* hum-aac-ios */;
+			targetProxy = 0000000000000001A0000001 /* PBXContainerItemProxy */;
+		};
+		0000000000000001B0000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 000000000000000100000000 /* hum-aac-ios */;
+			targetProxy = 0000000000000001A0000002 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		000000000000000011000000 /* Debug configuration for PBXProject "hum-aac-ios" */ = {
@@ -262,6 +388,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "hum-aac-ios/hum-aac-ios.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7V795ZVY5R;
@@ -273,6 +400,7 @@
 				INFOPLIST_FILE = "Hum-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Hum;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				"INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=iphoneos*]" = NO;
 				"INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=iphonesimulator*]" = NO;
 				"INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=macosx*]" = YES;
@@ -282,6 +410,8 @@
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = "remote-notification";
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphonesimulator*]" = "remote-notification";
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
@@ -314,6 +444,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "hum-aac-ios/hum-aac-ios.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7V795ZVY5R;
@@ -325,6 +456,7 @@
 				INFOPLIST_FILE = "Hum-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Hum;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				"INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=iphoneos*]" = NO;
 				"INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=iphonesimulator*]" = NO;
 				"INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=macosx*]" = YES;
@@ -334,6 +466,8 @@
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = "remote-notification";
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphonesimulator*]" = "remote-notification";
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
@@ -362,6 +496,112 @@
 			};
 			name = Release;
 		};
+		1A2F385E307B49E30017BDE8 /* Debug configuration for PBXNativeTarget "HumTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.dhananjaysuresh.hum-aac.tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hum.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Hum";
+				"TEST_HOST[sdk=macosx*]" = "$(BUILT_PRODUCTS_DIR)/Hum.app/Contents/MacOS/Hum";
+			};
+			name = Debug;
+		};
+		1A2F385F307B49E30017BDE8 /* Release configuration for PBXNativeTarget "HumTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.dhananjaysuresh.hum-aac.tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hum.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Hum";
+				"TEST_HOST[sdk=macosx*]" = "$(BUILT_PRODUCTS_DIR)/Hum.app/Contents/MacOS/Hum";
+			};
+			name = Release;
+		};
+		1A2F386A307B49E70017BDE8 /* Debug configuration for PBXNativeTarget "HumUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.dhananjaysuresh.hum-aac.uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "hum-aac-ios";
+			};
+			name = Debug;
+		};
+		1A2F386B307B49E70017BDE8 /* Release configuration for PBXNativeTarget "HumUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.dhananjaysuresh.hum-aac.uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "hum-aac-ios";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -378,6 +618,22 @@
 			buildConfigurations = (
 				000000000000000111000000 /* Debug configuration for PBXNativeTarget "hum-aac-ios" */,
 				000000000000000112000000 /* Release configuration for PBXNativeTarget "hum-aac-ios" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		1A2F3860307B49E30017BDE8 /* Build configuration list for PBXNativeTarget "HumTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A2F385E307B49E30017BDE8 /* Debug configuration for PBXNativeTarget "HumTests" */,
+				1A2F385F307B49E30017BDE8 /* Release configuration for PBXNativeTarget "HumTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		1A2F3869307B49E70017BDE8 /* Build configuration list for PBXNativeTarget "HumUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A2F386A307B49E70017BDE8 /* Debug configuration for PBXNativeTarget "HumUITests" */,
+				1A2F386B307B49E70017BDE8 /* Release configuration for PBXNativeTarget "HumUITests" */,
 			);
 			defaultConfigurationName = Release;
 		};

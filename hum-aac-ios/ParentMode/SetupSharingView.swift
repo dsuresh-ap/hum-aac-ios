@@ -34,6 +34,20 @@ struct SetupSharingView: View {
                 }
 
                 Section {
+                    Toggle("Sync with iCloud", isOn: Binding(
+                        get: { model.settings.iCloudSyncEnabled },
+                        set: { model.setICloudSync($0) }))
+                    if model.settings.iCloudSyncEnabled && !model.iCloudActive {
+                        Label("iCloud isn't available right now. Check that this device is signed in to iCloud. Your boards are safe on this device.", systemImage: "exclamationmark.icloud")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Keep devices in sync")
+                } footer: {
+                    Text("Your boards are stored in your own iCloud. We never see them. Turn this on for each iPad, iPhone or Mac that should share boards. Tiles never move on their own when changes arrive from another device.")
+                }
+
+                Section {
                     Button("Import a setup…", systemImage: "square.and.arrow.down") { showImporter = true }
                         .accessibilityIdentifier("importSetup")
                     #if os(macOS)
