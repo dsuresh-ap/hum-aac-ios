@@ -43,7 +43,7 @@ struct TileView: View {
                         }
                     }
                     .overlay(alignment: .topTrailing) {
-                        if cell.linkedBoardID != nil { FolderCorner() }
+                        if cell.linkedBoardID != nil { FolderCorner(ink: ink) }
                     }
                     .clipShape(.rect(cornerRadius: Theme.tileCorner, style: .continuous))
                     .offset(y: Theme.keyDepth - depth)
@@ -88,10 +88,12 @@ struct TileView: View {
         .padding(size.width > 120 ? 10 : 6)
     }
 
+    private var ink: Color { Theme.tileInk(function: cell.function, hex: cell.colorHex) }
+
     private func label(_ font: Font) -> some View {
         Text(cell.label)
             .font(font)
-            .foregroundStyle(Theme.ink)
+            .foregroundStyle(ink)
             .multilineTextAlignment(.center)
             .lineLimit(2)
             .minimumScaleFactor(0.6)
@@ -119,15 +121,17 @@ struct TileView: View {
 
 /// Small folder mark in the top-right corner of tiles that open another board.
 private struct FolderCorner: View {
+    var ink = Theme.ink
+
     var body: some View {
         // A folded corner with a folder mark: this tile opens another board.
         ZStack(alignment: .topTrailing) {
             Triangle()
-                .fill(Theme.ink.opacity(0.16))
+                .fill(ink.opacity(0.16))
                 .frame(width: 44, height: 44)
             Image(systemName: "folder.fill")
                 .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Theme.ink.opacity(0.6))
+                .foregroundStyle(ink.opacity(0.6))
                 .padding(7)
         }
             .accessibilityHidden(true)

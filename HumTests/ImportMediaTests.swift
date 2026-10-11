@@ -5,6 +5,7 @@ import Foundation
 import Testing
 import ImageIO
 import CoreGraphics
+import SwiftData
 import UniformTypeIdentifiers
 import HumConfig
 @testable import Hum
@@ -81,6 +82,60 @@ struct ImportMediaTests {
             """.utf8)
         let tile = try importTile(model, picture: svg, name: "symbol.svg")
         // macOS draws SVG during the import; iOS right after it, with WebKit.
+        await ImportService.renderImportedSVGs(model)
+        let stored = try #require(tile.imageData)
+        #expect(!ImageProcessing.isSVG(stored))
+        #expect(try SymbolTests.centerIsRed(stored))
+    }
+
+    /// An import or a synced change can delete tiles while their SVG pictures are being drawn.
+    @Test func deletingTilesWhilePicturesAreDrawnDoesNotCrash() async throws {
+        let model = makeModel()
+        let svg = Data("""
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="red"/></svg>
+            """.utf8)
+        for tile in model.home.placedTiles { tile.imageData = svg }
+        try model.context.save()
+        let drawing = Task { await ImportService.renderImportedSVGs(model) }
+        await Task.yield()
+        for tile in model.home.tiles ?? [] { model.context.delete(tile) }
+        try model.context.save()
+        await drawing.value
+        #expect(try model.context.fetch(FetchDescriptor<Tile>()).isEmpty)
+    }
+
+    /// Big setups prepare their pictures in the background and report each one for the progress bar.
+    @Test func importReportsProgressForEveryPicture() async throws {
+        let model = makeModel()
+        var doc = ConfigBridge.export(boards: model.store.boards()).document
+        let home = try #require(doc.boards.firstIndex { $0.isHome })
+        let pictures = (0..<3).map { "media/p\($0).png" }
+        let png = try #require(Self.bigTransparentPNG())
+        doc.boards[home].tiles = doc.boards[home].tiles.enumerated().map { index, tile in
+            var tile = tile
+            if index < pictures.count { tile.image = pictures[index] }
+            return tile
+        }
+        let package = try HumPackage.write(doc, media: Dictionary(uniqueKeysWithValues: pictures.map { ($0, png) }))
+        let service = ImportService(model: model)
+        var steps: [ImportService.Progress] = []
+        try await service.apply(try service.prepare(data: package, fileName: "big.hum"), mode: .replace) { steps.append($0) }
+        #expect(steps.first == .backingUp)
+        #expect(steps.contains(.pictures(done: 3, total: 3)))
+        #expect(steps.last == .saving)
+        let stored = model.home.placedTiles.compactMap(\.imageData)
+        #expect(stored.count == 3)
+        #expect(try stored.allSatisfy { try Self.pixelSize($0).0 <= 1024 })
+    }
+
+    /// Older builds kept imported SVGs as they were, and the Mac showed blank tiles. Launch converts them.
+    @Test func svgPicturesSavedByOlderBuildsAreRepaired() async throws {
+        let model = makeModel()
+        let tile = try #require(model.home.placedTiles.first)
+        tile.imageData = Data("""
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="red"/></svg>
+            """.utf8)
+        try model.context.save()
         await ImportService.renderImportedSVGs(model)
         let stored = try #require(tile.imageData)
         #expect(!ImageProcessing.isSVG(stored))

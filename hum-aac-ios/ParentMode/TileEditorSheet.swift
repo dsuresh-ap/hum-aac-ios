@@ -473,7 +473,7 @@ struct TileEditorSheet: View {
         switch request.kind {
         case .new(let boardID, let row, let column):
             guard let board = model.store.board(boardID) else { break }
-            saved = model.store.addTile(to: board, row: row, column: column, newFolderName: folderName,
+            saved = model.store.addTile(to: board, row: row, column: column, phoneSpot: request.phoneSpot, newFolderName: folderName,
                                         rows: rows, columns: columns, apply)
         case .edit:
             if let tile = existing {

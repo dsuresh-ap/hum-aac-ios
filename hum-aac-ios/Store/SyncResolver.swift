@@ -12,7 +12,10 @@ import SwiftData
 /// device reaches the same answer.
 ///
 /// 1. Duplicate boards/tiles with the same `id`: keep the oldest record, delete the copies.
-/// 2. More than one Home: the oldest Home board stays Home.
+/// 2. More than one Home: a family's own Home beats Hum's starter board, then the newest Home wins
+///    (so the latest import or setup is the one every device keeps). A device that joins sync uploads
+///    the boards it already had, often just the starter; if that starter was never changed it holds
+///    none of the family's work, so it is removed instead of lingering as a second "Home".
 /// 3. Two tiles in one spot: the tile that has been there longer (older `positionUpdatedAt`, then
 ///    older `createdAt`, then smaller id) keeps the spot. The other goes to the "needs a spot" tray
 ///    for a parent to place. Nothing is pushed into another spot.
@@ -21,6 +24,7 @@ enum SyncResolver {
     struct Report: Equatable {
         var removedDuplicates = 0
         var fixedHomes = 0
+        var removedStarterBoards = 0
         var unplacedTiles = 0
         var isEmpty: Bool { self == Report() }
     }
@@ -50,12 +54,18 @@ enum SyncResolver {
         }
 
         // 2. One Home.
-        let liveBoards = ((try? context.fetch(FetchDescriptor<Board>())) ?? []).filter { !$0.isDeleted }
-        let homes = liveBoards.filter(\.isHome).sorted(by: older)
+        var liveBoards = ((try? context.fetch(FetchDescriptor<Board>())) ?? []).filter { !$0.isDeleted }
+        let homes = liveBoards.filter(\.isHome).sorted(by: preferredHome)
         for extra in homes.dropFirst() {
             extra.isHome = false
             report.fixedHomes += 1
+            if StarterBoard.isUntouched(extra) {
+                for tile in extra.tiles ?? [] { context.delete(tile) }
+                context.delete(extra)
+                report.removedStarterBoards += 1
+            }
         }
+        liveBoards.removeAll { $0.isDeleted }
 
         // 3. One tile per spot. (No force-unwraps: this runs on data from other devices.)
         for board in liveBoards {
@@ -86,6 +96,16 @@ enum SyncResolver {
     }
 
     // Only synced values are compared, so every device makes the same choice.
+
+    /// Which of two Homes stays Home: not the starter board, then the newest, then the smaller id.
+    private static func preferredHome(_ a: Board, _ b: Board) -> Bool {
+        let starterID = StarterBoard.homeID
+        let (aStarter, bStarter) = (a.id == starterID, b.id == starterID)
+        if aStarter != bStarter { return bStarter }
+        if a.createdAt != b.createdAt { return a.createdAt > b.createdAt }
+        return a.id.uuidString < b.id.uuidString
+    }
+
     private static func older(_ a: Board, _ b: Board) -> Bool {
         (a.createdAt, a.updatedAt) < (b.createdAt, b.updatedAt)
     }

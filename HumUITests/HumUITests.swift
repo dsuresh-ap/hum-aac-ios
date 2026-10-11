@@ -68,6 +68,27 @@ final class HumUITests: XCTestCase {
         XCTAssertTrue(element(app, "emptySlot.3.3").waitForExistence(timeout: 3), "Undo should remove the new tile")
     }
 
+    /// On iPhone, a board wider than 4 columns is shown in its phone layout (4 columns), in the child
+    /// view and in the editor, and a tile added there goes where the parent tapped.
+    @MainActor
+    func testPhoneLayoutForBigBoards() {
+        let app = launch("-skipFirstRun", "-phoneLayout", "-wideHome")
+        let hi = element(app, "tile.hi")
+        XCTAssertTrue(hi.waitForExistence(timeout: 5))
+        XCTAssertGreaterThan(hi.frame.width, app.frame.width / 5, "Four columns, not five")
+        openParentMode(app)
+        XCTAssertTrue(element(app, "phonePage").waitForExistence(timeout: 3))
+        // 18 starter tiles fill four rows and two spots of the fifth.
+        element(app, "emptySlot.4.2").tap()
+        let field = element(app, "spokenTextField")
+        XCTAssertTrue(field.waitForExistence(timeout: 3))
+        field.tap()
+        field.typeText("All aboard!")
+        element(app, "saveTile").tap()
+        XCTAssertTrue(element(app, "editTile.All aboard").waitForExistence(timeout: 3))
+        XCTAssertFalse(element(app, "emptySlot.4.2").exists, "The new tile takes the spot that was tapped")
+    }
+
     /// "New folder here" asks for a name, makes the folder tile, and opens the empty folder to fill.
     @MainActor
     func testNewFolderOpensItForFilling() {

@@ -16,6 +16,8 @@ func makeModel(starter: Bool = true) -> AppModel {
     let model = AppModel(container: Persistence.makeContainer(inMemory: true),
                          settings: DeviceSettings(defaults: defaults),
                          history: SpeechHistory(fileURL: nil))
+    // Tests run on an iPhone simulator; the phone layout has its own tests (PhoneLayoutTests).
+    model.usesPhoneLayout = false
     if starter { model.finishFirstRun(.starter) }
     liveModels.append(model)
     return model

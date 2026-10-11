@@ -31,12 +31,14 @@ struct BoardSnapshot: Equatable {
         var linkedBoardExists: Bool
         /// Key of the decoded recording, if the parent recorded this phrase. Changes when re-recorded.
         var recordingKey: String?
+        /// Set on the phone layout's "More" cell: tapping it opens this page of the same board.
+        var nextPage: Int? = nil
 
         static func == (a: Cell, b: Cell) -> Bool {
             a.id == b.id && a.label == b.label && a.spokenText == b.spokenText && a.function == b.function
                 && a.colorHex == b.colorHex && a.symbol == b.symbol && a.image === b.image
                 && a.linkedBoardID == b.linkedBoardID && a.linkedBoardExists == b.linkedBoardExists
-                && a.recordingKey == b.recordingKey
+                && a.recordingKey == b.recordingKey && a.nextPage == b.nextPage
         }
     }
 
@@ -47,6 +49,8 @@ struct BoardSnapshot: Equatable {
     var isHome: Bool
     /// `cells[row][column]`: nil is an empty or hidden slot. Hidden tiles keep their slot.
     var cells: [[Cell?]]
+    /// The phone layout's page (0 on bigger screens).
+    var page = 0
 }
 
 @MainActor
@@ -69,6 +73,7 @@ final class AppModel {
             if mode == .parent {
                 editPath = []
                 editingBoardID = currentBoardID
+                editingPage = currentPage
                 showNextPendingChange()
             } else if oldValue == .parent {
                 // Leaving parent mode: show the latest edits right away (the child isn't tapping yet).
@@ -80,11 +85,14 @@ final class AppModel {
     var editingBoardID: UUID?
     /// Folders opened while editing, so "Back" returns to the board you came from.
     var editPath: [UUID] = []
+    /// The phone layout page shown in the editor (iPhone, big boards).
+    var editingPage = 0
 
     /// Jumps the editor to a board (from a menu or the board list). Forgets the folder path.
     func editBoard(_ id: UUID?) {
         editPath = []
         editingBoardID = id
+        editingPage = 0
     }
 
     /// Opens a folder in the editor, remembering where we came from.
@@ -92,10 +100,34 @@ final class AppModel {
         guard id != editingBoardID else { return }
         if let current = editingBoardID ?? homeBoardID { editPath.append(current) }
         editingBoardID = id
+        editingPage = 0
     }
 
     func backInEditor() {
         editingBoardID = editPath.popLast()
+        editingPage = 0
+    }
+
+    // MARK: Phone layout
+
+    /// True on iPhone: boards too big for a phone screen are shown in their phone layout (`PhoneLayout`).
+    var usesPhoneLayout = AppModel.isPhone
+
+    static var isPhone: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+        #else
+        false
+        #endif
+    }
+
+    /// Whether this device shows `board` in its phone layout instead of its own grid.
+    func showsPhoneLayout(_ board: Board) -> Bool { usesPhoneLayout && !PhoneLayout.fits(board) }
+
+    /// Gives new tiles a phone spot before the phone shows `board`. Not an undo step.
+    func arrangePhoneLayout(_ board: Board) {
+        guard showsPhoneLayout(board), PhoneLayout.arrange(board) else { return }
+        try? context.save()
     }
     /// True until a parent finishes first-run setup.
     var needsFirstRun: Bool
@@ -165,6 +197,10 @@ final class AppModel {
         }
     }
     var importError: String?
+    /// True while a sheet (Setup & sharing) shows the import preview itself; the root view waits.
+    var importHostedBySheet = false
+    /// True while stored SVG pictures are being turned into JPEGs.
+    @ObservationIgnored var isConvertingSVGs = false
 
     /// Every way a file arrives (Files, AirDrop, "Open in Hum", drag and drop) ends here. Nothing
     /// changes until the parent sees the preview, and the preview only shows in parent mode.
@@ -206,6 +242,8 @@ final class AppModel {
             try? loadStarterBoard()
         }
         goHome()
+        // Pictures saved as SVG (older builds, or synced from another device) become JPEGs.
+        Task { await ImportService.renderImportedSVGs(self) }
     }
 
     /// Finishes first-run setup with the parent's choice.
@@ -272,8 +310,17 @@ final class AppModel {
 
     // MARK: Navigation
 
-    /// Boards the child opened on the way to the current one, for the Back button. Home clears it.
-    private(set) var boardPath: [UUID] = []
+    /// Where the child has been: a board, and its phone layout page.
+    struct Stop: Equatable {
+        var board: UUID
+        var page: Int
+    }
+
+    /// Boards (and phone pages) the child opened on the way to the current one, for the Back button.
+    /// Home clears it.
+    private(set) var boardPath: [Stop] = []
+    /// The phone layout page being shown (always 0 on bigger screens).
+    private(set) var currentPage = 0
     var canGoBack: Bool { !boardPath.isEmpty }
 
     var homeBoardID: UUID? {
@@ -292,23 +339,31 @@ final class AppModel {
         if let current = currentBoardID {
             // Opening a board that is already on the path (a loop of links) goes back to it instead
             // of growing the path forever.
-            if let index = boardPath.firstIndex(of: boardID) {
+            if let index = boardPath.firstIndex(where: { $0.board == boardID }) {
                 boardPath.removeSubrange(index...)
             } else {
-                boardPath.append(current)
+                boardPath.append(Stop(board: current, page: currentPage))
             }
         }
         if boardID == homeBoardID { boardPath = [] }
         show(boardID: boardID)
     }
 
-    func goBack() {
-        guard let previous = boardPath.popLast() else { return goHome() }
-        show(boardID: previous)
+    /// Opens another page of the current board's phone layout ("More"). Back returns to this page.
+    func openPage(_ page: Int) {
+        guard let current = currentBoardID, page != currentPage else { return }
+        boardPath.append(Stop(board: current, page: currentPage))
+        show(boardID: current, page: page)
     }
 
-    func show(boardID: UUID?) {
+    func goBack() {
+        guard let previous = boardPath.popLast() else { return goHome() }
+        show(boardID: previous.board, page: previous.page)
+    }
+
+    func show(boardID: UUID?, page: Int = 0) {
         currentBoardID = boardID
+        currentPage = page
         rebuildSnapshot()
     }
 
@@ -317,6 +372,7 @@ final class AppModel {
     /// Called from the touch handler. Sound first, everything else after.
     func tap(_ cell: BoardSnapshot.Cell, tapTime: UInt64) {
         lastTouch = .now
+        if let page = cell.nextPage { return openPage(page) }
         // A silent folder tile (no phrase, no recording) just opens its board.
         if !cell.spokenText.isEmpty || cell.recordingKey != nil {
             speech.speak(cell.spokenText, recordingID: cell.recordingKey, tapTime: tapTime)
@@ -341,14 +397,32 @@ final class AppModel {
     func rebuildSnapshot() {
         guard let id = currentBoardID,
               let board = fetchBoard(id) else {
-            snapshot = nil
+            // The board was deleted (e.g. "Replace everything" on another device): go Home instead of
+            // leaving the child with an empty screen.
+            if let home = homeBoardID, home != currentBoardID, fetchBoard(home) != nil {
+                boardPath = []
+                show(boardID: home)
+            } else {
+                snapshot = nil
+            }
             return
         }
         let allBoardIDs = Set(((try? context.fetch(FetchDescriptor<Board>())) ?? []).map(\.id))
-        var cells = [[BoardSnapshot.Cell?]](repeating: [BoardSnapshot.Cell?](repeating: nil, count: board.columns), count: board.rows)
+        let phone = showsPhoneLayout(board)
+        if phone { arrangePhoneLayout(board) }
+        let pageCount = phone ? PhoneLayout.pageCount(board) : 1
+        let page = min(currentPage, pageCount - 1)
+        let (rows, columns) = phone ? (PhoneLayout.rows, PhoneLayout.columns) : (board.rows, board.columns)
+        var cells = [[BoardSnapshot.Cell?]](repeating: [BoardSnapshot.Cell?](repeating: nil, count: columns), count: rows)
         var recordings: [(id: String, data: Data)] = []
         for tile in board.placedTiles where !tile.isHidden {
-            guard let r = tile.row, let c = tile.column, r < board.rows, c < board.columns, cells[r][c] == nil else { continue }
+            let spot: (Int, Int)?
+            if phone {
+                spot = PhoneLayout.spot(of: tile).flatMap { $0.page == page ? ($0.row, $0.column) : nil }
+            } else {
+                spot = tile.row.flatMap { r in tile.column.map { (r, $0) } }
+            }
+            guard let (r, c) = spot, r < rows, c < columns, cells[r][c] == nil else { continue }
             let key = tile.audioData.map { Self.recordingKey(tile.id, $0) }
             if let key, let audio = tile.audioData { recordings.append((key, audio)) }
             cells[r][c] = BoardSnapshot.Cell(
@@ -358,7 +432,13 @@ final class AppModel {
                 linkedBoardExists: tile.linkedBoardID.map(allBoardIDs.contains) ?? false,
                 recordingKey: key)
         }
-        snapshot = BoardSnapshot(boardID: board.id, name: board.name, rows: board.rows, columns: board.columns, isHome: board.isHome, cells: cells)
+        if phone, page < pageCount - 1 {
+            cells[PhoneLayout.rows - 1][PhoneLayout.columns - 1] = BoardSnapshot.Cell(
+                id: Self.moreCellID(board.id, page: page), label: "More", spokenText: "", function: nil, colorHex: nil,
+                symbol: "➡️", image: nil, linkedBoardID: nil, linkedBoardExists: false, recordingKey: nil, nextPage: page + 1)
+        }
+        snapshot = BoardSnapshot(boardID: board.id, name: board.name, rows: rows, columns: columns, isHome: board.isHome,
+                                 cells: cells, page: page)
         speech.prepareRecordings(recordings)
         prerender(board)
     }
@@ -393,6 +473,14 @@ final class AppModel {
         return try? context.fetch(descriptor).first
     }
 
+    /// A stable ID for a board page's "More" cell, so SwiftUI keeps the same view between rebuilds.
+    static func moreCellID(_ board: UUID, page: Int) -> UUID {
+        var bytes = board.uuid
+        bytes.15 ^= UInt8(truncatingIfNeeded: page + 1)
+        bytes.14 ^= 0x5A
+        return UUID(uuid: bytes)
+    }
+
     /// Tile ID + size + a cheap content hash, so a new recording never plays the old one.
     static func recordingKey(_ id: UUID, _ data: Data) -> String {
         var hash: UInt64 = 1469598103934665603
@@ -424,13 +512,17 @@ final class AppModel {
         guard let data = tile.imageData else { return nil }
         let key = "\(tile.id)-\(data.count)"
         if let cached = imageCache[key] { return cached }
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        let source = CGImageSourceCreateWithData(data as CFData, nil)
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
             kCGImageSourceThumbnailMaxPixelSize: 512,
         ]
-        let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+        var image = source.flatMap { CGImageSourceCreateThumbnailAtIndex($0, 0, options as CFDictionary) }
+        #if os(macOS)
+        // An SVG still waiting to be converted (see `ImportService.renderImportedSVGs`).
+        if image == nil, ImageProcessing.isSVG(data) { image = ImageProcessing.rasterizeSVG(data) }
+        #endif
         imageCache[key] = image
         return image
     }

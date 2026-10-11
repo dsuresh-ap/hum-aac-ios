@@ -48,17 +48,54 @@ enum ConfigBridge {
 
     // MARK: Apply (MergePlanner.Plan → SwiftData)
 
-    /// Writes a planned import into SwiftData. Media is only set when the package contains it.
-    /// Pictures are resized and flattened like photos added in the app (`normalizedImportImage`).
+    /// One picture from a package, ready to store: resized and flattened like photos added in the app
+    /// (`normalizedImportImage`). SVG that can't be drawn here yet (iOS) is kept as is and drawn right
+    /// after the import. Nil if it isn't a picture.
+    nonisolated static func preparedPicture(_ raw: Data) -> Data? {
+        ImageProcessing.normalizedImportImage(raw) ?? (ImageProcessing.isSVG(raw) ? raw : nil)
+    }
+
+    /// The package pictures `plan` uses, by path.
+    nonisolated static func picturePaths(in plan: MergePlanner.Plan, media: [String: Data]) -> [String] {
+        let tiles = plan.result.boards.flatMap(\.tiles) + plan.unplaced.map(\.tile)
+        return Array(Set(tiles.compactMap(\.image).filter { media[$0] != nil })).sorted()
+    }
+
+    /// Prepares every picture `plan` uses, several at a time off the main thread (a big setup can have
+    /// well over a thousand). `progress` gets (done, total) on the main actor after each one.
     @MainActor
-    static func apply(_ plan: MergePlanner.Plan, media: [String: Data], in context: ModelContext) throws {
+    static func preparePictures(for plan: MergePlanner.Plan, media: [String: Data],
+                                progress: (Int, Int) -> Void) async -> [String: Data?] {
+        let paths = picturePaths(in: plan, media: media)
+        var prepared: [String: Data?] = [:]
+        progress(0, paths.count)
+        await withTaskGroup(of: (String, Data?).self) { group in
+            var next = paths.makeIterator()
+            func addNext() {
+                guard let path = next.next(), let raw = media[path] else { return }
+                group.addTask { (path, preparedPicture(raw)) }
+            }
+            for _ in 0..<max(2, ProcessInfo.processInfo.activeProcessorCount) { addNext() }
+            for await (path, data) in group {
+                prepared[path] = data
+                progress(prepared.count, paths.count)
+                addNext()
+            }
+        }
+        return prepared
+    }
+
+    /// Writes a planned import into SwiftData. Media is only set when the package contains it.
+    /// `prepared` holds pictures already processed by `preparePictures`; others are processed here.
+    @MainActor
+    static func apply(_ plan: MergePlanner.Plan, media: [String: Data], prepared: [String: Data?] = [:],
+                      in context: ModelContext) throws {
         // Each file once, even if several tiles use it.
-        var pictures: [String: Data?] = [:]
+        var pictures = prepared
         func picture(_ path: String) -> Data? {
             if let done = pictures[path] { return done }
             guard let raw = media[path] else { return nil }
-            // SVG that can't be drawn here yet (iOS) is kept as is and drawn right after the import.
-            let ready = ImageProcessing.normalizedImportImage(raw) ?? (ImageProcessing.isSVG(raw) ? raw : nil)
+            let ready = preparedPicture(raw)
             pictures[path] = ready
             return ready
         }
@@ -96,7 +133,12 @@ enum ConfigBridge {
                 tile.column = newColumn
                 tile.positionUpdatedAt = now
             }
-            if tile.board?.id != board.id { tile.board = board }
+            if tile.board?.id != board.id {
+                tile.board = board
+                tile.phonePage = nil  // its phone spot was on the old board
+                tile.phoneRow = nil
+                tile.phoneColumn = nil
+            }
             tile.updatedAt = now
         }
 

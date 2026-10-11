@@ -97,6 +97,39 @@ final class BoardStore {
         }
     }
 
+    /// Moves a tile in the phone layout. If another tile is there, the two swap. The big layout
+    /// (`row`/`column`, used by iPad and Mac) is untouched, except that a tile coming from the tray or
+    /// another board takes the first empty spot there. Returns false (and changes nothing) when it needs
+    /// that spot and the board is full.
+    @discardableResult
+    func movePhone(_ tile: Tile, to spot: PhoneLayout.Spot, on board: Board) -> Bool {
+        guard !PhoneLayout.isMoreSpot(row: spot.row, column: spot.column) else { return false }
+        let needsBigSpot = tile.board?.id != board.id || tile.row == nil || tile.column == nil
+        let bigSpot = needsBigSpot ? firstEmptySpot(on: board) : nil
+        if needsBigSpot && bigSpot == nil { return false }
+        if !needsBigSpot && PhoneLayout.spot(of: tile) == spot { return true }
+        change("Move Tile") {
+            let from = needsBigSpot ? nil : PhoneLayout.spot(of: tile)
+            if let other = PhoneLayout.tiles(on: board, page: spot.page)[spot], other.id != tile.id {
+                // Swap. A tile with nowhere to go gets a free spot the next time the phone shows the board.
+                other.phonePage = from?.page
+                other.phoneRow = from?.row
+                other.phoneColumn = from?.column
+            }
+            if let bigSpot {
+                tile.board = board
+                tile.row = bigSpot.row
+                tile.column = bigSpot.column
+                tile.positionUpdatedAt = .now
+            }
+            tile.phonePage = spot.page
+            tile.phoneRow = spot.row
+            tile.phoneColumn = spot.column
+            board.updatedAt = .now
+        }
+        return true
+    }
+
     /// The first empty spot, reading left to right, top to bottom. Nil when the board is full.
     func firstEmptySpot(on board: Board) -> (row: Int, column: Int)? {
         let taken = Set(board.placedTiles.map { "\($0.row!),\($0.column!)" })
@@ -119,6 +152,9 @@ final class BoardStore {
             tile.board = target
             tile.row = spot?.row
             tile.column = spot?.column
+            tile.phonePage = nil  // its phone spot was on the old board; it gets a new one there
+            tile.phoneRow = nil
+            tile.phoneColumn = nil
             tile.positionUpdatedAt = now
             target.updatedAt = now
         }
@@ -184,12 +220,16 @@ final class BoardStore {
 
     /// Adds a new tile from the tile editor, and its folder board if asked. One undo step.
     @discardableResult
-    func addTile(to board: Board, row: Int, column: Int, newFolderName: String? = nil, rows: Int = 3, columns: Int = 3,
-                 _ edit: (Tile) -> Void) -> Tile {
+    func addTile(to board: Board, row: Int, column: Int, phoneSpot: PhoneLayout.Spot? = nil, newFolderName: String? = nil,
+                 rows: Int = 3, columns: Int = 3, _ edit: (Tile) -> Void) -> Tile {
         let tile = Tile(label: "", spokenText: "", row: row, column: column)
         change(newFolderName == nil ? "Add Tile" : "New Folder") {
             context.insert(tile)
             tile.board = board
+            // Added on a phone: it goes where the parent tapped there, too.
+            tile.phonePage = phoneSpot?.page
+            tile.phoneRow = phoneSpot?.row
+            tile.phoneColumn = phoneSpot?.column
             edit(tile)
             if let newFolderName {
                 let folder = Board(name: newFolderName, rows: rows, columns: columns, isHome: false)

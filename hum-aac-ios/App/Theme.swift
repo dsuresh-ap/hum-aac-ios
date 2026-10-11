@@ -41,6 +41,30 @@ enum Theme {
         return .adaptive(light: light.face, dark: dark.face)
     }
 
+    /// Text and marks on a tile. The built-in colors follow Light/Dark mode together with `ink`, but a
+    /// tile's own color (e.g. from TD Snap) doesn't, so it gets whichever ink reads better on it: a white
+    /// tile never gets white text in Dark Mode.
+    static func tileInk(function: TileFunction?, hex: String?) -> Color {
+        guard let hex, let value = UInt32(hex.dropFirst(), radix: 16) else { return ink }
+        return contrast(value, darkInk) >= contrast(value, lightInk) ? Color(hex: darkInk) : Color(hex: lightInk)
+    }
+
+    private static let darkInk: UInt32 = 0x26303A
+    private static let lightInk: UInt32 = 0xEEF1F4
+
+    /// WCAG contrast ratio between two sRGB colors.
+    static func contrast(_ a: UInt32, _ b: UInt32) -> Double {
+        func luminance(_ hex: UInt32) -> Double {
+            func channel(_ shift: UInt32) -> Double {
+                let c = Double((hex >> shift) & 0xFF) / 255
+                return c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
+            }
+            return 0.2126 * channel(16) + 0.7152 * channel(8) + 0.0722 * channel(0)
+        }
+        let (x, y) = (luminance(a), luminance(b))
+        return (max(x, y) + 0.05) / (min(x, y) + 0.05)
+    }
+
     /// The darker edge under the face (the "key" side).
     static func tileEdge(function: TileFunction?, hex: String?) -> Color {
         if let hex, let value = UInt32(hex.dropFirst(), radix: 16) { return Color(hex: value).opacity(0.55) }
@@ -66,16 +90,23 @@ extension Color {
     }
 
     /// A color that follows Light/Dark mode.
-    static func adaptive(light: UInt32, dark: UInt32) -> Color {
-        func make(_ hex: UInt32) -> PlatformColor {
-            PlatformColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
-        }
+    ///
+    /// `nonisolated` and `@Sendable` on purpose: SwiftUI resolves these colors on its render thread too,
+    /// and a main-actor closure there stops the app (a Swift concurrency isolation check).
+    nonisolated static func adaptive(light: UInt32, dark: UInt32) -> Color {
         #if canImport(UIKit)
-        return Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? make(dark) : make(light) })
+        return Color(uiColor: UIColor { @Sendable traits in
+            platformColor(traits.userInterfaceStyle == .dark ? dark : light)
+        })
         #else
-        return Color(nsColor: NSColor(name: nil) { appearance in
-            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? make(dark) : make(light)
+        return Color(nsColor: NSColor(name: nil) { @Sendable appearance in
+            platformColor(appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light)
         })
         #endif
+    }
+
+    nonisolated private static func platformColor(_ hex: UInt32) -> PlatformColor {
+        PlatformColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+                      blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
     }
 }

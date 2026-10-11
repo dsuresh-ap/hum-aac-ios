@@ -171,6 +171,7 @@ private struct SentenceStrip: View {
                         ForEach(Array(model.strip.enumerated()), id: \.offset) { _, cell in
                             Text(cell.label)
                                 .font(.system(.title3, design: .rounded, weight: .semibold))
+                                .foregroundStyle(Theme.tileInk(function: cell.function, hex: cell.colorHex))
                                 .padding(.horizontal, 12).padding(.vertical, 6)
                                 .background(Theme.tileColor(function: cell.function, hex: cell.colorHex), in: .capsule)
                         }
@@ -223,7 +224,7 @@ private struct HistoryBox: View {
                             } label: {
                                 Text(entry.spokenText)
                                     .font(.system(.body, design: .rounded, weight: index == 0 ? .semibold : .regular))
-                                    .foregroundStyle(Theme.ink.opacity(index == 0 ? 1 : 0.7))
+                                    .foregroundStyle(Theme.tileInk(function: entry.function, hex: entry.colorHex).opacity(index == 0 ? 1 : 0.7))
                                     .lineLimit(1)
                                     .padding(.horizontal, 12).padding(.vertical, 7)
                                     .background(Theme.tileColor(function: entry.function, hex: entry.colorHex).opacity(index == 0 ? 1 : 0.6), in: .capsule)

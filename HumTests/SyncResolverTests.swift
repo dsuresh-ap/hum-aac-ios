@@ -39,13 +39,61 @@ struct SyncResolverTests {
         #expect(all.count == 1)
     }
 
-    @Test func onlyOneHome() {
+    /// A device joining sync uploads its untouched starter board, even one made before the family's own
+    /// setup. The family's Home stays Home and the starter disappears (it holds none of their work).
+    @Test func familysHomeBeatsAnUntouchedStarterWhichIsRemoved() throws {
         let model = makeModel()
-        let other = Board(name: "Other Home", rows: 2, columns: 2, isHome: true)
-        other.createdAt = .now.addingTimeInterval(60)
-        model.context.insert(other)
+        let starterID = try #require(StarterBoard.homeID)
+        #expect(StarterBoard.isUntouched(model.home))
+        let family = Board(name: "Maya's Home", rows: 2, columns: 2, isHome: true)
+        family.createdAt = model.home.createdAt.addingTimeInterval(3600)
+        model.context.insert(family)
+        let report = SyncResolver.resolve(in: model.context)
+        #expect(report.removedStarterBoards == 1)
+        #expect(model.store.boards().filter(\.isHome).map(\.name) == ["Maya's Home"])
+        #expect(!model.store.boards().contains { $0.id == starterID })
+        #expect(try model.context.fetch(FetchDescriptor<Tile>()).isEmpty)
+    }
+
+    @Test func anEditedStarterLosesHomeButIsKept() throws {
+        let model = makeModel()
+        let starter = model.home
+        try #require(starter.placedTiles.first).spokenText = "Let's go to Grandma's!"
+        let family = Board(name: "Maya's Home", rows: 2, columns: 2, isHome: true)
+        family.createdAt = starter.createdAt.addingTimeInterval(-3600)  // even when it's older
+        model.context.insert(family)
+        let report = SyncResolver.resolve(in: model.context)
+        #expect(report.removedStarterBoards == 0)
+        #expect(!starter.isHome && family.isHome)
+        #expect(model.store.boards().contains { $0.id == starter.id })
+    }
+
+    /// Two of the family's own Homes (e.g. a "Replace everything" on one device while another was
+    /// offline): the newest one, the latest setup, stays Home everywhere.
+    @Test func newestOfTwoFamilyHomesWins() {
+        let model = makeModel(starter: false)
+        let older = Board(name: "Old Home", rows: 2, columns: 2, isHome: true)
+        older.createdAt = .now.addingTimeInterval(-3600)
+        let newer = Board(name: "New Home", rows: 2, columns: 2, isHome: true)
+        model.context.insert(older)
+        model.context.insert(newer)
         SyncResolver.resolve(in: model.context)
-        #expect(model.store.boards().filter(\.isHome).map(\.name) == ["Home"])
+        #expect(model.store.boards().filter(\.isHome).map(\.name) == ["New Home"])
+        #expect(model.store.boards().count == 2)
+    }
+
+    /// "Replace everything" on another device can delete the board the child is looking at.
+    @Test func aBoardDeletedElsewhereSendsTheChildHome() throws {
+        let model = makeModel()
+        let folder = model.store.addFolder(named: "Food", on: model.home, rows: 2, columns: 2)
+        model.goHome()
+        model.open(boardID: folder.id)
+        #expect(model.snapshot?.boardID == folder.id)
+        model.context.delete(folder)
+        try model.context.save()
+        model.rebuildSnapshot()  // what a synced change triggers
+        #expect(model.snapshot?.boardID == model.home.id)
+        #expect(!model.canGoBack)
     }
 
     @Test func cleanStoreIsLeftAlone() {

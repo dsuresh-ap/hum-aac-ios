@@ -27,6 +27,8 @@ struct HumApp: App {
                 .environment(model)
                 .modelContainer(model.container)
                 .task {
+                    let launchArgs = ProcessInfo.processInfo.arguments
+                    if launchArgs.contains("-uiTesting") { model.usesPhoneLayout = launchArgs.contains("-phoneLayout") }
                     model.launch()
                     // Screenshot/UI-test helpers. Only active with -uiTesting (in-memory store).
                     let args = ProcessInfo.processInfo.arguments
@@ -39,6 +41,7 @@ struct HumApp: App {
                         if args.contains("-startInParent") { model.mode = .parent }
                         if args.contains("-darkMode") { model.settings.appearance = .dark }
                         if args.contains("-demoFolder") { UITestFixtures.addFoodFolder(model) }
+                        if args.contains("-wideHome") { UITestFixtures.widenHome(model) }
                         if args.contains("-demoHistory") { UITestFixtures.addHistory(model) }
                         if args.contains("-openFolder"), let snack = model.snapshot?.cells.joined().compactMap({ $0 }).first(where: { $0.linkedBoardID != nil }) {
                             model.tap(snack, tapTime: mach_absolute_time())
@@ -83,21 +86,10 @@ struct RootView: View {
         // "Open in Hum", AirDrop and Finder double-click.
         .onOpenURL { url in if url.isFileURL { model.requestImport(url: url) } }
         // The preview only appears in parent mode. A file that arrives while the child is using
-        // Hum waits until a parent opens grown-up settings.
-        .sheet(item: Binding(
-            get: { model.mode == .parent || showFirstRunImporter ? model.pendingImport : nil },
-            set: { if $0 == nil { model.pendingImport = nil } })) { pending in
-            ImportPreviewSheet(pending: pending)
-        }
+        // Hum waits until a parent opens grown-up settings. Setup & sharing shows its own.
+        .modifier(ImportPreviewHost(isActive: (model.mode == .parent || showFirstRunImporter) && !model.importHostedBySheet))
         .fileImporter(isPresented: $showFirstRunImporter, allowedContentTypes: [.humPackage, .json, .zip]) { result in
             if case .success(let url) = result { model.requestImport(url: url) }
-        }
-        .alert("This file couldn't be imported", isPresented: Binding(
-            get: { model.mode == .parent && model.importError != nil },
-            set: { if !$0 { model.importError = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(model.importError ?? "")
         }
         #if os(macOS)
         .dropDestination(for: URL.self) { urls, _ in
@@ -120,6 +112,13 @@ struct RootView: View {
 /// Small, deterministic setups for UI tests and screenshots. Only reachable with -uiTesting.
 @MainActor
 enum UITestFixtures {
+    /// Makes Home 6 columns wide (tiles keep their spots), too wide for a phone: it gets a phone layout.
+    static func widenHome(_ model: AppModel) {
+        guard let home = model.store.boards().first(where: \.isHome) else { return }
+        try? model.store.resize(home, rows: home.rows, columns: 6)
+        model.goHome()
+    }
+
     /// Turns the starter "snack" tile into a folder that opens a Food board.
     static func addFoodFolder(_ model: AppModel) {
         guard let home = model.store.boards().first(where: \.isHome),

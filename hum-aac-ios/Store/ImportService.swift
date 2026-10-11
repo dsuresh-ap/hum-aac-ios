@@ -55,12 +55,51 @@ struct ImportService {
             replace: MergePlanner.plan(existing: existing, incoming: loaded.document, mode: .replace))
     }
 
-    /// Applies the parent's choice as one undoable step. "Replace everything" saves a backup first.
-    func apply(_ pending: PendingImport, mode: MergePlanner.Mode) throws {
+    /// Where a long import is, for the preview's progress bar.
+    enum Progress: Equatable {
+        case backingUp
+        case pictures(done: Int, total: Int)
+        case saving
+
+        var fraction: Double? {
+            if case .pictures(let done, let total) = self, total > 0 { return Double(done) / Double(total) }
+            return nil
+        }
+
+        var message: String {
+            switch self {
+            case .backingUp: "Saving a backup of your boards…"
+            case .pictures(_, 0): "Getting ready…"
+            case .pictures(let done, let total): "Preparing pictures… \(done) of \(total)"
+            case .saving: "Saving your boards…"
+            }
+        }
+    }
+
+    /// Like `apply(_:mode:)`, but pictures are prepared in the background with progress, so a big setup
+    /// doesn't freeze the app.
+    func apply(_ pending: PendingImport, mode: MergePlanner.Mode, progress: (Progress) -> Void) async throws {
         let plan = mode == .merge ? pending.merge : pending.replace
-        if mode == .replace { try writeBackup() }
+        if mode == .replace {
+            progress(.backingUp)
+            await Task.yield()
+            try writeBackup()
+        }
+        let prepared = await ConfigBridge.preparePictures(for: plan, media: pending.loaded.media) { done, total in
+            progress(.pictures(done: done, total: total))
+        }
+        progress(.saving)
+        await Task.yield()  // let the label update before the (short) save on the main actor
+        try apply(pending, mode: mode, prepared: prepared, backupWritten: true)
+    }
+
+    /// Applies the parent's choice as one undoable step. "Replace everything" saves a backup first.
+    func apply(_ pending: PendingImport, mode: MergePlanner.Mode, prepared: [String: Data?] = [:],
+               backupWritten: Bool = false) throws {
+        let plan = mode == .merge ? pending.merge : pending.replace
+        if mode == .replace && !backupWritten { try writeBackup() }
         try model.store.change(mode == .merge ? "Import" : "Replace Everything") {
-            try ConfigBridge.apply(plan, media: pending.loaded.media, in: model.context)
+            try ConfigBridge.apply(plan, media: pending.loaded.media, prepared: prepared, in: model.context)
         }
         // Display and voice settings only come along with "Replace everything".
         if mode == .replace, let settings = pending.loaded.document.settings {
@@ -76,17 +115,36 @@ struct ImportService {
     }
 
     /// iOS can only draw SVG pictures (e.g. Mulberry symbols in a hand-made file) asynchronously, with
-    /// WebKit, so imported SVGs are converted to JPEG just after the import. Not an undo step of its own:
-    /// undoing the import removes these tiles anyway.
+    /// WebKit, so imported SVGs are converted to JPEG just after the import. It also runs at launch, which
+    /// repairs SVGs saved by older builds of Hum or synced from another device. Not an undo step of its
+    /// own: undoing the import removes these tiles anyway.
+    private static func liveTile(_ id: UUID, in context: ModelContext) -> Tile? {
+        var descriptor = FetchDescriptor<Tile>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        return (try? context.fetch(descriptor))?.first
+    }
+
     static func renderImportedSVGs(_ model: AppModel) async {
-        let tiles = ((try? model.context.fetch(FetchDescriptor<Tile>())) ?? []).filter { $0.imageData.map(ImageProcessing.isSVG) ?? false }
-        guard !tiles.isEmpty else { return }
-        for tile in tiles {
-            guard let svg = tile.imageData else { continue }
+        guard !model.isConvertingSVGs else { return }
+        model.isConvertingSVGs = true
+        defer { model.isConvertingSVGs = false }
+        let ids = ((try? model.context.fetch(FetchDescriptor<Tile>())) ?? [])
+            .filter { $0.imageData.map(ImageProcessing.isSVG) ?? false }.map(\.id)
+        for (i, id) in ids.enumerated() {
+            // Fetched again at every step: while a picture is drawn, an import or a synced change can
+            // delete the tile, and reading a deleted tile's picture crashes SwiftData.
+            guard let svg = liveTile(id, in: model.context)?.imageData, ImageProcessing.isSVG(svg) else { continue }
             let jpeg = await ImageProcessing.tileImageDataAllowingSVG(from: svg)
+            guard let tile = liveTile(id, in: model.context) else { continue }
             model.context.undoManager?.disableUndoRegistration()
             tile.imageData = jpeg  // nil if it can't be drawn: no picture beats a broken one
             model.context.undoManager?.enableUndoRegistration()
+            // A big import (e.g. a whole Snap page set) has hundreds: save and show them as they come.
+            if i % 50 == 49 {
+                try? model.context.save()
+                model.scheduleSnapshotRefresh()
+            }
+            await Task.yield()
         }
         try? model.context.save()
         model.scheduleSnapshotRefresh()

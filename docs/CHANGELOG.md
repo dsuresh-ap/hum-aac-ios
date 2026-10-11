@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased: import from TD Snap
+
+- **`hum-config import-snap <file.sps> <out.hum | folder>`** turns a TD Snap page set into a Hum setup.
+  Every page reachable from Snap's Home becomes a board, and each button keeps its spot, words, colour and
+  ID (so re-importing a newer export updates tiles instead of copying them). Snap's symbols (WMF/EMF)
+  become SVG. Snap's Back/Home buttons are dropped (Hum has its own), and a left column that only held
+  navigation is removed. Keyboards, the dashboard and grids over 8 × 8 are left out and listed.
+  HumConfig reads the `.sps` with a small built-in SQLite reader, so it still has no dependencies.
+- **Fixed:** importing from Setup & sharing showed the preview only after the sheet was closed. The
+  preview now opens right over it.
+- **Fixed:** pictures saved as SVG (by builds before "Process imported pictures", or synced from another
+  device) showed as blank tiles. Hum now converts them to JPEG at launch, and the Mac draws them meanwhile.
+  Big imports convert in batches without freezing the app.
+- **Phone layout:** on iPhone, a board wider than 4 columns or taller than 8 rows is shown as pages of
+  4 × 8 instead of shrinking the board. Tiles fill the phone pages in the board's reading order the first
+  time, then keep their phone spot (the phone's own motor plan); "More" in the bottom-right spot opens the
+  next page and Back returns. Moving tiles on the iPhone only changes the phone layout, so iPad and Mac
+  keep theirs, and nothing goes to the "needs a spot" tray when you switch devices. Phone spots sync.
+- **Imports show progress and don't freeze the app:** pictures are prepared on background threads,
+  several at a time, with a progress bar ("Preparing pictures… 340 of 1,581"). Only the final save runs
+  on the main thread, so the whole import stays one undo step.
+- **Fixed:** an iPhone crash while drawing big boards: SwiftUI resolves Hum's Light/Dark colours on its
+  render thread, and they were marked main-thread-only, which the Swift runtime stops on.
+- **Fixed:** a crash when an import or a synced change deleted tiles while their SVG pictures were being
+  converted, or while edit mode was still drawing them.
+- **Fixed:** a device that joined iCloud sync could take Home away from an imported setup: it uploaded
+  its own starter board, and the "two Homes" repair kept the *oldest* Home. Now a family's own Home
+  always beats the starter, then the newest Home wins (the latest import sticks on every device), and
+  a starter board nobody changed is removed instead of lingering as a second "Home".
+- **Fixed:** tiles with their own colour (e.g. Snap's near-white) had light labels in Dark Mode and were
+  unreadable. Labels, folder marks, the sentence strip and history now pick dark or light text by the
+  tile colour's contrast.
+
 ## Unreleased: imported pictures, pictures that fit
 
 - **Imported pictures are processed like photos added in the app:** resized to 1024 px, flattened onto

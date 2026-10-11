@@ -13,12 +13,29 @@ struct ImportPreviewSheet: View {
     @State private var mode: MergePlanner.Mode = .merge
     @State private var confirmReplace = false
     @State private var errorMessage: String?
+    /// Set while the import runs; the sheet shows a progress bar and can't be closed.
+    @State private var progress: ImportService.Progress?
 
     private var plan: MergePlanner.Plan { mode == .merge ? pending.merge : pending.replace }
 
     var body: some View {
         NavigationStack {
             Form {
+                if let progress {
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let fraction = progress.fraction {
+                                ProgressView(value: fraction)
+                            } else {
+                                ProgressView().controlSize(.small)
+                            }
+                            Text(progress.message).font(.callout).foregroundStyle(.secondary).monospacedDigit()
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityIdentifier("importProgress")
+                    }
+                }
+
                 Section {
                     Text(plan.summary.sentence)
                         .font(.title3.weight(.semibold))
@@ -62,11 +79,12 @@ struct ImportPreviewSheet: View {
             .formStyle(.grouped)
             .navigationTitle("Import a setup")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(progress != nil) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(mode == .merge ? "Merge" : "Replace…") {
                         if mode == .merge { apply() } else { confirmReplace = true }
                     }
+                    .disabled(progress != nil)
                     .accessibilityIdentifier("applyImport")
                 }
             }
@@ -78,7 +96,9 @@ struct ImportPreviewSheet: View {
             .alert("Import didn't work", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: { Text(errorMessage ?? "") }
+            .disabled(progress != nil)
         }
+        .interactiveDismissDisabled(progress != nil)
         #if os(macOS)
         .frame(minWidth: 480, minHeight: 460)
         #endif
@@ -91,11 +111,43 @@ struct ImportPreviewSheet: View {
     private var changedTiles: [HumTile] { allIncomingTiles.filter { plan.changedTileIDs.contains($0.id) }.prefix(30).map { $0 } }
 
     private func apply() {
-        do {
-            try ImportService(model: model).apply(pending, mode: mode)
-            dismiss()
-        } catch {
-            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        guard progress == nil else { return }
+        progress = .pictures(done: 0, total: 0)
+        Task {
+            defer { progress = nil }
+            do {
+                try await ImportService(model: model).apply(pending, mode: mode) { progress = $0 }
+                dismiss()
+            } catch {
+                errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            }
         }
+    }
+}
+
+/// Shows the import preview (and import errors) for `model.pendingImport`.
+///
+/// SwiftUI can't present a sheet from a view that is already presenting one, so a preview asked for
+/// from inside a sheet (Setup & sharing) has to be shown by that sheet. The root view shows it the rest
+/// of the time, and stands back while a sheet that hosts its own preview is open.
+struct ImportPreviewHost: ViewModifier {
+    /// False while the preview must wait (child mode, or a sheet above is hosting it instead).
+    var isActive: Bool
+    @Environment(AppModel.self) private var model
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(item: Binding(
+                get: { isActive ? model.pendingImport : nil },
+                set: { if $0 == nil { model.pendingImport = nil } })) { pending in
+                ImportPreviewSheet(pending: pending)
+            }
+            .alert("This file couldn't be imported", isPresented: Binding(
+                get: { isActive && model.importError != nil },
+                set: { if !$0 { model.importError = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(model.importError ?? "")
+            }
     }
 }

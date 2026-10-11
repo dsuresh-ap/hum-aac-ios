@@ -126,7 +126,8 @@ struct ParentEditorView: View {
             errorMessage = "\(board.name) is full. Make the grid bigger (the size at the top right) or hide a tile you don't need."
             return
         }
-        editor = TileEditorRequest(kind: .new(boardID: board.id, row: spot.row, column: spot.column), startsAsFolder: folder)
+        editor = TileEditorRequest(kind: .new(boardID: board.id, row: spot.row, column: spot.column), startsAsFolder: folder,
+                                   phoneSpot: model.showsPhoneLayout(board) ? PhoneLayout.firstFreeSpot(on: board) : nil)
     }
 
     @ToolbarContentBuilder
@@ -214,6 +215,8 @@ struct TileEditorRequest: Identifiable {
     let kind: Kind
     /// "New folder": the sheet asks for a name first and makes the folder on Save.
     var startsAsFolder = false
+    /// Added from an iPhone's phone layout: the phone spot that was tapped.
+    var phoneSpot: PhoneLayout.Spot? = nil
 }
 
 /// A short message after a move, e.g. "Moved “juice” into Food." with a button to open the folder.
@@ -255,28 +258,85 @@ private struct EditGrid: View {
     @Environment(AppModel.self) private var model
     @Query(sort: \Board.createdAt) private var boards: [Board]
 
+    /// True on iPhone for boards too big for its screen: the editor shows and edits the phone layout.
+    private var phone: Bool { model.showsPhoneLayout(board) }
+    private var rows: Int { phone ? PhoneLayout.rows : board.rows }
+    private var columns: Int { phone ? PhoneLayout.columns : board.columns }
+    /// The phone pages, plus an empty one after them when the parent turned to it to add tiles there.
+    private var pageCount: Int { max(PhoneLayout.pageCount(board), model.editingPage + 1) }
+    private var page: Int { phone ? min(model.editingPage, pageCount - 1) : 0 }
+
     var body: some View {
-        GeometryReader { geo in
-            let spacing = Theme.gridSpacing
-            let width = (geo.size.width - spacing * CGFloat(board.columns - 1)) / CGFloat(board.columns)
-            let height = (geo.size.height - spacing * CGFloat(board.rows - 1)) / CGFloat(board.rows)
-            let byPosition = Dictionary(board.placedTiles.map { ("\($0.row!),\($0.column!)", $0) }, uniquingKeysWith: { a, _ in a })
-            VStack(spacing: spacing) {
-                if min(width, height) < 88 {
-                    Text("Tiles are smaller than 88 points on this screen. Consider fewer rows or columns, or a folder.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(0..<board.rows, id: \.self) { row in
-                    HStack(spacing: spacing) {
-                        ForEach(0..<board.columns, id: \.self) { column in
-                            slot(tile: byPosition["\(row),\(column)"], row: row, column: column, roomy: height >= 120 && width >= 120)
+        VStack(spacing: 8) {
+            if phone { pageBar }
+            GeometryReader { geo in
+                let spacing = phone ? 8 : Theme.gridSpacing
+                let width = (geo.size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
+                let height = (geo.size.height - spacing * CGFloat(rows - 1)) / CGFloat(rows)
+                let byPosition: [String: Tile] = phone
+                    ? Dictionary(uniqueKeysWithValues: PhoneLayout.tiles(on: board, page: page).map { ("\($0.key.row),\($0.key.column)", $0.value) })
+                    : Dictionary(board.placedTiles.map { ("\($0.row!),\($0.column!)", $0) }, uniquingKeysWith: { a, _ in a })
+                VStack(spacing: spacing) {
+                    if !phone && min(width, height) < 88 {
+                        Text("Tiles are smaller than 88 points on this screen. Consider fewer rows or columns, or a folder.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(0..<rows, id: \.self) { row in
+                        HStack(spacing: spacing) {
+                            ForEach(0..<columns, id: \.self) { column in
+                                Group {
+                                    if phone && PhoneLayout.isMoreSpot(row: row, column: column) {
+                                        moreSlot
+                                    } else {
+                                        slot(tile: byPosition["\(row),\(column)"], row: row, column: column,
+                                             roomy: height >= 120 && width >= 120)
+                                    }
+                                }
                                 .frame(width: max(width, 0), height: max(height, 0))
+                            }
                         }
                     }
                 }
             }
         }
+        // New tiles (added on a Mac, or from an import) get a phone spot before they're shown here.
+        .task(id: "\(board.id)-\(board.placedTiles.count)") { model.arrangePhoneLayout(board) }
+    }
+
+    /// "Page 1 of 2" with arrows, for boards shown in their phone layout.
+    private var pageBar: some View {
+        HStack {
+            Button { model.editingPage = page - 1 } label: { Image(systemName: "chevron.left") }
+                .disabled(page == 0)
+                .accessibilityLabel("Previous page")
+            Spacer()
+            Text("Phone page \(page + 1) of \(pageCount)")
+                .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                .accessibilityIdentifier("phonePage")
+            Spacer()
+            Button { model.editingPage = page + 1 } label: { Image(systemName: "chevron.right") }
+                .accessibilityLabel(page + 1 < pageCount ? "Next page" : "New page")
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+    }
+
+    /// The bottom-right spot of a phone page: "More" opens the next page (for the child too).
+    private var moreSlot: some View {
+        Button { model.editingPage = page + 1 } label: {
+            RoundedRectangle(cornerRadius: Theme.tileCorner, style: .continuous)
+                .fill(Theme.ink.opacity(0.06))
+                .overlay {
+                    VStack(spacing: 4) {
+                        Image(systemName: "arrow.right.circle")
+                        Text(page + 1 < PhoneLayout.pageCount(board) ? "More" : "New page").font(.caption.weight(.semibold))
+                    }
+                    .foregroundStyle(Theme.ink.opacity(0.55))
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("phoneMore")
     }
 
     /// Folders a tile could move into: every board except this one and the folder the tile itself opens.
@@ -334,16 +394,37 @@ private struct EditGrid: View {
                     }
                     .accessibilityHint("Double-tap to edit. Drag to move.")
             } else {
-                EmptySlot(row: row, column: column, roomy: roomy,
-                          add: { folder in editor = TileEditorRequest(kind: .new(boardID: board.id, row: row, column: column), startsAsFolder: folder) })
+                EmptySlot(row: row, column: column, roomy: roomy, add: { folder in add(row: row, column: column, folder: folder) })
             }
         }
         .dropDestination(for: String.self) { items, _ in
             guard let id = items.first.flatMap(UUID.init(uuidString:)),
                   let dragged = (board.tiles ?? []).first(where: { $0.id == id }) else { return false }
-            model.store.move(dragged, to: row, column: column, on: board)
+            if phone {
+                // Only the phone layout changes; iPad and Mac keep their spots.
+                if !model.store.movePhone(dragged, to: PhoneLayout.Spot(page: page, row: row, column: column), on: board) {
+                    errorMessage = "\(board.name) is full on bigger screens. Make its grid bigger on an iPad or Mac first."
+                }
+            } else {
+                model.store.move(dragged, to: row, column: column, on: board)
+            }
             return true
         }
+    }
+
+    /// A new tile or folder in this spot. On the phone layout it also needs a spot on the board's own grid
+    /// (iPad and Mac): the first empty one.
+    private func add(row: Int, column: Int, folder: Bool) {
+        guard phone else {
+            editor = TileEditorRequest(kind: .new(boardID: board.id, row: row, column: column), startsAsFolder: folder)
+            return
+        }
+        guard let bigSpot = model.store.firstEmptySpot(on: board) else {
+            errorMessage = "\(board.name) is full on bigger screens. Make its grid bigger on an iPad or Mac first."
+            return
+        }
+        editor = TileEditorRequest(kind: .new(boardID: board.id, row: bigSpot.row, column: bigSpot.column), startsAsFolder: folder,
+                                   phoneSpot: PhoneLayout.Spot(page: page, row: row, column: column))
     }
 }
 
@@ -406,7 +487,19 @@ struct EditTileCard: View {
     var onDropIntoFolder: ((UUID) -> Bool)? = nil
     @State private var dropTargeted = false
 
+    private var ink: Color { Theme.tileInk(function: tile.function, hex: tile.colorHex) }
+
     var body: some View {
+        // A tile deleted by an import or a synced change can be drawn once more before its board
+        // updates; reading its picture then would crash SwiftData.
+        if tile.modelContext == nil || tile.isDeleted {
+            Color.clear
+        } else {
+            card
+        }
+    }
+
+    private var card: some View {
         GeometryReader { geo in
             let size = min(geo.size.width, geo.size.height)
             VStack(spacing: 4) {
@@ -424,7 +517,7 @@ struct EditTileCard: View {
                 }
                 Text(tile.label)
                     .font(.system(size: max(13, size * 0.11), weight: .semibold, design: .rounded))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(ink)
                     .lineLimit(2)
                     .minimumScaleFactor(0.6)
             }
@@ -439,7 +532,7 @@ struct EditTileCard: View {
                     if tile.audioData != nil { Image(systemName: "waveform").accessibilityLabel("Has a recording") }
                 }
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(Theme.ink.opacity(0.45))
+                .foregroundStyle(ink.opacity(0.45))
                 .padding(10)
             }
             .overlay(alignment: .topTrailing) {
@@ -554,6 +647,10 @@ private struct UnplacedTray: View {
 enum PlatformImage {
     /// Small decoded preview for edit mode.
     static func thumbnail(_ data: Data, maxPixels: Int = 400) -> CGImage? {
+        #if os(macOS)
+        // An SVG still waiting to be converted (see `ImportService.renderImportedSVGs`).
+        if ImageProcessing.isSVG(data) { return ImageProcessing.rasterizeSVG(data) }
+        #endif
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,

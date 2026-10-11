@@ -97,6 +97,10 @@ struct SetupSharingView: View {
         #if os(macOS)
         .frame(minWidth: 480, minHeight: 440)
         #endif
+        // The preview opens right here, over this sheet, instead of waiting for it to close.
+        .modifier(ImportPreviewHost(isActive: true))
+        .onAppear { model.importHostedBySheet = true }
+        .onDisappear { model.importHostedBySheet = false }
     }
 
     private func export(boardID: UUID?, name: String? = nil) {

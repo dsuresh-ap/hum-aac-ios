@@ -117,7 +117,10 @@ struct GridSizeSheet: View {
             return "\(cutOff.count) tile\(cutOff.count == 1 ? "" : "s") won't fit this size (shown with a dashed outline)."
         }
         let total = rows * columns
-        return "\(total) spots. Tiles keep their places: a bigger grid adds empty spots at the right and bottom."
+        let base = "\(total) spots. Tiles keep their places: a bigger grid adds empty spots at the right and bottom."
+        // The grid is shared by every device; shrinking it to fit a phone isn't needed any more.
+        guard AppModel.isPhone else { return base }
+        return base + " This size is for iPad and Mac too. On iPhone, boards wider than \(PhoneLayout.columns) or taller than \(PhoneLayout.rows) use a phone layout instead, so you don't need to shrink them here."
     }
 
     private var cutTitle: String { "\(cutOff.count) tile\(cutOff.count == 1 ? "" : "s") won't fit" }
