@@ -4,103 +4,193 @@
 import SwiftUI
 import HumConfig
 
-/// "Help me set up": the parent-only AI helper. Nothing changes until the parent previews and applies.
+/// "Help me set up": the parent-only AI helper. Three steps on one page:
+/// 1. tell it about your child, 2. see the suggested tiles, 3. tick the ones you want and add them.
+/// Nothing changes until the parent taps Add.
 struct AIHelperView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
 
-    enum Feature: String, CaseIterable { case describe = "Describe what you need", capture = "Add my child's phrases" }
+    enum Feature: String, CaseIterable { case describe = "Describe your child", capture = "Paste their phrases" }
+    enum Field: Hashable { case describe, phrases, context }
+
     @State private var feature: Feature = .describe
     @State private var describeText = ""
     @State private var phrasesText = ""
     @State private var contextText = ""
     @State private var working = false
     @State private var proposal: AIHelper.Proposal?
+    @State private var selected: Set<Int> = []
     @State private var errorMessage: String?
+    @FocusState private var focus: Field?
 
     var body: some View {
         @Bindable var settings = model.settings
         NavigationStack {
             Form {
-                Section {
-                    Toggle("Use the AI helper", isOn: $settings.aiEnabled)
-                    if settings.aiEnabled {
-                        Picker("Where it runs", selection: $settings.aiUsePrivateCloud) {
-                            Text("On this device").tag(false)
-                            if case .available = AIHelper.availability(mode: .privateCloud) {
-                                Text("Private Cloud Compute").tag(true)
-                            }
-                        }
-                        if settings.aiUsePrivateCloud {
-                            Text("This sends your text request to Apple's Private Cloud Compute. Apple does not store it.")
-                                .font(.footnote).foregroundStyle(.secondary)
-                            quotaStatus
-                        }
-                    }
-                } footer: {
-                    Text("Off until you turn it on. Only your words and your tiles' text are used, never photos or recordings. It only suggests tiles: you see a preview and choose whether to add them.")
-                }
-
-                if settings.aiEnabled {
-                    if case .unavailable(let reason) = AIHelper.availability(mode: mode) {
-                        Section { Label(reason, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary) }
-                    } else {
-                        Section {
-                            Picker("What would you like?", selection: $feature) {
-                                ForEach(Feature.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                            }
-                            .pickerStyle(.segmented)
-                            switch feature {
-                            case .describe:
-                                TextField("e.g. My child loves trains and says “all aboard!” when she wants to go.", text: $describeText, axis: .vertical)
-                                    .lineLimit(3...8)
-                            case .capture:
-                                TextField("One phrase per line, exactly as your child says it", text: $phrasesText, axis: .vertical)
-                                    .lineLimit(3...10)
-                                TextField("When does your child say these? (optional)", text: $contextText, axis: .vertical)
-                                    .lineLimit(1...4)
-                            }
-                            Button {
-                                Task { await run() }
-                            } label: {
-                                if working { ProgressView() } else { Label("Suggest tiles", systemImage: "sparkles") }
-                            }
-                            .disabled(working || inputIsEmpty)
-                        }
-
-                        if let proposal {
-                            Section("Suggestions") {
-                                if proposal.tiles.isEmpty {
-                                    Text("No new tiles to suggest.").foregroundStyle(.secondary)
-                                }
-                                ForEach(Array(proposal.tiles.enumerated()), id: \.offset) { _, tile in
-                                    VStack(alignment: .leading) {
-                                        Text(tile.label).font(.headline)
-                                        Text("“\(tile.spokenText)”").foregroundStyle(.secondary)
-                                        if let board = tile.boardName { Text("Board: \(board)").font(.caption).foregroundStyle(.tertiary) }
-                                    }
-                                }
-                                ForEach(proposal.notes, id: \.self) { note in
-                                    Label(note, systemImage: "info.circle").font(.footnote).foregroundStyle(.secondary)
-                                }
-                                if !proposal.tiles.isEmpty {
-                                    Button("Preview and add…", systemImage: "eye") { preview(proposal) }
-                                }
-                            }
-                        }
-                    }
+                if !settings.aiEnabled {
+                    introSection
+                } else if case .unavailable(let reason) = AIHelper.availability(mode: mode) {
+                    Section { Label(reason, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary) }
+                    privacySection
+                } else {
+                    askSection
+                    if let proposal { suggestionsSection(proposal) }
+                    privacySection
                 }
             }
             .formStyle(.grouped)
             .navigationTitle("Help me set up")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            // "Close", not "Done": Return must never close this page while the parent is typing.
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
             .alert("The helper couldn't finish", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: { Text(errorMessage ?? "") }
+            .onAppear { focusInput() }
+            .onChange(of: feature) { focusInput() }
         }
         #if os(macOS)
-        .frame(minWidth: 520, minHeight: 560)
+        .frame(minWidth: 540, minHeight: 600)
         #endif
+    }
+
+    // MARK: Sections
+
+    /// Shown while the helper is off: what it does, what it uses, and one button to turn it on.
+    private var introSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 14) {
+                Label("Get tile ideas from what your child says", systemImage: "sparkles")
+                    .font(.title3.weight(.semibold))
+                Text("Tell the helper about your child, or paste phrases they say. It suggests whole-phrase tiles, and you choose which ones to add.")
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Only your words and your tiles' text are used. Never photos or recordings.", systemImage: "text.bubble")
+                    Label("Runs on this device by default.", systemImage: "lock")
+                    Label("It only suggests. Nothing changes until you tap Add.", systemImage: "hand.tap")
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                Button("Turn on the helper") {
+                    model.settings.aiEnabled = true
+                    focusInput()
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("turnOnAI")
+            }
+            .padding(.vertical, 6)
+        }
+    }
+
+    private var askSection: some View {
+        Section {
+            Picker("What would you like to do?", selection: $feature) {
+                ForEach(Feature.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            switch feature {
+            case .describe:
+                TextField("e.g. My child loves trains and says “all aboard!” when she wants to go.", text: $describeText, axis: .vertical)
+                    .lineLimit(3...8)
+                    .focused($focus, equals: .describe)
+            case .capture:
+                ZStack(alignment: .topLeading) {
+                    if phrasesText.isEmpty {
+                        Text("One phrase per line, exactly as your child says it")
+                            .foregroundStyle(.tertiary)
+                            .padding(.top, 8).padding(.leading, 5)
+                            .allowsHitTesting(false)
+                    }
+                    TextEditor(text: $phrasesText)
+                        .focused($focus, equals: .phrases)
+                        .frame(minHeight: 110)
+                        .scrollContentBackground(.hidden)
+                }
+                TextField("When does your child say these? (optional)", text: $contextText, axis: .vertical)
+                    .lineLimit(1...4)
+                    .focused($focus, equals: .context)
+            }
+            HStack {
+                Button {
+                    Task { await run() }
+                } label: {
+                    Label(proposal == nil ? "Suggest tiles" : "Suggest again", systemImage: "sparkles")
+                }
+                .buttonStyle(.borderedProminent)
+                // Return (outside the phrase list) or ⌘Return suggests.
+                .keyboardShortcut(.defaultAction)
+                .disabled(working || inputIsEmpty)
+                .background {
+                    Button("", action: { Task { await run() } })
+                        .keyboardShortcut(.return, modifiers: .command)
+                        .disabled(working || inputIsEmpty)
+                        .hidden()
+                }
+                if working {
+                    ProgressView().controlSize(.small)
+                    Text("Thinking… this can take a few seconds.").font(.callout).foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text("1. Tell the helper")
+        } footer: {
+            Text(feature == .describe
+                 ? "Put the phrases your child really says in quotes, so they're kept exactly."
+                 : "Each line becomes one tile, kept whole. No AI needed for this? Use Add → Paste phrases.")
+        }
+    }
+
+    private func suggestionsSection(_ proposal: AIHelper.Proposal) -> some View {
+        Section {
+            if proposal.tiles.isEmpty {
+                Text("No new tiles to suggest. Try describing it another way.").foregroundStyle(.secondary)
+            }
+            SuggestedTilesList(tiles: proposal.tiles, selected: $selected, targetName: targetName)
+            ForEach(proposal.notes, id: \.self) { note in
+                Label(note, systemImage: "info.circle").font(.footnote).foregroundStyle(.secondary)
+            }
+            if !proposal.tiles.isEmpty {
+                Button {
+                    add(proposal)
+                } label: {
+                    Label(selected.isEmpty ? "Choose tiles to add" : "Add \(selected.count) tile\(selected.count == 1 ? "" : "s")",
+                          systemImage: "plus.circle.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(selected.isEmpty)
+                .accessibilityIdentifier("addSuggestions")
+            }
+        } header: {
+            Text("2. Choose tiles to add")
+        } footer: {
+            Text("New tiles go in empty spots. Nothing already on your boards moves. You can undo.")
+        }
+    }
+
+    /// Where it runs, the Private Cloud Compute note and quota, and turning the helper off.
+    private var privacySection: some View {
+        @Bindable var settings = model.settings
+        return Section {
+            Picker("Where it runs", selection: $settings.aiUsePrivateCloud) {
+                Text("On this device").tag(false)
+                if case .available = AIHelper.availability(mode: .privateCloud) {
+                    Text("Private Cloud Compute").tag(true)
+                }
+            }
+            if settings.aiUsePrivateCloud {
+                Text("This sends your text request to Apple's Private Cloud Compute. Apple does not store it.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                quotaStatus
+            }
+            Toggle("Use the AI helper", isOn: $settings.aiEnabled)
+        } header: {
+            Text("Privacy")
+        } footer: {
+            Text("Only your words and your tiles' text are used, never photos or recordings.")
+        }
     }
 
     /// Today's Private Cloud Compute allowance, shown before it runs out rather than as a surprise.
@@ -121,14 +211,23 @@ struct AIHelperView: View {
         }
     }
 
+    // MARK: Actions
+
     private var mode: AIHelper.Mode { model.settings.aiUsePrivateCloud ? .privateCloud : .onDevice }
+
+    private var targetName: String { model.editingBoardID.flatMap(model.fetchBoard)?.name ?? "Home" }
 
     private var inputIsEmpty: Bool {
         feature == .describe ? describeText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             : phrasesText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    private func focusInput() {
+        DispatchQueue.main.async { focus = feature == .describe ? .describe : .phrases }
+    }
+
     private func run() async {
+        guard !working, !inputIsEmpty else { return }
         working = true
         defer { working = false }
         let existing = ConfigBridge.export(boards: model.store.boards()).document
@@ -137,7 +236,9 @@ struct AIHelperView: View {
             : .capture(phrases: phrasesText.split(whereSeparator: \.isNewline).map { String($0).trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty },
                        context: contextText)
         do {
-            proposal = try await AIHelper.propose(task, mode: mode, existing: existing)
+            let result = try await AIHelper.propose(task, mode: mode, existing: existing)
+            proposal = result
+            selected = Set(result.tiles.indices)
         } catch let error as AIHelper.AIError {
             if case .quotaReached = error { model.settings.aiUsePrivateCloud = false }  // switch to on-device for next time
             errorMessage = error.errorDescription
@@ -146,17 +247,14 @@ struct AIHelperView: View {
         }
     }
 
-    /// Hands the checked tiles to the same import preview as a file. The parent taps Apply there.
-    private func preview(_ proposal: AIHelper.Proposal) {
-        let existing = ConfigBridge.export(boards: model.store.boards()).document
-        let document = ProposalChecker.document(from: proposal.tiles, targetBoardID: model.editingBoardID, existing: existing)
-        let issues = HumValidator.semanticIssues(in: document)
-        if let error = issues.first(where: { $0.severity == .error }) {
-            errorMessage = error.message
-            return
+    /// The list above is the preview; Add runs the same Merge as a file import.
+    private func add(_ proposal: AIHelper.Proposal) {
+        let chosen = proposal.tiles.indices.filter(selected.contains).map { proposal.tiles[$0] }
+        do {
+            try ImportService(model: model).addSuggested(chosen, targetBoardID: model.editingBoardID, source: "Suggestions from the AI helper")
+            dismiss()
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
-        let loaded = LoadedConfig(document: document, media: [:], warnings: issues)
-        model.pendingImport = ImportService(model: model).prepare(loaded: loaded, fileName: "Suggestions from the AI helper")
-        dismiss()
     }
 }

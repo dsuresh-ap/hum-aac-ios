@@ -74,6 +74,22 @@ struct ImportService {
         }
     }
 
+    // MARK: Suggested tiles
+
+    /// Suggested tiles (AI helper, pasted phrases) that the parent saw listed and chose to add.
+    /// They take free spots on the board being edited (or the folder the AI named), else the
+    /// "needs a spot" tray. Same Merge path as a file, so existing tiles never move or disappear.
+    @discardableResult
+    func addSuggested(_ tiles: [ProposedTile], targetBoardID: UUID?, source: String) throws -> MergePlanner.Summary {
+        let existing = ConfigBridge.export(boards: model.store.boards()).document
+        let document = ProposalChecker.document(from: tiles, targetBoardID: targetBoardID, existing: existing)
+        let issues = HumValidator.semanticIssues(in: document)
+        if issues.contains(where: { $0.severity == .error }) { throw HumConfigError.invalid(issues) }
+        let pending = prepare(loaded: LoadedConfig(document: document, media: [:], warnings: issues), fileName: source)
+        try apply(pending, mode: .merge)
+        return pending.merge.summary
+    }
+
     // MARK: Export
 
     /// The whole setup (or one board) as `.hum` bytes.

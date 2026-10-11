@@ -68,6 +68,21 @@ final class HumUITests: XCTestCase {
         XCTAssertTrue(element(app, "emptySlot.3.3").waitForExistence(timeout: 3), "Undo should remove the new tile")
     }
 
+    /// "New folder here" asks for a name, makes the folder tile, and opens the empty folder to fill.
+    @MainActor
+    func testNewFolderOpensItForFilling() {
+        let app = launch("-skipFirstRun", "-startInParent")
+        element(app, "emptySlot.3.3").press(forDuration: 1.2)
+        app.buttons["New folder here"].firstMatch.tap()
+        let name = element(app, "labelField")
+        XCTAssertTrue(name.waitForExistence(timeout: 3))
+        name.tap()
+        name.typeText("Trains")
+        element(app, "saveTile").tap()
+        XCTAssertTrue(app.staticTexts["Editing Trains"].waitForExistence(timeout: 3), "The new folder should open for filling")
+        XCTAssertTrue(element(app, "emptySlot.0.0").exists)
+    }
+
     @MainActor
     func testFolderOpensAndBackReturns() {
         let app = launch("-skipFirstRun", "-demoFolder")

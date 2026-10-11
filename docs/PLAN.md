@@ -218,9 +218,25 @@ AVAudioEngine (started once, kept running while foreground)
   App ID. Until then the PCC option is hidden.
 - Only text (parent's request + labels/spokenText/function tags) is sent. Never images/audio.
 - Output → `HumConfig` DTOs → same validator → `GLPRuleCheck` (rejects/fixes praise/reward/compliance phrases,
-  split gestalts, removals, protest-tile demotion) → the same Import Preview → parent taps **Apply**.
+  split gestalts, removals, protest-tile demotion) → a checklist preview inside the helper (every tile,
+  its emoji and where it goes; Merge only — "Replace everything" makes no sense for suggestions) → parent
+  taps **Add** → the same `MergePlanner` merge as a file import, one undo step. (Changed 2026-10: the
+  separate Import Preview hop with a Merge/Replace choice confused parents.) "Paste phrases" uses the
+  same checklist and checks without any model.
 - PCC privacy: Apple processes but doesn't retain request data and we never receive it → label stays
   **Data Not Collected**.
+
+## 8b. Symbol library (online, parent-started) — exception agreed 2026-10-11
+
+- The owner allowed fetching AAC symbols as an exception to "no network". The picture picker's
+  **Symbols** tab searches ARASAAC (`api.arasaac.org`, pictograms CC BY-NC-SA 4.0; Hum is free, so
+  non-commercial use fits). Only the parent's search word is sent, from an ephemeral `URLSession` (no
+  cookies, no disk cache). A chosen symbol is downloaded once and saved in the tile like a photo, so child
+  mode never touches the network. Credit is shown in the picker and in Settings → Credits.
+- macOS needs the sandbox **Outgoing Connections (Client)** capability for this; iOS needs nothing.
+- Privacy label: ARASAAC receives a search word that isn't linked to the user or device. Re-check the
+  label wording before release.
+- Later: Mulberry (CC BY-SA, via Global Symbols) needs SVG → PNG rendering first.
 
 ## 9. Privacy manifest
 

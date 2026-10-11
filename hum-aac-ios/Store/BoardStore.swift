@@ -97,6 +97,34 @@ final class BoardStore {
         }
     }
 
+    /// The first empty spot, reading left to right, top to bottom. Nil when the board is full.
+    func firstEmptySpot(on board: Board) -> (row: Int, column: Int)? {
+        let taken = Set(board.placedTiles.map { "\($0.row!),\($0.column!)" })
+        for row in 0..<board.rows {
+            for column in 0..<board.columns where !taken.contains("\(row),\(column)") { return (row, column) }
+        }
+        return nil
+    }
+
+    /// Moves a tile into another board (a folder), keeping its ID, photo and recording. Its old spot
+    /// stays empty. It goes to the first empty spot there, or the "needs a spot" tray if the board is
+    /// full. Nothing else moves. Returns true when it got a spot.
+    @discardableResult
+    func moveToBoard(_ tile: Tile, _ target: Board) -> Bool {
+        guard tile.board?.id != target.id else { return tile.row != nil }
+        let spot = firstEmptySpot(on: target)
+        change("Move to Folder") {
+            let now = Date.now
+            tile.board?.updatedAt = now
+            tile.board = target
+            tile.row = spot?.row
+            tile.column = spot?.column
+            tile.positionUpdatedAt = now
+            target.updatedAt = now
+        }
+        return spot != nil
+    }
+
     func setHidden(_ tile: Tile, _ hidden: Bool) {
         change(hidden ? "Hide Tile" : "Show Tile") {
             tile.isHidden = hidden
@@ -110,12 +138,70 @@ final class BoardStore {
     }
 
     /// Saves edits from the tile editor as one undo step.
-    func update(_ tile: Tile, _ edit: (Tile) -> Void) {
+    ///
+    /// A folder's board is named after its tile. If the parent renames the tile and the board still has
+    /// the tile's old name, the board is renamed with it, so the folder title the child sees matches.
+    /// `newFolderName` also makes a new folder board for the tile, in the same undo step.
+    func update(_ tile: Tile, newFolderName: String? = nil, rows: Int = 3, columns: Int = 3, _ edit: (Tile) -> Void) {
         change("Edit Tile") {
+            let oldLabel = tile.label
             edit(tile)
+            if let newFolderName {
+                let board = Board(name: newFolderName, rows: rows, columns: columns, isHome: false)
+                context.insert(board)
+                tile.linkedBoardID = board.id
+            } else if let id = tile.linkedBoardID, oldLabel != tile.label, let folder = board(id),
+                      folder.name.localizedCaseInsensitiveCompare(oldLabel) == .orderedSame, !tile.label.isEmpty {
+                folder.name = Self.folderName(from: tile.label)
+                folder.updatedAt = .now
+            }
             tile.updatedAt = .now
             tile.board?.updatedAt = .now
         }
+    }
+
+    /// Adds a new tile from the tile editor, and its folder board if asked. One undo step.
+    @discardableResult
+    func addTile(to board: Board, row: Int, column: Int, newFolderName: String? = nil, rows: Int = 3, columns: Int = 3,
+                 _ edit: (Tile) -> Void) -> Tile {
+        let tile = Tile(label: "", spokenText: "", row: row, column: column)
+        change(newFolderName == nil ? "Add Tile" : "New Folder") {
+            context.insert(tile)
+            tile.board = board
+            edit(tile)
+            if let newFolderName {
+                let folder = Board(name: newFolderName, rows: rows, columns: columns, isHome: false)
+                context.insert(folder)
+                tile.linkedBoardID = folder.id
+            }
+            board.updatedAt = .now
+        }
+        return tile
+    }
+
+    /// Makes a folder and a tile on `host` that opens it, in the first empty spot (or the "needs a spot"
+    /// tray when `host` is full). One undo step.
+    @discardableResult
+    func addFolder(named name: String, on host: Board, rows: Int, columns: Int) -> Board {
+        let spot = firstEmptySpot(on: host)
+        let folder = Board(name: name, rows: rows, columns: columns, isHome: false)
+        change("New Folder") {
+            context.insert(folder)
+            let tile = Tile(label: name, spokenText: "", row: spot?.row, column: spot?.column)
+            context.insert(tile)
+            tile.board = host
+            tile.linkedBoardID = folder.id
+            tile.symbol = EmojiSuggester.suggestion(label: name, spokenText: "") ?? "📁"
+            host.updatedAt = .now
+        }
+        return folder
+    }
+
+    /// "snack" → "Snack": a folder title from a tile label.
+    static func folderName(from label: String) -> String {
+        let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let first = trimmed.first else { return "New folder" }
+        return first.uppercased() + trimmed.dropFirst()
     }
 
     // MARK: Boards

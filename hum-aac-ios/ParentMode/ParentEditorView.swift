@@ -7,8 +7,8 @@ import ImageIO
 
 /// Parent (edit) mode: the same grid the child sees, with edit affordances.
 ///
-/// Tap an empty spot to add a tile, tap a tile to edit it, drag a tile to move it. Tiles only move when
-/// a parent drags them.
+/// Tap an empty spot to add a tile (or a folder), tap a tile to edit it, drag a tile to move it.
+/// Tiles only move when a parent drags them or chooses "Move to folder".
 struct ParentEditorView: View {
     @Environment(AppModel.self) private var model
     @Query(sort: \Board.createdAt) private var boards: [Board]
@@ -21,12 +21,16 @@ struct ParentEditorView: View {
     @State private var showGridSize = false
     @State private var showHistory = false
     @State private var showAI = false
+    @State private var showPaste = false
     @State private var errorMessage: String?
-    /// Folders opened while editing, so "Back" returns to the board you came from.
-    @State private var editPath: [UUID] = []
+    @State private var notice: EditNotice?
 
     private var board: Board? {
         boards.first { $0.id == model.editingBoardID } ?? boards.first(where: \.isHome) ?? boards.first
+    }
+
+    private var anySheet: Bool {
+        editor != nil || showBoards || showSettings || showSharing || showGridSize || showHistory || showAI || showPaste
     }
 
     var body: some View {
@@ -36,14 +40,18 @@ struct ParentEditorView: View {
                     VStack(spacing: 0) {
                         EditBand(
                             board: board,
-                            parentName: editPath.last.flatMap { id in boards.first { $0.id == id }?.name },
-                            onBack: goBackInEditor,
+                            parentName: model.editPath.last.flatMap { id in boards.first { $0.id == id }?.name },
+                            onBack: model.backInEditor,
                             onGridSize: { showGridSize = true })
-                        EditGrid(board: board, editor: $editor, errorMessage: $errorMessage, openFolder: openFolderInEditor)
+                        EditGrid(board: board, editor: $editor, errorMessage: $errorMessage, notice: $notice,
+                                 openFolder: model.openFolderInEditor)
                             .padding(Theme.gridPadding)
                         if !board.unplacedTiles.isEmpty {
                             UnplacedTray(board: board, editor: $editor)
                         }
+                    }
+                    .overlay(alignment: .bottom) {
+                        if let notice { NoticeBanner(notice: notice, onOpen: { model.openFolderInEditor($0); self.notice = nil }) }
                     }
                 } else {
                     ContentUnavailableView {
@@ -68,6 +76,7 @@ struct ParentEditorView: View {
             .sheet(isPresented: $showGridSize) { if let board { GridSizeSheet(board: board) } }
             .sheet(isPresented: $showHistory) { HistoryView() }
             .sheet(isPresented: $showAI) { AIHelperView() }
+            .sheet(isPresented: $showPaste) { PastePhrasesSheet() }
             .alert("Can't do that", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -83,16 +92,41 @@ struct ParentEditorView: View {
                 if !model.settings.hasSeenGuidedAccessTip { showGuidedAccessTip = true }
                 #endif
             }
+            .task(id: notice?.id) {
+                guard notice != nil else { return }
+                try? await Task.sleep(for: .seconds(5))
+                notice = nil
+            }
+            // Menu-bar / hardware-keyboard commands. Off while a sheet is up, so ⌘N never opens a
+            // second editor behind the first.
+            .focusedSceneValue(\.editorCommands, anySheet ? nil : commands)
         }
     }
 
-    private func openFolderInEditor(_ id: UUID) {
-        if let current = board?.id { editPath.append(current) }
-        model.editingBoardID = id
+    private var commands: EditorCommands {
+        EditorCommands(
+            newTile: { addNew(folder: false) },
+            newFolder: { addNew(folder: true) },
+            pastePhrases: { showPaste = true },
+            aiHelper: AIHelper.isSupportedOnThisDevice ? { showAI = true } : nil,
+            gridSize: { showGridSize = true },
+            foldersList: { showBoards = true },
+            back: model.editPath.isEmpty ? nil : { model.backInEditor() },
+            home: { model.editBoard(boards.first(where: \.isHome)?.id) },
+            history: { showHistory = true },
+            sharing: { showSharing = true },
+            settings: { showSettings = true },
+            done: { model.mode = .child })
     }
 
-    private func goBackInEditor() {
-        model.editingBoardID = editPath.popLast()
+    /// New tile or folder in the first empty spot of this board.
+    private func addNew(folder: Bool) {
+        guard let board else { return }
+        guard let spot = model.store.firstEmptySpot(on: board) else {
+            errorMessage = "\(board.name) is full. Make the grid bigger (the size at the top right) or hide a tile you don't need."
+            return
+        }
+        editor = TileEditorRequest(kind: .new(boardID: board.id, row: spot.row, column: spot.column), startsAsFolder: folder)
     }
 
     @ToolbarContentBuilder
@@ -108,15 +142,25 @@ struct ParentEditorView: View {
         }
         ToolbarItemGroup(placement: .primaryAction) {
             Menu {
-                Picker("Board", selection: Binding(get: { board?.id }, set: { editPath = []; model.editingBoardID = $0 })) {
+                Button("New tile", systemImage: "plus.square") { addNew(folder: false) }
+                Button("New folder", systemImage: "folder.badge.plus") { addNew(folder: true) }
+                Button("Paste phrases…", systemImage: "list.bullet.rectangle") { showPaste = true }
+            } label: {
+                Label("Add", systemImage: "plus")
+            }
+            .help("Add a tile, a folder, or many phrases at once")
+            .accessibilityIdentifier("addMenu")
+
+            Menu {
+                Picker("Board", selection: Binding(get: { board?.id }, set: { model.editBoard($0) })) {
                     ForEach(boards) { b in
-                        Label(b.name, systemImage: b.isHome ? "house" : "square.grid.3x3").tag(Optional(b.id))
+                        Label(b.name, systemImage: b.isHome ? "house" : "folder").tag(Optional(b.id))
                     }
                 }
                 Divider()
-                Button("Manage boards…", systemImage: "rectangle.stack") { showBoards = true }
+                Button("Home & folders…", systemImage: "rectangle.stack") { showBoards = true }
             } label: {
-                Label("Boards", systemImage: "rectangle.stack")
+                Label("Home & folders", systemImage: "rectangle.stack")
             }
             .accessibilityIdentifier("boardsMenu")
 
@@ -168,6 +212,37 @@ struct TileEditorRequest: Identifiable {
     enum Kind { case new(boardID: UUID, row: Int, column: Int), edit(tileID: UUID) }
     let id = UUID()
     let kind: Kind
+    /// "New folder": the sheet asks for a name first and makes the folder on Save.
+    var startsAsFolder = false
+}
+
+/// A short message after a move, e.g. "Moved “juice” into Food." with a button to open the folder.
+struct EditNotice: Identifiable, Equatable {
+    let id = UUID()
+    let text: String
+    let folderID: UUID?
+}
+
+private struct NoticeBanner: View {
+    let notice: EditNotice
+    let onOpen: (UUID) -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "folder.fill")
+            Text(notice.text).font(.callout.weight(.semibold))
+            if let id = notice.folderID {
+                Button("Open folder") { onOpen(id) }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+            }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .background(.regularMaterial, in: .capsule)
+        .padding(.bottom, 16)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .accessibilityElement(children: .combine)
+    }
 }
 
 /// The board grid in edit mode.
@@ -175,8 +250,10 @@ private struct EditGrid: View {
     let board: Board
     @Binding var editor: TileEditorRequest?
     @Binding var errorMessage: String?
+    @Binding var notice: EditNotice?
     let openFolder: (UUID) -> Void
     @Environment(AppModel.self) private var model
+    @Query(sort: \Board.createdAt) private var boards: [Board]
 
     var body: some View {
         GeometryReader { geo in
@@ -186,14 +263,14 @@ private struct EditGrid: View {
             let byPosition = Dictionary(board.placedTiles.map { ("\($0.row!),\($0.column!)", $0) }, uniquingKeysWith: { a, _ in a })
             VStack(spacing: spacing) {
                 if min(width, height) < 88 {
-                    Text("Tiles are smaller than 88 points on this screen. Consider fewer rows or columns, or a sub-board.")
+                    Text("Tiles are smaller than 88 points on this screen. Consider fewer rows or columns, or a folder.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
                 ForEach(0..<board.rows, id: \.self) { row in
                     HStack(spacing: spacing) {
                         ForEach(0..<board.columns, id: \.self) { column in
-                            slot(tile: byPosition["\(row),\(column)"], row: row, column: column)
+                            slot(tile: byPosition["\(row),\(column)"], row: row, column: column, roomy: height >= 120 && width >= 120)
                                 .frame(width: max(width, 0), height: max(height, 0))
                         }
                     }
@@ -202,11 +279,33 @@ private struct EditGrid: View {
         }
     }
 
+    /// Folders a tile could move into: every board except this one and the folder the tile itself opens.
+    private func destinations(for tile: Tile) -> [Board] {
+        boards.filter { $0.id != board.id && $0.id != tile.linkedBoardID }
+    }
+
+    private func moveIntoFolder(_ tile: Tile, _ folder: Board) {
+        let placed = model.store.moveToBoard(tile, folder)
+        withAnimation {
+            notice = EditNotice(
+                text: placed ? "Moved “\(tile.label)” into \(folder.name)." : "Moved “\(tile.label)” into \(folder.name). It's full, so it waits for a spot there.",
+                folderID: folder.id)
+        }
+    }
+
     @ViewBuilder
-    private func slot(tile: Tile?, row: Int, column: Int) -> some View {
+    private func slot(tile: Tile?, row: Int, column: Int, roomy: Bool) -> some View {
         Group {
             if let tile {
-                EditTileCard(tile: tile, onOpenFolder: tile.linkedBoardID.map { id in { openFolder(id) } })
+                EditTileCard(tile: tile,
+                             onOpenFolder: tile.linkedBoardID.map { id in { openFolder(id) } },
+                             onDropIntoFolder: tile.linkedBoardID.flatMap { id in boards.first { $0.id == id } }.map { folder in
+                                 { droppedID in
+                                     guard droppedID != tile.id, let dragged = (board.tiles ?? []).first(where: { $0.id == droppedID }) else { return false }
+                                     moveIntoFolder(dragged, folder)
+                                     return true
+                                 }
+                             })
                     .onTapGesture { editor = TileEditorRequest(kind: .edit(tileID: tile.id)) }
                     .draggable(tile.id.uuidString)
                     .contextMenu {
@@ -214,28 +313,24 @@ private struct EditGrid: View {
                         if let link = tile.linkedBoardID {
                             Button("Open folder", systemImage: "folder") { openFolder(link) }
                         }
+                        let targets = destinations(for: tile)
+                        if !targets.isEmpty {
+                            Menu("Move to folder", systemImage: "folder.badge.gearshape") {
+                                ForEach(targets) { folder in
+                                    Button(folder.isHome ? "\(folder.name) (Home)" : folder.name) { moveIntoFolder(tile, folder) }
+                                }
+                            }
+                        }
                         Button(tile.isHidden ? "Show tile" : "Hide tile", systemImage: tile.isHidden ? "eye" : "eye.slash") {
                             model.store.setHidden(tile, !tile.isHidden)
                         }
+                        Divider()
+                        Button("Delete tile", systemImage: "trash", role: .destructive) { model.store.delete(tile) }
                     }
                     .accessibilityHint("Double-tap to edit. Drag to move.")
             } else {
-                Button {
-                    editor = TileEditorRequest(kind: .new(boardID: board.id, row: row, column: column))
-                } label: {
-                    RoundedRectangle(cornerRadius: Theme.tileCorner, style: .continuous)
-                        .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
-                        .foregroundStyle(Theme.ink.opacity(0.25))
-                        .overlay {
-                            Label("Add", systemImage: "plus")
-                                .font(.system(.headline, design: .rounded))
-                                .foregroundStyle(Theme.ink.opacity(0.45))
-                        }
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Add a tile here, row \(row + 1), column \(column + 1)")
-                .accessibilityIdentifier("emptySlot.\(row).\(column)")
+                EmptySlot(row: row, column: column, roomy: roomy,
+                          add: { folder in editor = TileEditorRequest(kind: .new(boardID: board.id, row: row, column: column), startsAsFolder: folder) })
             }
         }
         .dropDestination(for: String.self) { items, _ in
@@ -247,12 +342,64 @@ private struct EditGrid: View {
     }
 }
 
+/// An empty spot: tap to add a tile here. Roomy spots also offer "Folder"; every spot has both in
+/// its context menu.
+private struct EmptySlot: View {
+    let row: Int
+    let column: Int
+    let roomy: Bool
+    let add: (_ folder: Bool) -> Void
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            Button {
+                add(false)
+            } label: {
+                RoundedRectangle(cornerRadius: Theme.tileCorner, style: .continuous)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+                    .foregroundStyle(Theme.ink.opacity(0.25))
+                    .overlay {
+                        Label("Tile", systemImage: "plus")
+                            .font(.system(.headline, design: .rounded))
+                            .foregroundStyle(Theme.ink.opacity(0.45))
+                    }
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Add a tile here, row \(row + 1), column \(column + 1)")
+            .accessibilityIdentifier("emptySlot.\(row).\(column)")
+
+            if roomy {
+                Button {
+                    add(true)
+                } label: {
+                    Label("Folder", systemImage: "folder.badge.plus")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.ink.opacity(0.55))
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Theme.ink.opacity(0.06), in: .capsule)
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, 10)
+                .accessibilityLabel("Add a folder here, row \(row + 1), column \(column + 1)")
+            }
+        }
+        .contextMenu {
+            Button("New tile here", systemImage: "plus.square") { add(false) }
+            Button("New folder here", systemImage: "folder.badge.plus") { add(true) }
+        }
+    }
+}
+
 /// A tile as shown in edit mode: the child's tile, plus a pencil, hidden state, and a small camera mark
 /// when it still uses a placeholder emoji instead of a real photo.
 struct EditTileCard: View {
     let tile: Tile
     /// For folder tiles: opens the folder's board in the editor.
     var onOpenFolder: (() -> Void)? = nil
+    /// For folder tiles: a tile dropped on the "Open" chip moves inside the folder.
+    var onDropIntoFolder: ((UUID) -> Bool)? = nil
+    @State private var dropTargeted = false
 
     var body: some View {
         GeometryReader { geo in
@@ -301,13 +448,18 @@ struct EditTileCard: View {
                 // Top edge, between the badges and the pencil, so it never covers the label.
                 if let onOpenFolder {
                     Button(action: onOpenFolder) {
-                        Label("Open", systemImage: "folder.fill")
-                            .labelStyle(OpenFolderLabelStyle(compact: geo.size.width < 150))
+                        Label(dropTargeted ? "Put inside" : "Open", systemImage: "folder.fill")
+                            .labelStyle(OpenFolderLabelStyle(compact: geo.size.width < 150 && !dropTargeted))
                             .font(.caption.weight(.semibold))
                             .padding(.horizontal, 10).padding(.vertical, 6)
-                            .background(.background.opacity(0.75), in: .capsule)
+                            .background(dropTargeted ? AnyShapeStyle(Color.accentColor.opacity(0.35)) : AnyShapeStyle(.background.opacity(0.75)), in: .capsule)
                     }
                     .buttonStyle(.plain)
+                    .dropDestination(for: String.self) { items, _ in
+                        guard let id = items.first.flatMap(UUID.init(uuidString:)), let onDropIntoFolder else { return false }
+                        return onDropIntoFolder(id)
+                    } isTargeted: { dropTargeted = $0 && onDropIntoFolder != nil }
+                    .help("Open the folder. Drop a tile here to put it inside.")
                     .padding(.top, 8)
                     .accessibilityLabel("Open folder")
                 }
@@ -345,7 +497,7 @@ private struct EditBand: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Editing \(board.name)")
                     .font(.system(.title3, design: .serif, weight: .semibold))
-                Text("Tap a tile to change it, tap + to add one, or drag a tile to move it. Your child sees changes when you tap Done.")
+                Text("Tap a tile to change it, or an empty spot to add one. Drag to move; drop a tile on a folder's Open button to put it inside. Your child sees changes when you tap Done.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }

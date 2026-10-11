@@ -31,7 +31,7 @@ agents asked by a parent to **write or edit a Hum setup** (`hum.json` / `.hum`).
 ## If you are changing the app's code
 
 - Read [`docs/PLAN.md`](docs/PLAN.md) and the hard product rules in it (free forever, no tracking, no
-  network except opt-in Apple iCloud/PCC, no dependencies, no reward mechanics, never gate
+  network except opt-in Apple iCloud/PCC and the parent-started ARASAAC symbol search, no dependencies, no reward mechanics, never gate
   communication, motor-plan stability, audio latency first).
 - `Packages/HumConfig` must stay dependency-free and build on Linux (`swift test` there).
 - Run `swift test --package-path Packages/HumConfig` and build the `Hum` scheme for macOS and iOS.

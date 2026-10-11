@@ -4,11 +4,15 @@
 import SwiftUI
 import SwiftData
 
-/// Create, rename, duplicate, delete and resize boards; choose the Home board.
+/// Home and folders: create, rename, duplicate, delete and resize them; choose the Home board.
+///
+/// In the parent UI every board except Home is a "folder". A folder no tile opens is flagged, because
+/// the child can't reach it.
 struct BoardManagerView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Board.createdAt) private var boards: [Board]
+    @Query private var tiles: [Tile]
 
     @State private var newBoardName = ""
     @State private var newRows = 3
@@ -16,23 +20,40 @@ struct BoardManagerView: View {
     @State private var boardToDelete: Board?
     @State private var errorMessage: String?
 
+    /// Boards some tile opens.
+    private var reachable: Set<UUID> { Set(tiles.compactMap(\.linkedBoardID)) }
+
+    /// Where "Make folder" puts the new folder tile: the board being edited, or Home.
+    private var hostBoard: Board? {
+        boards.first { $0.id == model.editingBoardID } ?? boards.first(where: \.isHome) ?? boards.first
+    }
+
     var body: some View {
         NavigationStack {
             Form {
-                Section("Your boards") {
+                Section("Home and folders") {
                     ForEach(boards) { board in
                         NavigationLink {
-                            BoardDetailView(board: board, errorMessage: $errorMessage)
+                            BoardDetailView(board: board, errorMessage: $errorMessage, onDelete: { boardToDelete = board })
                         } label: {
                             HStack {
-                                Label(board.name, systemImage: board.isHome ? "house.fill" : "square.grid.3x3")
+                                Label {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(board.name)
+                                        if !board.isHome && !reachable.contains(board.id) {
+                                            Text("No tile opens this folder yet").font(.caption).foregroundStyle(.orange)
+                                        }
+                                    }
+                                } icon: {
+                                    Image(systemName: board.isHome ? "house.fill" : "folder")
+                                }
                                 Spacer()
                                 Text("\(board.rows) × \(board.columns)").foregroundStyle(.secondary).monospacedDigit()
                             }
                         }
                         .contextMenu {
-                            Button("Edit this board", systemImage: "pencil") {
-                                model.editingBoardID = board.id
+                            Button("Edit", systemImage: "pencil") {
+                                model.editBoard(board.id)
                                 dismiss()
                             }
                             Button("Duplicate", systemImage: "plus.square.on.square") { model.store.duplicate(board) }
@@ -45,23 +66,19 @@ struct BoardManagerView: View {
                 }
 
                 Section {
-                    TextField("Board name, e.g. Food or Outside", text: $newBoardName)
+                    TextField("Folder name, e.g. Food or Outside", text: $newBoardName)
+                        .onSubmit(makeFolder)
                     GridSizePicker(rows: $newRows, columns: $newColumns)
-                    Button("Make board", systemImage: "plus") {
-                        let board = model.store.createBoard(name: newBoardName.trimmingCharacters(in: .whitespaces), rows: newRows, columns: newColumns)
-                        newBoardName = ""
-                        model.editingBoardID = board.id
-                        dismiss()
-                    }
-                    .disabled(newBoardName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    Button("Make folder", systemImage: "folder.badge.plus", action: makeFolder)
+                        .disabled(newBoardName.trimmingCharacters(in: .whitespaces).isEmpty)
                 } header: {
-                    Text("New board")
+                    Text("New folder")
                 } footer: {
-                    Text("To open it from another board, edit a tile and choose it under \"Opens a board\". Keep \"no\", \"stop\" and \"all done\" on Home too.")
+                    Text("Adds a folder tile to \(hostBoard?.name ?? "Home") in its first empty spot, then opens the new folder so you can fill it. Keep \"no\", \"stop\" and \"all done\" on Home too.")
                 }
             }
             .formStyle(.grouped)
-            .navigationTitle("Boards")
+            .navigationTitle("Home & folders")
             .onAppear {
                 newRows = model.settings.newBoardRows
                 newColumns = model.settings.newBoardColumns
@@ -69,15 +86,15 @@ struct BoardManagerView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
-            .confirmationDialog("Delete \(boardToDelete?.name ?? "this board")?", isPresented: Binding(get: { boardToDelete != nil }, set: { if !$0 { boardToDelete = nil } }), titleVisibility: .visible) {
-                Button("Delete board", role: .destructive) {
+            .confirmationDialog("Delete \(boardToDelete?.name ?? "this folder")?", isPresented: Binding(get: { boardToDelete != nil }, set: { if !$0 { boardToDelete = nil } }), titleVisibility: .visible) {
+                Button("Delete folder", role: .destructive) {
                     if let board = boardToDelete {
                         do { try model.store.delete(board) } catch { errorMessage = error.localizedDescription }
                     }
                     boardToDelete = nil
                 }
             } message: {
-                Text("Its tiles are deleted too. Tiles that opened this board will still speak. You can undo this.")
+                Text("Its tiles are deleted too. Tiles that opened it will still speak. You can undo this.")
             }
             .alert("Can't do that", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK", role: .cancel) {}
@@ -87,11 +104,23 @@ struct BoardManagerView: View {
         .frame(minWidth: 460, minHeight: 520)
         #endif
     }
+
+    /// Makes the folder and the tile that opens it, then opens the folder in the editor.
+    private func makeFolder() {
+        let name = newBoardName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty, let host = hostBoard else { return }
+        let folder = model.store.addFolder(named: name, on: host, rows: newRows, columns: newColumns)
+        newBoardName = ""
+        model.editBoard(host.id)
+        model.openFolderInEditor(folder.id)
+        dismiss()
+    }
 }
 
 private struct BoardDetailView: View {
     let board: Board
     @Binding var errorMessage: String?
+    let onDelete: () -> Void
     @Environment(AppModel.self) private var model
     @State private var name = ""
     @State private var showGridSize = false
@@ -118,11 +147,14 @@ private struct BoardDetailView: View {
             }
             Section {
                 if board.isHome {
-                    Label("This is the Home board", systemImage: "house.fill")
+                    Label("This is the Home board. It opens first.", systemImage: "house.fill")
                 } else {
                     Button("Make this the Home board", systemImage: "house") { model.store.setHome(board) }
                 }
-                Button("Duplicate board", systemImage: "plus.square.on.square") { model.store.duplicate(board) }
+                Button("Duplicate", systemImage: "plus.square.on.square") { model.store.duplicate(board) }
+                if !board.isHome {
+                    Button("Delete…", systemImage: "trash", role: .destructive, action: onDelete)
+                }
             }
         }
         .formStyle(.grouped)

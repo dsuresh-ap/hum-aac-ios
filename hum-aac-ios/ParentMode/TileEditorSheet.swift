@@ -6,9 +6,12 @@ import SwiftData
 import PhotosUI
 import UniformTypeIdentifiers
 import HumConfig
+#if canImport(ImagePlayground)
+import ImagePlayground
+#endif
 
-/// Add or edit one tile. Fields follow the order parents think in:
-/// Photo → What it says → Label → Color → Opens a board.
+/// Add or edit one tile (or a folder). The everyday fields come first:
+/// Picture → What it says → Label → Folder. Color, hide and delete wait under "More options".
 struct TileEditorSheet: View {
     let request: TileEditorRequest
 
@@ -16,25 +19,50 @@ struct TileEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Board.createdAt) private var boards: [Board]
 
+    /// What a tile does when tapped, besides speaking.
+    enum Link: Hashable { case none, newFolder, board(UUID) }
+
+    /// Everything the parent can change, to tell whether Cancel would lose anything.
+    struct Draft: Equatable {
+        var spokenText = ""
+        var label = ""
+        var function: TileFunction?
+        var colorHex: String?
+        var link = Link.none
+        var isHidden = false
+        var symbol = ""
+        var imageData: Data?
+        var audioData: Data?
+    }
+
+    enum Field: Hashable { case phrase, label }
+
     @State private var spokenText = ""
     @State private var label = ""
     @State private var labelEdited = false
     @State private var function: TileFunction?
     @State private var useCustomColor = false
     @State private var customColor = Color(hex: 0xCFE6CC)
-    @State private var linkedBoardID: UUID?
+    @State private var link = Link.none
     @State private var isHidden = false
+    /// The parent's emoji. While untouched, the tile shows (and saves) a guess from its words.
     @State private var symbol = ""
+    @State private var symbolTouched = false
     @State private var imageData: Data?
     @State private var audioData: Data?
     @State private var recorder = PhraseRecorder()
     @State private var photoItem: PhotosPickerItem?
     @State private var showCamera = false
     @State private var showFileImporter = false
+    @State private var showEmojiPicker = false
+    @State private var pickerSource = EmojiPickerView.Source.emoji
+    @State private var showImagePlayground = false
+    @State private var showMore = false
     @State private var confirmDelete = false
+    @State private var confirmDiscard = false
     @State private var loaded = false
-    /// A folder board made from this sheet; removed again if the parent cancels.
-    @State private var createdFolderID: UUID?
+    @State private var initial = Draft()
+    @FocusState private var focus: Field?
 
     private var existing: Tile? {
         guard case .edit(let id) = request.kind else { return nil }
@@ -42,121 +70,61 @@ struct TileEditorSheet: View {
     }
 
     private var hasWords: Bool { !spokenText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-    /// A tile needs words to say, except a folder tile, which can just open its board (it needs a label).
-    private var canSave: Bool {
-        hasWords || (linkedBoardID != nil && !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    private var hasLabel: Bool { !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    /// A tile needs words to say, except a folder tile, which can just open its folder (it needs a name).
+    private var canSave: Bool { hasWords || (link != .none && hasLabel) }
+    /// New folders ask for the name first; the phrase is optional.
+    private var folderFirst: Bool { request.startsAsFolder && existing == nil }
+
+    private var suggestedSymbol: String? { EmojiSuggester.suggestion(label: label, spokenText: spokenText) }
+    /// The emoji the tile shows and saves.
+    private var shownSymbol: String { symbolTouched || !symbol.isEmpty ? symbol : (suggestedSymbol ?? "") }
+
+    private var draft: Draft {
+        Draft(spokenText: spokenText, label: label, function: function,
+              colorHex: useCustomColor ? customColor.hexString : nil, link: link, isHidden: isHidden,
+              symbol: symbolTouched ? symbol : initial.symbol, imageData: imageData, audioData: audioData)
     }
+    private var hasChanges: Bool { loaded && draft != initial }
 
     var body: some View {
         NavigationStack {
             Form {
-                photoSection
-                Section {
-                    HStack(alignment: .top) {
-                        TextField("e.g. Let's get out of here!", text: $spokenText, axis: .vertical)
-                            .lineLimit(1...4)
-                            .accessibilityIdentifier("spokenTextField")
-                            .onChange(of: spokenText) { _, new in if !labelEdited { label = Self.suggestLabel(new) } }
-                        Button {
-                            model.speech.speak(spokenText)
-                        } label: {
-                            Image(systemName: "play.circle.fill").font(.title2)
-                        }
-                        .buttonStyle(.borderless)
-                        .disabled(!hasWords)
-                        .accessibilityLabel("Play")
-                    }
-                    if let phrase = GLPRules.discouragedPhrase(in: spokenText) {
-                        Text("“\(phrase)” sounds like praise or an instruction. Hum tiles are your child's own voice, so we suggest a phrase your child would say.")
-                            .font(.footnote).foregroundStyle(.orange)
-                    }
-                } header: {
-                    Text("What does this tile say?")
-                } footer: {
-                    Text("Type the whole phrase, just the way your child says it, even if it's from a show or a song. Keep it whole. Don't split it into single words.")
+                pictureSection
+                if folderFirst {
+                    labelSection
+                    phraseSection
+                } else {
+                    phraseSection
+                    labelSection
                 }
-
                 recordingSection
-
-                Section {
-                    TextField("Label", text: $label)
-                        .onChange(of: label) { _, new in labelEdited = new != Self.suggestLabel(spokenText) }
-                        .accessibilityIdentifier("labelField")
-                } header: {
-                    Text("Label")
-                } footer: {
-                    Text("The short words printed on the tile. Your child hears the whole phrase.")
-                }
-
-                Section {
-                    Picker("What is it for?", selection: $function) {
-                        Text("Not sure").tag(TileFunction?.none)
-                        Text("Asking for something").tag(TileFunction?.some(.request))
-                        Text("Saying no / stop").tag(TileFunction?.some(.protest))
-                        Text("Body & feelings").tag(TileFunction?.some(.regulation))
-                        Text("Hello, bye, together").tag(TileFunction?.some(.connection))
-                        Text("Sharing what they notice").tag(TileFunction?.some(.comment))
-                        Text("Something else").tag(TileFunction?.some(.other))
-                    }
-                    Toggle("Choose my own color", isOn: $useCustomColor)
-                    if useCustomColor {
-                        ColorPicker("Tile color", selection: $customColor, supportsOpacity: false)
-                    }
-                } header: {
-                    Text("Color")
-                } footer: {
-                    Text("Used only for color. Every tile always works the same, and \"no\" tiles are as big as all the others.")
-                }
-
-                Section {
-                    Picker("When tapped, also open", selection: $linkedBoardID) {
-                        Text("Nothing (just speak)").tag(UUID?.none)
-                        ForEach(boards.filter { $0.id != currentBoardID }) { b in
-                            Text(b.name).tag(Optional(b.id))
-                        }
-                    }
-                    if linkedBoardID == nil {
-                        Button("Make this tile a new folder", systemImage: "folder.badge.plus") { makeFolder() }
-                    }
-                } header: {
-                    Text("Folder")
-                } footer: {
-                    Text("A folder tile opens another board, like \"Food\" or \"Outside\". Your child comes back with the Back or Home button. A folder tile can say its phrase first, or just open (leave \"What does this tile say?\" empty).")
-                }
-
-                Section {
-                    TextField("Emoji until you add a photo", text: $symbol)
-                    Toggle("Hide for now", isOn: $isHidden)
-                } footer: {
-                    Text("A hidden tile keeps its spot as empty space, so nothing else moves.")
-                }
-
-                if existing != nil {
-                    Section {
-                        Button("Delete tile", role: .destructive) { confirmDelete = true }
-                    }
-                }
+                folderSection
+                moreSection
             }
             .formStyle(.grouped)
-            .navigationTitle(existing == nil ? "New tile" : "Edit tile")
+            .navigationTitle(title)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        // Don't leave behind an empty folder board the parent didn't keep.
-                        if let id = createdFolderID, let board = model.store.board(id), (board.tiles ?? []).isEmpty {
-                            try? model.store.delete(board)
-                        }
-                        dismiss()
-                    }
+                    Button("Cancel") { cancel() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .disabled(!canSave)
+                        .keyboardShortcut(.return, modifiers: .command)
                         .accessibilityIdentifier("saveTile")
                 }
+            }
+            .interactiveDismissDisabled(hasChanges)
+            .confirmationDialog("Discard your changes?", isPresented: $confirmDiscard, titleVisibility: .visible) {
+                Button("Discard changes", role: .destructive) { dismiss() }
+                if canSave { Button("Save") { save() } }
+                Button("Keep editing", role: .cancel) {}
+            } message: {
+                Text("You changed this tile but haven't saved it yet.")
             }
             .confirmationDialog("Delete this tile?", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("Delete tile", role: .destructive) {
@@ -181,6 +149,15 @@ struct TileEditorSheet: View {
                 defer { if access { url.stopAccessingSecurityScopedResource() } }
                 if let data = try? Data(contentsOf: url) { imageData = ImageProcessing.tileImageData(from: data) }
             }
+            .sheet(isPresented: $showEmojiPicker) {
+                EmojiPickerView(selection: Binding(get: { shownSymbol }, set: { symbol = $0; symbolTouched = true }),
+                                label: label, spokenText: spokenText,
+                                onSymbol: { imageData = ImageProcessing.tileImageData(from: $0) },
+                                source: pickerSource)
+            }
+            .modifier(ImagePlaygroundSheet(isPresented: $showImagePlayground, concept: playgroundConcept) { data in
+                imageData = ImageProcessing.tileImageData(from: data)
+            })
             #if os(iOS)
             .fullScreenCover(isPresented: $showCamera) {
                 CameraPicker { data in imageData = data.flatMap(ImageProcessing.tileImageData(from:)) }
@@ -189,18 +166,25 @@ struct TileEditorSheet: View {
             #endif
         }
         #if os(macOS)
-        .frame(minWidth: 480, minHeight: 620)
+        .frame(minWidth: 500, minHeight: 620)
         #endif
     }
 
-    private var photoSection: some View {
+    private var title: String {
+        if existing != nil { return link == .none ? "Edit tile" : "Edit folder" }
+        return folderFirst ? "New folder" : "New tile"
+    }
+
+    // MARK: Sections
+
+    private var pictureSection: some View {
         Section {
-            HStack(spacing: 16) {
+            HStack(alignment: .top, spacing: 16) {
                 Group {
                     if let imageData, let image = PlatformImage.thumbnail(imageData, maxPixels: 300) {
                         Image(decorative: image, scale: 1).resizable().scaledToFill()
                     } else {
-                        Text(symbol.isEmpty ? "📷" : symbol).font(.system(size: 44))
+                        Text(shownSymbol.isEmpty ? "📷" : shownSymbol).font(.system(size: 44))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .background(Theme.chrome)
                     }
@@ -212,6 +196,7 @@ struct TileEditorSheet: View {
                     imageData = processed
                     return true
                 }
+                .accessibilityLabel(imageData == nil ? "Picture: \(shownSymbol.isEmpty ? "none" : shownSymbol)" : "Picture: photo")
 
                 VStack(alignment: .leading, spacing: 8) {
                     #if os(iOS)
@@ -225,16 +210,93 @@ struct TileEditorSheet: View {
                     #if os(macOS)
                     Button("Choose file…", systemImage: "folder") { showFileImporter = true }
                     #endif
+                    CreateImageButton { showImagePlayground = true }
+                    Button("Find a symbol…", systemImage: "square.grid.3x3.square") {
+                        pickerSource = .symbols
+                        showEmojiPicker = true
+                    }
+                    Button(imageData == nil ? "Choose emoji…" : "Emoji…", systemImage: "face.smiling") {
+                        pickerSource = .emoji
+                        showEmojiPicker = true
+                    }
                     if imageData != nil {
-                        Button("No photo", systemImage: "xmark.circle", role: .destructive) { imageData = nil }
+                        Button("Remove photo", systemImage: "xmark.circle", role: .destructive) { imageData = nil }
                     }
                 }
                 .buttonStyle(.borderless)
             }
+            if imageData == nil {
+                let ideas = EmojiSuggester.suggestions(label: label, spokenText: spokenText, limit: 6)
+                if !ideas.isEmpty {
+                    HStack(spacing: 6) {
+                        Text("Ideas:").font(.callout).foregroundStyle(.secondary)
+                        ForEach(ideas, id: \.self) { emoji in
+                            Button {
+                                symbol = emoji
+                                symbolTouched = true
+                            } label: {
+                                Text(emoji).font(.title2)
+                                    .padding(4)
+                                    .background(emoji == shownSymbol ? Color.accentColor.opacity(0.25) : .clear, in: .rect(cornerRadius: 8))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
         } header: {
-            Text("Photo")
+            Text("Picture")
         } footer: {
-            Text("Add a photo of the real thing. Real photos often work better than drawings.")
+            Text(imageData == nil
+                 ? "Hum picks an emoji from the words until you add a photo. Real photos often work better than drawings. You can also drag a picture onto the square."
+                 : "Real photos often work better than drawings.")
+        }
+    }
+
+    private var phraseSection: some View {
+        Section {
+            HStack(alignment: .top) {
+                TextField(folderFirst ? "e.g. I want a snack (optional)" : "e.g. Let's get out of here!", text: $spokenText, axis: .vertical)
+                    .lineLimit(1...4)
+                    .focused($focus, equals: .phrase)
+                    .onSubmit(submit)
+                    .accessibilityIdentifier("spokenTextField")
+                    .onChange(of: spokenText) { _, new in if !labelEdited { label = Self.suggestLabel(new) } }
+                Button {
+                    model.speech.speak(spokenText)
+                } label: {
+                    Image(systemName: "play.circle.fill").font(.title2)
+                }
+                .buttonStyle(.borderless)
+                .disabled(!hasWords)
+                .accessibilityLabel("Play")
+            }
+            if let phrase = GLPRules.discouragedPhrase(in: spokenText) {
+                Text("“\(phrase)” sounds like praise or an instruction. Hum tiles are your child's own voice, so we suggest a phrase your child would say.")
+                    .font(.footnote).foregroundStyle(.orange)
+            }
+        } header: {
+            Text(folderFirst ? "Say something when it opens? (optional)" : "What does this tile say?")
+        } footer: {
+            Text(folderFirst
+                 ? "Leave empty to just open the folder."
+                 : "Type the whole phrase, just the way your child says it, even if it's from a show or a song. Keep it whole. Don't split it into single words.")
+        }
+    }
+
+    private var labelSection: some View {
+        Section {
+            TextField(folderFirst ? "e.g. Snacks" : "Label", text: $label)
+                .focused($focus, equals: .label)
+                .onSubmit(submit)
+                .onChange(of: label) { _, new in labelEdited = new != Self.suggestLabel(spokenText) }
+                .accessibilityIdentifier("labelField")
+        } header: {
+            Text(folderFirst ? "Folder name" : "Label")
+        } footer: {
+            Text(folderFirst
+                 ? "Shown on the folder tile and at the top of the folder."
+                 : "The short words printed on the tile. Filled in from the phrase; change it if you like.")
         }
     }
 
@@ -249,7 +311,7 @@ struct TileEditorSheet: View {
                     .foregroundStyle(.red)
                     Text(String(format: "%.1f s", recorder.elapsed)).monospacedDigit().foregroundStyle(.secondary)
                 } else {
-                    Button(audioData == nil ? "Record" : "Record again", systemImage: "mic.circle") {
+                    Button(audioData == nil ? "Record your voice" : "Record again", systemImage: "mic.circle") {
                         Task { await recorder.start() }
                     }
                     if let audioData {
@@ -265,29 +327,74 @@ struct TileEditorSheet: View {
                 Text("Hum isn't allowed to use the microphone. You can allow it in Settings → Privacy & Security → Microphone.")
                     .font(.footnote).foregroundStyle(.orange)
             }
-        } header: {
-            Text("Say it in your own voice (optional)")
         } footer: {
-            Text("Record the phrase the way your child hears it, with the same tune. The tile plays your recording instead of the computer voice. It stays on this device.")
+            Text("Optional. Record the phrase with the same tune your child hears. The tile plays your recording instead of the computer voice. It stays on this device.")
         }
     }
 
-    /// Creates an empty board named after this tile and links the tile to it.
-    private func makeFolder() {
-        let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
-        let name = trimmed.isEmpty ? "New folder" : trimmed.prefix(1).uppercased() + trimmed.dropFirst()
-        let board = model.store.createBoard(name: name, rows: model.settings.newBoardRows, columns: model.settings.newBoardColumns)
-        createdFolderID = board.id
-        linkedBoardID = board.id
-        if label.isEmpty { label = name }
-        labelEdited = true
+    private var folderSection: some View {
+        Section {
+            Picker("When tapped, also open", selection: $link) {
+                Text("Nothing (just speak)").tag(Link.none)
+                Text(newFolderTitle).tag(Link.newFolder)
+                let others = boards.filter { $0.id != currentBoardID }
+                if !others.isEmpty {
+                    Divider()
+                    ForEach(others) { b in
+                        Text(b.isHome ? "\(b.name) (Home)" : b.name).tag(Link.board(b.id))
+                    }
+                }
+            }
+        } header: {
+            Text("Folder")
+        } footer: {
+            Text("A folder tile opens another page of tiles, like \"Food\" or \"Outside\". Your child comes back with the Back or Home button.")
+        }
     }
+
+    private var newFolderTitle: String {
+        hasLabel ? "A new folder: \(BoardStore.folderName(from: label))" : "A new folder"
+    }
+
+    private var moreSection: some View {
+        Section {
+            DisclosureGroup("More options", isExpanded: $showMore) {
+                Picker("What is it for?", selection: $function) {
+                    Text("Not sure").tag(TileFunction?.none)
+                    Text("Asking for something").tag(TileFunction?.some(.request))
+                    Text("Saying no / stop").tag(TileFunction?.some(.protest))
+                    Text("Body & feelings").tag(TileFunction?.some(.regulation))
+                    Text("Hello, bye, together").tag(TileFunction?.some(.connection))
+                    Text("Sharing what they notice").tag(TileFunction?.some(.comment))
+                    Text("Something else").tag(TileFunction?.some(.other))
+                }
+                Toggle("Choose my own color", isOn: $useCustomColor)
+                if useCustomColor {
+                    ColorPicker("Tile color", selection: $customColor, supportsOpacity: false)
+                }
+                Toggle("Hide for now", isOn: $isHidden)
+                Text("\"What is it for?\" only sets the color. A hidden tile keeps its spot as empty space, so nothing else moves.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                if existing != nil {
+                    Button("Delete tile", systemImage: "trash", role: .destructive) { confirmDelete = true }
+                }
+            }
+        }
+    }
+
+    // MARK: Actions
 
     private var currentBoardID: UUID? {
         switch request.kind {
         case .new(let boardID, _, _): return boardID
         case .edit: return existing?.board?.id
         }
+    }
+
+    /// The words Image Playground starts from.
+    private var playgroundConcept: String {
+        let words = spokenText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return words.isEmpty ? label : words
     }
 
     /// A short label from a long phrase: the first few words, without trailing punctuation.
@@ -299,7 +406,15 @@ struct TileEditorSheet: View {
 
     private func load() {
         guard !loaded else { return }
-        loaded = true
+        defer {
+            initial = draft
+            loaded = true
+            // Start typing right away on a new tile.
+            if existing == nil {
+                DispatchQueue.main.async { focus = folderFirst ? .label : .phrase }
+            }
+        }
+        if folderFirst { link = .newFolder }
         guard let tile = existing else { return }
         spokenText = tile.spokenText
         label = tile.label
@@ -309,41 +424,108 @@ struct TileEditorSheet: View {
             useCustomColor = true
             customColor = Color(hex: value)
         }
-        linkedBoardID = tile.linkedBoardID
+        link = tile.linkedBoardID.map { id in boards.contains { $0.id == id } ? .board(id) : .none } ?? .none
         isHidden = tile.isHidden
         symbol = tile.symbol ?? ""
         imageData = tile.imageData
         audioData = tile.audioData
+        initial.symbol = symbol
+    }
+
+    /// Return in a text field saves, when there's enough to save.
+    private func submit() {
+        if canSave { save() }
+    }
+
+    private func cancel() {
+        if recorder.state == .recording { _ = recorder.finish() }
+        if hasChanges { confirmDiscard = true } else { dismiss() }
     }
 
     private func save() {
+        if recorder.state == .recording, let data = recorder.finish() { audioData = data }
         let text = spokenText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let finalLabel = label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Self.suggestLabel(text) : label
+        let finalLabel = hasLabel ? label.trimmingCharacters(in: .whitespacesAndNewlines) : Self.suggestLabel(text)
+        let finalSymbol = shownSymbol
+        let folderName = link == .newFolder ? BoardStore.folderName(from: finalLabel) : nil
         let apply: (Tile) -> Void = { tile in
             tile.spokenText = text
             tile.label = finalLabel
             tile.function = function
             tile.colorHex = useCustomColor ? customColor.hexString : nil
-            tile.linkedBoardID = linkedBoardID
+            if case .board(let id) = link { tile.linkedBoardID = id } else { tile.linkedBoardID = nil }
             tile.isHidden = isHidden
-            tile.symbol = symbol.isEmpty ? nil : symbol
+            tile.symbol = finalSymbol.isEmpty ? nil : finalSymbol
             tile.imageData = imageData
             tile.audioData = audioData
         }
+        let rows = model.settings.newBoardRows, columns = model.settings.newBoardColumns
+        var saved: Tile?
         switch request.kind {
         case .new(let boardID, let row, let column):
             guard let board = model.store.board(boardID) else { break }
-            model.store.change("Add Tile") {
-                let tile = Tile(label: finalLabel, spokenText: text, row: row, column: column)
-                model.context.insert(tile)
-                tile.board = board
-                apply(tile)
-            }
+            saved = model.store.addTile(to: board, row: row, column: column, newFolderName: folderName,
+                                        rows: rows, columns: columns, apply)
         case .edit:
-            if let tile = existing { model.store.update(tile, apply) }
+            if let tile = existing {
+                model.store.update(tile, newFolderName: folderName, rows: rows, columns: columns, apply)
+                saved = tile
+            }
         }
         if !text.isEmpty { model.speech.prepare([text]) }
         dismiss()
+        // A brand-new folder is empty: go straight in so the parent can fill it.
+        if folderName != nil, let id = saved?.linkedBoardID { model.openFolderInEditor(id) }
+    }
+}
+
+/// "Create image": Apple's Image Playground, starting from the tile's words. Only shown on devices that
+/// support it. Styles are limited to Apple's own (no outside image services).
+private struct CreateImageButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        #if canImport(ImagePlayground)
+        if #available(iOS 18.4, macOS 15.4, *) {
+            Available(action: action)
+        }
+        #endif
+    }
+
+    #if canImport(ImagePlayground)
+    @available(iOS 18.4, macOS 15.4, *)
+    private struct Available: View {
+        let action: () -> Void
+        @Environment(\.supportsImagePlayground) private var supported
+
+        var body: some View {
+            if supported {
+                Button("Create image…", systemImage: "wand.and.sparkles", action: action)
+            }
+        }
+    }
+    #endif
+}
+
+private struct ImagePlaygroundSheet: ViewModifier {
+    @Binding var isPresented: Bool
+    let concept: String
+    let onImage: (Data) -> Void
+
+    func body(content: Content) -> some View {
+        #if canImport(ImagePlayground)
+        if #available(iOS 18.4, macOS 15.4, *) {
+            content
+                .imagePlaygroundSheet(isPresented: $isPresented, concept: concept) { url in
+                    if let data = try? Data(contentsOf: url) { onImage(data) }
+                }
+                .imagePlaygroundGenerationStyle(.illustration, in: [.illustration, .animation, .sketch])
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
     }
 }
 

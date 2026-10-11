@@ -51,11 +51,8 @@ struct HumApp: App {
         }
         #if os(macOS)
         .defaultSize(width: 1100, height: 820)
-        .commands {
-            // One window: a second copy of the board would only confuse.
-            CommandGroup(replacing: .newItem) {}
-        }
         #endif
+        .commands { EditorMenuCommands() }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active: model.speech.start()

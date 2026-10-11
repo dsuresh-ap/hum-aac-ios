@@ -92,9 +92,19 @@ enum AIHelper {
         return false
     }
 
-    /// Asks the model, then applies the code-level GLP checks.
-    @MainActor
-    static func propose(_ task: Task, mode: Mode, existing: HumDocument) async throws -> Proposal {
+    /// What the model returned, already mapped to `ProposedTile`.
+    struct Generation: Sendable {
+        var tiles: [ProposedTile]
+        /// Private Cloud Compute couldn't be reached, so the on-device model answered.
+        var usedOnDeviceFallback = false
+    }
+
+    /// Runs one prompt. Tests pass a fake; the app uses Foundation Models.
+    typealias Generator = @MainActor (_ prompt: String, _ mode: Mode) async throws -> Generation
+
+    /// The prompt for a task: the parent's request plus the existing tiles (so the model doesn't repeat
+    /// them). `short` lists fewer tiles, for when the full prompt is too long for the on-device model.
+    static func prompts(for task: Task, existing: HumDocument) -> (parentPhrases: [String], full: String, short: String) {
         let parentPhrases: [String]
         let request: String
         switch task {
@@ -110,30 +120,38 @@ enum AIHelper {
                 Make one tile per phrase with a short label and a function tag.
                 """
         }
-        let prompt = request + "\n\nTiles already on the boards (don't repeat them):\n" + boardsSummary(existing)
-        let shortPrompt = request + "\n\nSome tiles already on the boards (don't repeat them):\n" + boardsSummary(existing, limit: 30)
+        return (parentPhrases,
+                request + "\n\nTiles already on the boards (don't repeat them):\n" + boardsSummary(existing),
+                request + "\n\nSome tiles already on the boards (don't repeat them):\n" + boardsSummary(existing, limit: 30))
+    }
 
+    /// Asks the model, then applies the code-level GLP checks.
+    @MainActor
+    static func propose(_ task: Task, mode: Mode, existing: HumDocument, generator: Generator? = nil) async throws -> Proposal {
+        let (parentPhrases, prompt, shortPrompt) = prompts(for: task, existing: existing)
+        let generate = generator ?? foundationModelsGenerator
+        let result: Generation
+        do {
+            result = try await generate(prompt, mode)
+        } catch AIError.contextTooLong {
+            // Big setups can overflow the on-device model's context: retry with fewer existing tiles.
+            result = try await generate(shortPrompt, mode)
+        }
+        let checked = ProposalChecker.check(result.tiles, parentPhrases: parentPhrases, existing: existing)
+        var notes = checked.notes
+        if result.usedOnDeviceFallback {
+            notes.insert("Private Cloud Compute couldn't be reached, so these suggestions came from the model on this device.", at: 0)
+        }
+        return Proposal(tiles: checked.tiles, notes: notes, parentPhrases: parentPhrases)
+    }
+
+    /// The real model (Foundation Models), or `unavailable` on systems without it.
+    @MainActor
+    static func foundationModelsGenerator(_ prompt: String, _ mode: Mode) async throws -> Generation {
         #if canImport(FoundationModels)
         if #available(iOS 26.0, macOS 26.0, *) {
-            let result: (tiles: [AITileSuggestion], usedOnDeviceFallback: Bool)
-            do {
-                result = try await generate(prompt: prompt, mode: mode)
-            } catch AIError.contextTooLong {
-                // Big setups can overflow the on-device model's context: retry with fewer existing tiles.
-                result = try await generate(prompt: shortPrompt, mode: mode)
-            }
-            let raw = result.tiles
-            let proposed = raw.map {
-                ProposedTile(label: $0.label, spokenText: $0.spokenText,
-                             function: TileFunction(rawValue: $0.function.lowercased()),
-                             boardName: $0.boardName?.isEmpty == true ? nil : $0.boardName)
-            }
-            let checked = ProposalChecker.check(proposed, parentPhrases: parentPhrases, existing: existing)
-            var notes = checked.notes
-            if result.usedOnDeviceFallback {
-                notes.insert("Private Cloud Compute couldn't be reached, so these suggestions came from the model on this device.", at: 0)
-            }
-            return Proposal(tiles: checked.tiles, notes: notes, parentPhrases: parentPhrases)
+            let (raw, fallback) = try await generate(prompt: prompt, mode: mode)
+            return Generation(tiles: raw.map(\.proposedTile), usedOnDeviceFallback: fallback)
         }
         #endif
         throw AIError.unavailable
@@ -233,6 +251,15 @@ struct AITileSuggestion {
     var function: String
     @Guide(description: "Optional sub-board name like Trains or Food. Empty for the current board.")
     var boardName: String?
+    @Guide(description: "One emoji that pictures the phrase, like 🚂 for a train phrase")
+    var emoji: String?
+
+    var proposedTile: ProposedTile {
+        ProposedTile(label: label, spokenText: spokenText,
+                     function: TileFunction(rawValue: function.lowercased()),
+                     boardName: boardName?.isEmpty == true ? nil : boardName,
+                     symbol: emoji)
+    }
 }
 
 @available(iOS 26.0, macOS 26.0, *)

@@ -17,6 +17,8 @@ enum Persistence {
 
     /// The mode the last `makeContainer` call actually got (it falls back if iCloud isn't available).
     @MainActor static private(set) var activeMode: Mode = .local
+    /// Why the iCloud store didn't open, when sync is on but Hum fell back to the local store.
+    @MainActor static private(set) var iCloudError: String?
 
     @MainActor
     static func makeContainer(inMemory: Bool = false, iCloud: Bool = false) -> ModelContainer {
@@ -25,14 +27,18 @@ enum Persistence {
             activeMode = .memory
             return memoryContainer(schema)
         }
+        iCloudError = nil
         if iCloud {
             let config = ModelConfiguration("Hum", schema: schema, cloudKitDatabase: .private(cloudKitContainerID))
-            if let container = try? ModelContainer(for: schema, configurations: [config]) {
+            do {
+                let container = try ModelContainer(for: schema, configurations: [config])
                 activeMode = .iCloud
                 return container
+            } catch {
+                // Not signed in to iCloud, missing entitlement (unsigned builds), etc.: keep working locally.
+                iCloudError = error.localizedDescription
+                print("Hum: iCloud store unavailable (\(error)); using the local store.")
             }
-            // Not signed in to iCloud, missing entitlement (unsigned builds), etc.: keep working locally.
-            print("Hum: iCloud store unavailable; using the local store.")
         }
         let local = ModelConfiguration("Hum", schema: schema, cloudKitDatabase: .none)
         do {

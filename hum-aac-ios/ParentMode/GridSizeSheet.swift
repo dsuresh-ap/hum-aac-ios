@@ -15,6 +15,7 @@ struct GridSizeSheet: View {
     @State private var rows = 3
     @State private var columns = 3
     @State private var confirmCut = false
+    @State private var confirmDiscard = false
     @State private var errorMessage: String?
 
     static let presets: [(Int, Int)] = [(2, 2), (2, 3), (3, 3), (3, 4), (4, 5), (5, 6), (6, 8)]
@@ -74,12 +75,22 @@ struct GridSizeSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { if changed { confirmDiscard = true } else { dismiss() } }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Apply") { apply() }
                         .disabled(!changed || rows * columns < 2)
                         .accessibilityIdentifier("applyGridSize")
                 }
+            }
+            .interactiveDismissDisabled(changed)
+            .confirmationDialog("Keep the old size?", isPresented: $confirmDiscard, titleVisibility: .visible) {
+                Button("Discard new size", role: .destructive) { dismiss() }
+                Button("Apply \(rows) × \(columns)") { apply() }
+                Button("Keep editing", role: .cancel) {}
+            } message: {
+                Text("You picked \(rows) × \(columns) but haven't applied it.")
             }
             .confirmationDialog(cutTitle, isPresented: $confirmCut, titleVisibility: .visible) {
                 Button("Move them to “needs a spot”") { apply(moveCutOff: true) }

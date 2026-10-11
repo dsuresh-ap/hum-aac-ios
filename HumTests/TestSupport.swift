@@ -5,6 +5,10 @@ import Foundation
 import SwiftData
 @testable import Hum
 
+/// Models made by tests, kept alive until the test run ends. Freeing a store while its undo manager still
+/// has an open run-loop undo group crashes SwiftData at the next run-loop turn (in whatever test runs then).
+@MainActor private var liveModels: [AppModel] = []
+
 /// A fresh app model with an in-memory store, its own settings and no saved history.
 @MainActor
 func makeModel(starter: Bool = true) -> AppModel {
@@ -13,6 +17,7 @@ func makeModel(starter: Bool = true) -> AppModel {
                          settings: DeviceSettings(defaults: defaults),
                          history: SpeechHistory(fileURL: nil))
     if starter { model.finishFirstRun(.starter) }
+    liveModels.append(model)
     return model
 }
 

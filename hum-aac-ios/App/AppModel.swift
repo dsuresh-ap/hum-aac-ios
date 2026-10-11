@@ -59,12 +59,15 @@ final class AppModel {
     let settings: DeviceSettings
     let speech: SpeechService
     let history: SpeechHistory
+    /// iCloud sync status for the parent (Setup & sharing).
+    let sync = SyncMonitor()
 
     private(set) var snapshot: BoardSnapshot?
     private(set) var currentBoardID: UUID?
     var mode: Mode = .child {
         didSet {
             if mode == .parent {
+                editPath = []
                 editingBoardID = currentBoardID
                 showNextPendingChange()
             } else if oldValue == .parent {
@@ -75,6 +78,25 @@ final class AppModel {
     }
     /// The board shown in the parent editor.
     var editingBoardID: UUID?
+    /// Folders opened while editing, so "Back" returns to the board you came from.
+    var editPath: [UUID] = []
+
+    /// Jumps the editor to a board (from a menu or the board list). Forgets the folder path.
+    func editBoard(_ id: UUID?) {
+        editPath = []
+        editingBoardID = id
+    }
+
+    /// Opens a folder in the editor, remembering where we came from.
+    func openFolderInEditor(_ id: UUID) {
+        guard id != editingBoardID else { return }
+        if let current = editingBoardID ?? homeBoardID { editPath.append(current) }
+        editingBoardID = id
+    }
+
+    func backInEditor() {
+        editingBoardID = editPath.popLast()
+    }
     /// True until a parent finishes first-run setup.
     var needsFirstRun: Bool
     @ObservationIgnored private(set) lazy var store = BoardStore(context: context)
@@ -85,13 +107,19 @@ final class AppModel {
     /// Turns iCloud sync on or off (parent action). Re-opens the same store with or without CloudKit.
     func setICloudSync(_ on: Bool) {
         settings.iCloudSyncEnabled = on
+        // The old store's undo steps can't apply to the new one. Detach them first, and keep the old
+        // container alive: freeing it while its undo manager has an open run-loop group crashes SwiftData.
+        store.clearUndo()
+        retiredContainers.append(container)
         container = Persistence.makeContainer(iCloud: on)
         store = BoardStore(context: container.mainContext)
         observeRemoteChanges()
         if on { SyncResolver.resolve(in: context) }
-        editingBoardID = nil
+        editBoard(nil)
         goHome()
     }
+
+    @ObservationIgnored private var retiredContainers: [ModelContainer] = []
 
     var iCloudActive: Bool { Persistence.activeMode == .iCloud }
 

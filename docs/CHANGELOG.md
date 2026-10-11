@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased: easier tiles and folders, pictures, shortcuts
+
+- **Folders are easier.** Every empty spot offers "Tile" and (when roomy, or by right-click / long-press)
+  "Folder". A new folder asks for a name only, is one undo step, and opens right away so you can fill
+  it. "Move to folder" on a tile's menu (or drop a tile on a folder's Open button) moves it inside,
+  keeping its photo and recording; it takes the first empty spot there. Renaming a folder tile renames
+  its folder. "Boards" is now "Home & folders"; folders no tile opens are flagged, and "Make folder"
+  also adds the tile that opens it.
+- **Tile editor:** the phrase field is focused on open, Return saves, ⌘Return saves anywhere, Cancel asks
+  before throwing away changes. Color, hide and delete moved under "More options".
+- **Pictures:** an emoji is picked from the tile's words until there's a photo (offline, ~200 AAC-focused
+  emoji with search), "Find a symbol…" searches the ARASAAC symbol library, and "Create image…" opens
+  Apple Image Playground (Apple's own styles only).
+- **Paste phrases:** add many tiles at once, one line per tile, no AI needed.
+- **AI helper:** one page — turn on, describe or paste, tick the suggested tiles, Add. Return no longer
+  closes the page; Return (or ⌘Return in the phrase list) suggests. Suggestions come with an emoji.
+- **Keyboard shortcuts** (Mac menu bar; hold ⌘ on iPad): ⌘N new tile, ⇧⌘N new folder, ⌥⌘V paste phrases,
+  ⌘[ back, ⇧⌘H Home, ⇧⌘B Home & folders, ⇧⌘G grid size, ⌘K AI helper, ⌘Y history, ⇧⌘E setup & sharing,
+  ⌘, settings, ⌘Return done editing. There is no shortcut into editing: the grown-up lock stays the only way in.
+- **iCloud status:** Setup & sharing shows the iCloud account state, when boards were last sent and
+  received, sync errors in plain words, and how developers can find the records in the CloudKit Console.
+- **Fixed:** jumping to a board from the board list left a stale Back button; the grid-size sheet now asks
+  before discarding a new size; switching iCloud sync could crash SwiftData through a stale undo manager.
+- **Tests:** AI pipeline with a fake model (prompt contents, praise/split repair, duplicates, emoji, retry
+  on context overflow, PCC fallback), a live on-device model test (`TEST_RUNNER_HUM_LIVE_AI=1`), folder
+  moves and renames, emoji suggestions, pasted phrases.
+
 ## Unreleased: voices, AI resilience, app icon
 
 - **Voices:** Hum now uses the most natural voice installed (Premium > Enhanced > Standard, Apple's

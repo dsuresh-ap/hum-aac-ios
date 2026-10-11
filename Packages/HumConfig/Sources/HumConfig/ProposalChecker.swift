@@ -10,12 +10,15 @@ public struct ProposedTile: Sendable, Equatable {
     public var function: TileFunction?
     /// A sub-board name the model suggests (nil = the board the parent is editing).
     public var boardName: String?
+    /// Placeholder emoji until the parent adds a photo. Filled in from the words when nil.
+    public var symbol: String?
 
-    public init(label: String, spokenText: String, function: TileFunction? = nil, boardName: String? = nil) {
+    public init(label: String, spokenText: String, function: TileFunction? = nil, boardName: String? = nil, symbol: String? = nil) {
         self.label = label
         self.spokenText = spokenText
         self.function = function
         self.boardName = boardName
+        self.symbol = symbol
     }
 }
 
@@ -54,10 +57,13 @@ public enum ProposalChecker {
             if tile.label.isEmpty || tile.label.split(separator: " ").count > maxLabelWords {
                 tile.label = shortLabel(for: tile.spokenText)
             }
+            // 4. One real emoji as the placeholder picture, or a guess from the words.
+            if let symbol = tile.symbol, !EmojiSuggester.isSingleEmoji(symbol) { tile.symbol = nil }
+            if tile.symbol == nil { tile.symbol = EmojiSuggester.suggestion(label: tile.label, spokenText: tile.spokenText) }
             tiles.append(tile)
         }
 
-        // 4. No duplicates, within the proposal or with tiles that already exist.
+        // 5. No duplicates, within the proposal or with tiles that already exist.
         var seen = Set(existing.boards.flatMap { $0.tiles.map { GLPRules.normalize($0.spokenText) } })
         var unique: [ProposedTile] = []
         for tile in tiles {
@@ -72,7 +78,7 @@ public enum ProposalChecker {
             }
         }
 
-        // 5. Protest and regulation tiles are never only on a sub-board: also offer them on Home.
+        // 6. Protest and regulation tiles are never only on a sub-board: also offer them on Home.
         let homeName = existing.homeBoard?.name
         let homePhrases = Set(existing.homeBoard?.tiles.map { GLPRules.normalize($0.spokenText) } ?? [])
         var extras: [ProposedTile] = []
@@ -133,10 +139,19 @@ public enum ProposalChecker {
             let (row, column) = spot ?? ((overflowIndex / board.columns) % board.rows, overflowIndex % board.columns)
             if spot != nil { taken.insert("\(row),\(column)") } else { overflow[board.id] = overflowIndex + 1 }
             occupied[board.id] = taken
-            board.tiles.append(HumTile(label: proposed.label, spokenText: proposed.spokenText, row: row, column: column, function: proposed.function))
+            board.tiles.append(HumTile(label: proposed.label, spokenText: proposed.spokenText, row: row, column: column,
+                                       function: proposed.function, symbol: proposed.symbol))
             boards[board.id] = board
         }
         return HumDocument(boards: order.compactMap { boards[$0] })
+    }
+
+    /// "Paste phrases" without AI: one line is one whole gestalt, never split. Blank lines are skipped.
+    public static func tiles(fromLines text: String) -> [ProposedTile] {
+        text.split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .map { ProposedTile(label: shortLabel(for: $0), spokenText: $0) }
     }
 
     /// First few words, without trailing punctuation.

@@ -145,6 +145,12 @@ struct SettingsView: View {
                     Text("For a full lock-down on iPad or iPhone, use Guided Access: Settings → Accessibility → Guided Access.")
                 }
 
+                Section {
+                    Text(SymbolLibrary.credit).font(.footnote).foregroundStyle(.secondary)
+                } header: {
+                    Text("Credits")
+                }
+
                 Section("For developers") {
                     NavigationLink("Tap-to-sound latency") { DeveloperLatencyView() }
                         .accessibilityIdentifier("developerLatency")
@@ -158,6 +164,17 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
             .navigationTitle("Settings")
+            #if os(macOS)
+            .navigationSubtitle("Changes save as you make them")
+            #endif
+            .safeAreaInset(edge: .bottom) {
+                #if os(iOS)
+                Text("Changes save as you make them.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity).padding(.vertical, 6)
+                    .background(.bar)
+                #endif
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
