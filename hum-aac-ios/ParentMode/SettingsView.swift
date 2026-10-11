@@ -148,6 +148,12 @@ struct SettingsView: View {
                 Section("For developers") {
                     NavigationLink("Tap-to-sound latency") { DeveloperLatencyView() }
                         .accessibilityIdentifier("developerLatency")
+                    LabeledContent("AI helper (on this device)") {
+                        Text(aiStatus(.onDevice)).multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("AI helper (Private Cloud Compute)") {
+                        Text(aiStatus(.privateCloud)).multilineTextAlignment(.trailing)
+                    }
                 }
             }
             .formStyle(.grouped)
@@ -163,6 +169,13 @@ struct SettingsView: View {
     }
 
     private var currentVoiceID: String { model.speech.voice.identifier }
+
+    private func aiStatus(_ mode: AIHelper.Mode) -> String {
+        switch AIHelper.availability(mode: mode) {
+        case .available: return "Available"
+        case .unavailable(let reason): return reason
+        }
+    }
 
     /// Voices for the device's language, best quality first.
     private func loadVoices() {

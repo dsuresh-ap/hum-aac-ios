@@ -20,6 +20,7 @@ struct ParentEditorView: View {
     @State private var showGuidedAccessTip = false
     @State private var showGridSize = false
     @State private var showHistory = false
+    @State private var showAI = false
     @State private var errorMessage: String?
     /// Folders opened while editing, so "Back" returns to the board you came from.
     @State private var editPath: [UUID] = []
@@ -66,6 +67,7 @@ struct ParentEditorView: View {
             .sheet(isPresented: $showSharing) { SetupSharingView() }
             .sheet(isPresented: $showGridSize) { if let board { GridSizeSheet(board: board) } }
             .sheet(isPresented: $showHistory) { HistoryView() }
+            .sheet(isPresented: $showAI) { AIHelperView() }
             .alert("Can't do that", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -125,6 +127,17 @@ struct ParentEditorView: View {
             }
             .disabled(!(model.store.undoManager?.canUndo ?? false))
             .keyboardShortcut("z", modifiers: .command)
+
+            // Only on devices with Apple Intelligence (hidden elsewhere, as the spec asks).
+            if AIHelper.isSupportedOnThisDevice {
+                Button {
+                    showAI = true
+                } label: {
+                    Label("Help me set up", systemImage: "sparkles")
+                }
+                .help("Suggest tiles from what your child says")
+                .accessibilityIdentifier("aiHelper")
+            }
 
             Button {
                 showHistory = true
