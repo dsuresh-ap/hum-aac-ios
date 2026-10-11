@@ -7,6 +7,9 @@ import SwiftData
 import HumConfig
 import CoreGraphics
 import ImageIO
+#if os(iOS)
+import UIKit
+#endif
 
 /// What the child grid draws: a frozen copy of one board.
 ///
@@ -55,19 +58,50 @@ final class AppModel {
 
     private(set) var snapshot: BoardSnapshot?
     private(set) var currentBoardID: UUID?
-    var mode: Mode = .child
-    var showDeveloperScreen = false
+    var mode: Mode = .child {
+        didSet {
+            if mode == .parent {
+                editingBoardID = currentBoardID
+            } else if oldValue == .parent {
+                // Leaving parent mode: show the latest edits right away (the child isn't tapping yet).
+                rebuildSnapshot()
+            }
+        }
+    }
+    /// The board shown in the parent editor.
+    var editingBoardID: UUID?
+    /// True until a parent finishes first-run setup.
+    var needsFirstRun: Bool
+    @ObservationIgnored private(set) lazy var store = BoardStore(context: context)
+
+    /// An import waiting for the parent's preview (Merge / Replace everything).
+    var pendingImport: PendingImport?
+    var importError: String?
+
+    /// Every way a file arrives (Files, AirDrop, "Open in Hum", drag and drop) ends here. Nothing
+    /// changes until the parent sees the preview, and the preview only shows in parent mode.
+    func requestImport(url: URL) {
+        do {
+            pendingImport = try ImportService(model: self).prepare(url: url)
+        } catch {
+            importError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
 
     /// Last time the child touched a tile. Snapshot refreshes from outside wait for a quiet moment.
     @ObservationIgnored private var lastTouch = Date.distantPast
     @ObservationIgnored private var pendingRefresh: Task<Void, Never>?
     /// Decoded images, keyed by tile ID + byte count, so redraws don't decode again.
     @ObservationIgnored private var imageCache: [String: CGImage] = [:]
+    #if os(iOS)
+    @ObservationIgnored private let haptic = UIImpactFeedbackGenerator(style: .light)
+    #endif
 
     init(container: ModelContainer, settings: DeviceSettings = DeviceSettings()) {
         self.container = container
         self.settings = settings
         self.speech = SpeechService(voice: nil)
+        self.needsFirstRun = !settings.hasCompletedSetup
         applySpeechSettings()
     }
 
@@ -75,13 +109,27 @@ final class AppModel {
 
     func launch() {
         speech.start()
-        do {
-            if try context.fetchCount(FetchDescriptor<Board>()) == 0 {
-                try loadStarterBoard()
-            }
-        } catch {
-            print("Hum: launch fetch failed: \(error)")
+        if !needsFirstRun, ((try? context.fetchCount(FetchDescriptor<Board>())) ?? 0) == 0 {
+            // Every board was deleted outside first run: never leave the child with nothing.
+            try? loadStarterBoard()
         }
+        goHome()
+    }
+
+    /// Finishes first-run setup with the parent's choice.
+    enum StartChoice { case starter, empty(rows: Int, columns: Int) }
+
+    func finishFirstRun(_ choice: StartChoice) {
+        switch choice {
+        case .starter:
+            try? loadStarterBoard()
+        case .empty(let rows, let columns):
+            if ((try? context.fetchCount(FetchDescriptor<Board>())) ?? 0) == 0 {
+                store.createBoard(name: "Home", rows: rows, columns: columns)
+            }
+        }
+        settings.hasCompletedSetup = true
+        needsFirstRun = false
         goHome()
     }
 
@@ -89,7 +137,8 @@ final class AppModel {
     func loadStarterBoard() throws {
         guard let url = Bundle.main.url(forResource: "starter.hum", withExtension: "json") else { return }
         let loaded = try HumConfigLoader.load(try Data(contentsOf: url))
-        let plan = MergePlanner.plan(existing: HumDocument(), incoming: loaded.document, mode: .merge)
+        let existing = ConfigBridge.export(boards: store.boards()).document
+        let plan = MergePlanner.plan(existing: existing, incoming: loaded.document, mode: .merge)
         try ConfigBridge.apply(plan, media: loaded.media, in: context)
         if let s = loaded.document.settings { settings.apply(s) }
         applySpeechSettings()
@@ -125,6 +174,9 @@ final class AppModel {
     func tap(_ cell: BoardSnapshot.Cell, tapTime: UInt64) {
         lastTouch = .now
         speech.speak(cell.spokenText, recordingID: cell.hasRecording ? recordingKey(cell.id) : nil, tapTime: tapTime)
+        #if os(iOS)
+        if settings.haptics { haptic.impactOccurred(intensity: 0.5) }
+        #endif
         if let link = cell.linkedBoardID, cell.linkedBoardExists {
             show(boardID: link)
         }

@@ -23,6 +23,13 @@ struct ChildBoardView: View {
             }
         }
         .background(Theme.background)
+        #if os(iOS)
+        .overlay {
+            if model.settings.editGate == .twoFingerTripleTap {
+                TwoFingerTripleTap { model.mode = .parent }
+            }
+        }
+        #endif
     }
 
     private var topBar: some View {
@@ -36,7 +43,12 @@ struct ChildBoardView: View {
                     .accessibilityAddTraits(.isHeader)
             }
             Spacer()
-            EditGateButton { model.mode = .parent }
+            if model.settings.editGate == .holdLock {
+                EditGateButton { model.mode = .parent }
+            } else {
+                // Keep the corner's size stable so nothing shifts when the gate type changes.
+                Color.clear.frame(width: 52, height: 52)
+            }
         }
         .padding(.horizontal, Theme.gridPadding)
         .frame(height: Theme.topBarHeight)

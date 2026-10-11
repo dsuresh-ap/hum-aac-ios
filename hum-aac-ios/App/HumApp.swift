@@ -4,6 +4,7 @@
 import SwiftUI
 import HumConfig
 import SwiftData
+import UniformTypeIdentifiers
 
 @main
 struct HumApp: App {
@@ -48,15 +49,47 @@ struct HumApp: App {
 
 struct RootView: View {
     @Environment(AppModel.self) private var model
+    @State private var showFirstRunImporter = false
 
     var body: some View {
+        @Bindable var model = model
         Group {
-            switch model.mode {
-            case .child: ChildBoardView()
-            case .parent: ParentHomeView()
+            if model.needsFirstRun {
+                FirstRunView { showFirstRunImporter = true }
+            } else {
+                switch model.mode {
+                case .child: ChildBoardView()
+                case .parent: ParentEditorView()
+                }
             }
         }
         .preferredColorScheme(colorScheme)
+        // "Open in Hum", AirDrop and Finder double-click.
+        .onOpenURL { url in if url.isFileURL { model.requestImport(url: url) } }
+        // The preview only appears in parent mode. A file that arrives while the child is using
+        // Hum waits until a parent opens grown-up settings.
+        .sheet(item: Binding(
+            get: { model.mode == .parent || showFirstRunImporter ? model.pendingImport : nil },
+            set: { if $0 == nil { model.pendingImport = nil } })) { pending in
+            ImportPreviewSheet(pending: pending)
+        }
+        .fileImporter(isPresented: $showFirstRunImporter, allowedContentTypes: [.humPackage, .json, .zip]) { result in
+            if case .success(let url) = result { model.requestImport(url: url) }
+        }
+        .alert("This file couldn't be imported", isPresented: Binding(
+            get: { model.mode == .parent && model.importError != nil },
+            set: { if !$0 { model.importError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(model.importError ?? "")
+        }
+        #if os(macOS)
+        .dropDestination(for: URL.self) { urls, _ in
+            guard model.mode == .parent, let url = urls.first else { return false }
+            model.requestImport(url: url)
+            return true
+        }
+        #endif
     }
 
     private var colorScheme: ColorScheme? {
