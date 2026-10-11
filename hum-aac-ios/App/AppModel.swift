@@ -56,6 +56,7 @@ final class AppModel {
     var context: ModelContext { container.mainContext }
     let settings: DeviceSettings
     let speech: SpeechService
+    let history: SpeechHistory
 
     private(set) var snapshot: BoardSnapshot?
     private(set) var currentBoardID: UUID?
@@ -123,9 +124,10 @@ final class AppModel {
     @ObservationIgnored private let haptic = UIImpactFeedbackGenerator(style: .light)
     #endif
 
-    init(container: ModelContainer, settings: DeviceSettings = DeviceSettings()) {
+    init(container: ModelContainer, settings: DeviceSettings = DeviceSettings(), history: SpeechHistory = SpeechHistory()) {
         self.container = container
         self.settings = settings
+        self.history = history
         self.speech = SpeechService(voice: nil)
         self.needsFirstRun = !settings.hasCompletedSetup
         applySpeechSettings()
@@ -183,10 +185,39 @@ final class AppModel {
 
     // MARK: Navigation
 
-    func goHome() {
+    /// Boards the child opened on the way to the current one, for the Back button. Home clears it.
+    private(set) var boardPath: [UUID] = []
+    var canGoBack: Bool { !boardPath.isEmpty }
+
+    var homeBoardID: UUID? {
         let boards = (try? context.fetch(FetchDescriptor<Board>())) ?? []
-        let home = boards.first(where: \.isHome) ?? boards.sorted { $0.createdAt < $1.createdAt }.first
-        show(boardID: home?.id)
+        return (boards.first(where: \.isHome) ?? boards.sorted { $0.createdAt < $1.createdAt }.first)?.id
+    }
+
+    func goHome() {
+        boardPath = []
+        show(boardID: homeBoardID)
+    }
+
+    /// Opens a folder's board, remembering where we came from.
+    func open(boardID: UUID) {
+        guard boardID != currentBoardID else { return }
+        if let current = currentBoardID {
+            // Opening a board that is already on the path (a loop of links) goes back to it instead
+            // of growing the path forever.
+            if let index = boardPath.firstIndex(of: boardID) {
+                boardPath.removeSubrange(index...)
+            } else {
+                boardPath.append(current)
+            }
+        }
+        if boardID == homeBoardID { boardPath = [] }
+        show(boardID: boardID)
+    }
+
+    func goBack() {
+        guard let previous = boardPath.popLast() else { return goHome() }
+        show(boardID: previous)
     }
 
     func show(boardID: UUID?) {
@@ -199,13 +230,19 @@ final class AppModel {
     /// Called from the touch handler. Sound first, everything else after.
     func tap(_ cell: BoardSnapshot.Cell, tapTime: UInt64) {
         lastTouch = .now
-        speech.speak(cell.spokenText, recordingID: cell.recordingKey, tapTime: tapTime)
-        if settings.sentenceStrip { strip.append(cell) }
+        // A silent folder tile (no phrase, no recording) just opens its board.
+        if !cell.spokenText.isEmpty || cell.recordingKey != nil {
+            speech.speak(cell.spokenText, recordingID: cell.recordingKey, tapTime: tapTime)
+            history.add(label: cell.label, spokenText: cell.spokenText, function: cell.function, colorHex: cell.colorHex)
+            if settings.sentenceStrip { strip.append(cell) }
+        }
         #if os(iOS)
         if settings.haptics { haptic.impactOccurred(intensity: 0.5) }
         #endif
         if let link = cell.linkedBoardID, cell.linkedBoardExists {
-            show(boardID: link)
+            open(boardID: link)
+        } else if settings.returnHomeAfterFolderTap, canGoBack {
+            goHome()
         }
     }
 
@@ -284,7 +321,13 @@ final class AppModel {
     func speakStrip() {
         guard !strip.isEmpty else { return }
         lastTouch = .now
-        speech.speak(strip.map(\.spokenText).joined(separator: " "))
+        speech.speak(strip.map(\.spokenText).filter { !$0.isEmpty }.joined(separator: " "))
+    }
+
+    /// Says a history entry again (tapping it in the history box).
+    func replay(_ entry: SpeechHistory.Entry) {
+        lastTouch = .now
+        speech.speak(entry.spokenText)
     }
 
     func clearStrip() { strip.removeAll() }

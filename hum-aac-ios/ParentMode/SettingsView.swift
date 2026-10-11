@@ -76,6 +76,7 @@ struct SettingsView: View {
                     }
                     .disabled(!settings.showLabels)
                     Toggle("Sentence strip", isOn: $settings.sentenceStrip)
+                    Toggle("History box (what was said recently)", isOn: $settings.showHistory)
                     Picker("Appearance", selection: $settings.appearance) {
                         Text("Match this device").tag(HumSettings.Appearance.system)
                         Text("Light").tag(HumSettings.Appearance.light)
@@ -84,7 +85,23 @@ struct SettingsView: View {
                 } header: {
                     Text("Tiles")
                 } footer: {
-                    Text("The sentence strip collects tapped tiles so your child can play them together. It's for later stages of language, so it's off at first. Each tile still speaks on its own.")
+                    Text("The sentence strip collects tapped tiles so your child can play them together; it's for later stages of language. The history box shows what was said recently, so you can catch up if you missed it. Both are off at first, and each tile always speaks on its own.")
+                }
+
+                Section {
+                    Toggle("Go back to Home after a tile in a folder speaks", isOn: $settings.returnHomeAfterFolderTap)
+                    LabeledContent("Size for new boards") {
+                        HStack(spacing: 8) {
+                            GridPreview(rows: settings.newBoardRows, columns: settings.newBoardColumns).frame(width: 22, height: 22)
+                            Text("\(settings.newBoardRows) × \(settings.newBoardColumns)").monospacedDigit()
+                        }
+                    }
+                    Stepper("Rows: \(settings.newBoardRows)", value: $settings.newBoardRows, in: 1...8)
+                    Stepper("Columns: \(settings.newBoardColumns)", value: $settings.newBoardColumns, in: 1...8)
+                } header: {
+                    Text("Folders and boards")
+                } footer: {
+                    Text("To change how many tiles an existing board shows, open it in edit mode and tap the grid size at the top right.")
                 }
 
                 Section {

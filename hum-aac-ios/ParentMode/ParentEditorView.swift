@@ -18,7 +18,11 @@ struct ParentEditorView: View {
     @State private var showSettings = false
     @State private var showSharing = false
     @State private var showGuidedAccessTip = false
+    @State private var showGridSize = false
+    @State private var showHistory = false
     @State private var errorMessage: String?
+    /// Folders opened while editing, so "Back" returns to the board you came from.
+    @State private var editPath: [UUID] = []
 
     private var board: Board? {
         boards.first { $0.id == model.editingBoardID } ?? boards.first(where: \.isHome) ?? boards.first
@@ -29,8 +33,12 @@ struct ParentEditorView: View {
             Group {
                 if let board {
                     VStack(spacing: 0) {
-                        EditBand(boardName: board.name)
-                        EditGrid(board: board, editor: $editor, errorMessage: $errorMessage)
+                        EditBand(
+                            board: board,
+                            parentName: editPath.last.flatMap { id in boards.first { $0.id == id }?.name },
+                            onBack: goBackInEditor,
+                            onGridSize: { showGridSize = true })
+                        EditGrid(board: board, editor: $editor, errorMessage: $errorMessage, openFolder: openFolderInEditor)
                             .padding(Theme.gridPadding)
                         if !board.unplacedTiles.isEmpty {
                             UnplacedTray(board: board, editor: $editor)
@@ -56,6 +64,8 @@ struct ParentEditorView: View {
             .sheet(isPresented: $showBoards) { BoardManagerView() }
             .sheet(isPresented: $showSettings) { SettingsView() }
             .sheet(isPresented: $showSharing) { SetupSharingView() }
+            .sheet(isPresented: $showGridSize) { if let board { GridSizeSheet(board: board) } }
+            .sheet(isPresented: $showHistory) { HistoryView() }
             .alert("Can't do that", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -74,6 +84,15 @@ struct ParentEditorView: View {
         }
     }
 
+    private func openFolderInEditor(_ id: UUID) {
+        if let current = board?.id { editPath.append(current) }
+        model.editingBoardID = id
+    }
+
+    private func goBackInEditor() {
+        model.editingBoardID = editPath.popLast()
+    }
+
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
@@ -87,7 +106,7 @@ struct ParentEditorView: View {
         }
         ToolbarItemGroup(placement: .primaryAction) {
             Menu {
-                Picker("Board", selection: Binding(get: { board?.id }, set: { model.editingBoardID = $0 })) {
+                Picker("Board", selection: Binding(get: { board?.id }, set: { editPath = []; model.editingBoardID = $0 })) {
                     ForEach(boards) { b in
                         Label(b.name, systemImage: b.isHome ? "house" : "square.grid.3x3").tag(Optional(b.id))
                     }
@@ -106,6 +125,13 @@ struct ParentEditorView: View {
             }
             .disabled(!(model.store.undoManager?.canUndo ?? false))
             .keyboardShortcut("z", modifiers: .command)
+
+            Button {
+                showHistory = true
+            } label: {
+                Label("History", systemImage: "clock.arrow.circlepath")
+            }
+            .accessibilityIdentifier("history")
 
             Button {
                 showSharing = true
@@ -136,6 +162,7 @@ private struct EditGrid: View {
     let board: Board
     @Binding var editor: TileEditorRequest?
     @Binding var errorMessage: String?
+    let openFolder: (UUID) -> Void
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -166,9 +193,18 @@ private struct EditGrid: View {
     private func slot(tile: Tile?, row: Int, column: Int) -> some View {
         Group {
             if let tile {
-                EditTileCard(tile: tile)
+                EditTileCard(tile: tile, onOpenFolder: tile.linkedBoardID.map { id in { openFolder(id) } })
                     .onTapGesture { editor = TileEditorRequest(kind: .edit(tileID: tile.id)) }
                     .draggable(tile.id.uuidString)
+                    .contextMenu {
+                        Button("Edit tile", systemImage: "pencil") { editor = TileEditorRequest(kind: .edit(tileID: tile.id)) }
+                        if let link = tile.linkedBoardID {
+                            Button("Open folder", systemImage: "folder") { openFolder(link) }
+                        }
+                        Button(tile.isHidden ? "Show tile" : "Hide tile", systemImage: tile.isHidden ? "eye" : "eye.slash") {
+                            model.store.setHidden(tile, !tile.isHidden)
+                        }
+                    }
                     .accessibilityHint("Double-tap to edit. Drag to move.")
             } else {
                 Button {
@@ -202,6 +238,8 @@ private struct EditGrid: View {
 /// when it still uses a placeholder emoji instead of a real photo.
 struct EditTileCard: View {
     let tile: Tile
+    /// For folder tiles: opens the folder's board in the editor.
+    var onOpenFolder: (() -> Void)? = nil
 
     var body: some View {
         GeometryReader { geo in
@@ -239,12 +277,27 @@ struct EditTileCard: View {
                 .padding(10)
             }
             .overlay(alignment: .topTrailing) {
-                Image(systemName: tile.linkedBoardID != nil ? "folder.fill" : "pencil")
+                Image(systemName: "pencil")
                     .font(.footnote.weight(.bold))
                     .foregroundStyle(Theme.ink.opacity(0.55))
                     .frame(width: 28, height: 28)
                     .background(.background.opacity(0.6), in: .circle)
                     .padding(8)
+            }
+            .overlay(alignment: .top) {
+                // Top edge, between the badges and the pencil, so it never covers the label.
+                if let onOpenFolder {
+                    Button(action: onOpenFolder) {
+                        Label("Open", systemImage: "folder.fill")
+                            .labelStyle(OpenFolderLabelStyle(compact: geo.size.width < 150))
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .background(.background.opacity(0.75), in: .capsule)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 8)
+                    .accessibilityLabel("Open folder")
+                }
             }
         }
         .contentShape(.rect(cornerRadius: Theme.tileCorner, style: .continuous))
@@ -252,24 +305,48 @@ struct EditTileCard: View {
         .accessibilityLabel("\(tile.label). Says: \(tile.spokenText)\(tile.isHidden ? ". Hidden" : "")")
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("editTile.\(tile.label)")
+        .accessibilityActions {
+            if let onOpenFolder { Button("Open folder", action: onOpenFolder) }
+        }
     }
 }
 
-/// Always-visible reminder that this is the grown-up editing view, with the three things you can do.
+/// Always-visible reminder that this is the grown-up editing view, with Back (inside a folder) and
+/// the grid-size control.
 private struct EditBand: View {
-    let boardName: String
+    let board: Board
+    let parentName: String?
+    let onBack: () -> Void
+    let onGridSize: () -> Void
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Image(systemName: "pencil.and.outline").foregroundStyle(Color.accentColor)
+        HStack(alignment: .center, spacing: 12) {
+            if let parentName {
+                Button(action: onBack) {
+                    Label(parentName, systemImage: "chevron.backward")
+                        .font(.callout.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .accessibilityLabel("Back to \(parentName)")
+            }
             VStack(alignment: .leading, spacing: 2) {
-                Text("Editing \(boardName)")
+                Text("Editing \(board.name)")
                     .font(.system(.title3, design: .serif, weight: .semibold))
                 Text("Tap a tile to change it, tap + to add one, or drag a tile to move it. Your child sees changes when you tap Done.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
+            Button(action: onGridSize) {
+                HStack(spacing: 8) {
+                    GridPreview(rows: board.rows, columns: board.columns).frame(width: 22, height: 22)
+                    Text("\(board.rows) × \(board.columns)").monospacedDigit()
+                }
+                .font(.callout.weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+            .accessibilityLabel("Grid size: \(board.rows) rows, \(board.columns) columns. Change")
+            .accessibilityIdentifier("gridSize")
         }
         .padding(.horizontal, Theme.gridPadding + 4)
         .padding(.vertical, 12)
@@ -313,5 +390,16 @@ enum PlatformImage {
             kCGImageSourceThumbnailMaxPixelSize: maxPixels,
         ]
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+    }
+}
+
+/// Icon and title on roomy tiles, icon only on narrow ones (iPhone).
+private struct OpenFolderLabelStyle: LabelStyle {
+    let compact: Bool
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 4) {
+            configuration.icon
+            if !compact { configuration.title }
+        }
     }
 }

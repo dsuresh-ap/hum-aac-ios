@@ -33,13 +33,19 @@ struct TileEditorSheet: View {
     @State private var showFileImporter = false
     @State private var confirmDelete = false
     @State private var loaded = false
+    /// A folder board made from this sheet; removed again if the parent cancels.
+    @State private var createdFolderID: UUID?
 
     private var existing: Tile? {
         guard case .edit(let id) = request.kind else { return nil }
         return (try? model.context.fetch(FetchDescriptor<Tile>(predicate: #Predicate { $0.id == id })))?.first
     }
 
-    private var canSave: Bool { !spokenText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var hasWords: Bool { !spokenText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    /// A tile needs words to say, except a folder tile, which can just open its board (it needs a label).
+    private var canSave: Bool {
+        hasWords || (linkedBoardID != nil && !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
 
     var body: some View {
         NavigationStack {
@@ -57,7 +63,7 @@ struct TileEditorSheet: View {
                             Image(systemName: "play.circle.fill").font(.title2)
                         }
                         .buttonStyle(.borderless)
-                        .disabled(!canSave)
+                        .disabled(!hasWords)
                         .accessibilityLabel("Play")
                     }
                     if let phrase = GLPRules.discouragedPhrase(in: spokenText) {
@@ -102,13 +108,20 @@ struct TileEditorSheet: View {
                     Text("Used only for color. Every tile always works the same, and \"no\" tiles are as big as all the others.")
                 }
 
-                Section("Opens a board") {
+                Section {
                     Picker("When tapped, also open", selection: $linkedBoardID) {
                         Text("Nothing (just speak)").tag(UUID?.none)
                         ForEach(boards.filter { $0.id != currentBoardID }) { b in
                             Text(b.name).tag(Optional(b.id))
                         }
                     }
+                    if linkedBoardID == nil {
+                        Button("Make this tile a new folder", systemImage: "folder.badge.plus") { makeFolder() }
+                    }
+                } header: {
+                    Text("Folder")
+                } footer: {
+                    Text("A folder tile opens another board, like \"Food\" or \"Outside\". Your child comes back with the Back or Home button. A folder tile can say its phrase first, or just open (leave \"What does this tile say?\" empty).")
                 }
 
                 Section {
@@ -130,7 +143,15 @@ struct TileEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        // Don't leave behind an empty folder board the parent didn't keep.
+                        if let id = createdFolderID, let board = model.store.board(id), (board.tiles ?? []).isEmpty {
+                            try? model.store.delete(board)
+                        }
+                        dismiss()
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .disabled(!canSave)
@@ -251,6 +272,17 @@ struct TileEditorSheet: View {
         }
     }
 
+    /// Creates an empty board named after this tile and links the tile to it.
+    private func makeFolder() {
+        let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = trimmed.isEmpty ? "New folder" : trimmed.prefix(1).uppercased() + trimmed.dropFirst()
+        let board = model.store.createBoard(name: name, rows: model.settings.newBoardRows, columns: model.settings.newBoardColumns)
+        createdFolderID = board.id
+        linkedBoardID = board.id
+        if label.isEmpty { label = name }
+        labelEdited = true
+    }
+
     private var currentBoardID: UUID? {
         switch request.kind {
         case .new(let boardID, _, _): return boardID
@@ -310,7 +342,7 @@ struct TileEditorSheet: View {
         case .edit:
             if let tile = existing { model.store.update(tile, apply) }
         }
-        model.speech.prepare([text])
+        if !text.isEmpty { model.speech.prepare([text]) }
         dismiss()
     }
 }

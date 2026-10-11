@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased: folders, grid size, history
+
+- **Folders and navigation:** a Back button next to Home (fixed slot, so nothing shifts), loop-safe
+  board path, clearer folder mark, silent folder tiles (no phrase, just open the board), "Make this tile a
+  new folder" in the tile editor, Open folder in edit mode (button, context menu and VoiceOver action) with
+  Back to the parent board, and an optional "go back Home after a tile in a folder speaks" setting.
+- **Grid size:** a grid button on the editing band opens presets (2×2 to 6×8), steppers and a live
+  preview. Bigger grids add empty spots. Smaller grids show which tiles won't fit and, only if the parent
+  agrees, move them to the "needs a spot" tray (never deleted, nothing else moves). Default size for new
+  boards in Settings.
+- **History:** an optional history box on the child's screen (recent phrases, tap to say again) and a
+  History screen for parents (grouped by day, repeats collapsed, clear). Stored on this device only.
+- Config format: `spokenText` may be empty for folder tiles that have `linkedBoardID` (41 tests).
+
 ## Unreleased: Milestones 2–5 (in progress)
 
 - **M2 Parent mode:** `BoardStore` (undoable edits; tiles move only by explicit drag; grids grow freely and

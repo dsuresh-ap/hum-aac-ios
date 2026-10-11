@@ -33,6 +33,13 @@ final class DeviceSettings {
     /// Off by default (for NLA Stage 3+).
     var sentenceStrip: Bool { didSet { defaults.set(sentenceStrip, forKey: Keys.sentenceStrip) } }
     var appearance: HumSettings.Appearance { didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) } }
+    /// A small box in child mode showing what was said recently. Off by default (calm screen first).
+    var showHistory: Bool { didSet { defaults.set(showHistory, forKey: Keys.showHistory) } }
+    /// After a tile inside a folder speaks, go back to Home automatically. Off by default.
+    var returnHomeAfterFolderTap: Bool { didSet { defaults.set(returnHomeAfterFolderTap, forKey: Keys.returnHome) } }
+    /// Grid size for new boards.
+    var newBoardRows: Int { didSet { defaults.set(newBoardRows, forKey: Keys.newRows) } }
+    var newBoardColumns: Int { didSet { defaults.set(newBoardColumns, forKey: Keys.newColumns) } }
 
     // Parent
     var editGate: EditGate { didSet { defaults.set(editGate.rawValue, forKey: Keys.editGate) } }
@@ -58,6 +65,10 @@ final class DeviceSettings {
         labelPosition = defaults.string(forKey: Keys.labelPosition).flatMap(HumSettings.LabelPosition.init) ?? .bottom
         sentenceStrip = defaults.bool(forKey: Keys.sentenceStrip)
         appearance = defaults.string(forKey: Keys.appearance).flatMap(HumSettings.Appearance.init) ?? .system
+        showHistory = defaults.bool(forKey: Keys.showHistory)
+        returnHomeAfterFolderTap = defaults.bool(forKey: Keys.returnHome)
+        newBoardRows = defaults.object(forKey: Keys.newRows) as? Int ?? 3
+        newBoardColumns = defaults.object(forKey: Keys.newColumns) as? Int ?? 4
         editGate = defaults.string(forKey: Keys.editGate).flatMap(EditGate.init) ?? .holdLock
         hasCompletedSetup = defaults.bool(forKey: Keys.setupDone)
         hasSeenGuidedAccessTip = defaults.bool(forKey: Keys.guidedAccessTip)
@@ -88,6 +99,8 @@ final class DeviceSettings {
         static let showLabels = "display.showLabels", labelPosition = "display.labelPosition"
         static let sentenceStrip = "display.sentenceStrip", appearance = "display.appearance"
         static let editGate = "parent.editGate", setupDone = "parent.setupDone", guidedAccessTip = "parent.guidedAccessTip"
+        static let showHistory = "display.showHistory", returnHome = "nav.returnHome"
+        static let newRows = "grid.newRows", newColumns = "grid.newColumns"
         static let iCloud = "sync.iCloud", ai = "ai.enabled", aiPCC = "ai.privateCloud"
     }
 }

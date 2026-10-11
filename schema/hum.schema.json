@@ -79,11 +79,9 @@
           "pattern": "\\S"
         },
         "spokenText": {
-          "description": "Exactly what the tile says out loud: one whole gestalt; do not split into words. Keep the child's own phrasing, including scripts from shows or songs (e.g. \"to infinity and beyond!\" may mean \"let's go fast\"). Never a praise, reward or compliance phrase.",
+          "description": "Exactly what the tile says out loud: one whole gestalt; do not split into words. Keep the child's own phrasing, including scripts from shows or songs (e.g. \"to infinity and beyond!\" may mean \"let's go fast\"). Never a praise, reward or compliance phrase. May be empty (\"\") only for a folder tile that has linkedBoardID and should just open its board silently; then label is required.",
           "type": "string",
-          "minLength": 1,
-          "maxLength": 500,
-          "pattern": "\\S"
+          "maxLength": 500
         },
         "row": {
           "description": "Grid row, counting from 0 at the top. Never change this for an existing tile unless the parent asked to move it.",
@@ -108,7 +106,7 @@
           "pattern": "^#[0-9A-Fa-f]{6}$"
         },
         "linkedBoardID": {
-          "description": "Optional id of another board. Tapping the tile speaks its phrase and then opens that board (shown with a small folder mark).",
+          "description": "Optional id of another board: this makes the tile a folder. Tapping it speaks its phrase (if it has one) and opens that board, shown with a folder mark. The child gets back with the Back and Home buttons.",
           "$ref": "#/$defs/uuid"
         },
         "hidden": {

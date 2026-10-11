@@ -12,7 +12,7 @@ struct BoardManagerView: View {
 
     @State private var newBoardName = ""
     @State private var newRows = 3
-    @State private var newColumns = 3
+    @State private var newColumns = 4
     @State private var boardToDelete: Board?
     @State private var errorMessage: String?
 
@@ -62,6 +62,10 @@ struct BoardManagerView: View {
             }
             .formStyle(.grouped)
             .navigationTitle("Boards")
+            .onAppear {
+                newRows = model.settings.newBoardRows
+                newColumns = model.settings.newBoardColumns
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
@@ -90,8 +94,7 @@ private struct BoardDetailView: View {
     @Binding var errorMessage: String?
     @Environment(AppModel.self) private var model
     @State private var name = ""
-    @State private var rows = 3
-    @State private var columns = 3
+    @State private var showGridSize = false
 
     var body: some View {
         Form {
@@ -100,19 +103,18 @@ private struct BoardDetailView: View {
                     .onSubmit { if !name.isEmpty { model.store.rename(board, to: name) } }
             }
             Section {
-                GridSizePicker(rows: $rows, columns: $columns)
-                Button("Apply grid size") {
-                    do { try model.store.resize(board, rows: rows, columns: columns) } catch {
-                        errorMessage = error.localizedDescription
-                        rows = board.rows
-                        columns = board.columns
+                Button {
+                    showGridSize = true
+                } label: {
+                    LabeledContent("Grid size") {
+                        HStack(spacing: 8) {
+                            GridPreview(rows: board.rows, columns: board.columns).frame(width: 22, height: 22)
+                            Text("\(board.rows) × \(board.columns)").monospacedDigit()
+                        }
                     }
                 }
-                .disabled(rows == board.rows && columns == board.columns)
-            } header: {
-                Text("Grid size")
             } footer: {
-                Text("Making the grid bigger never moves tiles. Making it smaller only works when no tile would be cut off.")
+                Text("Show more or fewer tiles. Tiles always keep their places.")
             }
             Section {
                 if board.isHome {
@@ -125,11 +127,8 @@ private struct BoardDetailView: View {
         }
         .formStyle(.grouped)
         .navigationTitle(board.name)
-        .onAppear {
-            name = board.name
-            rows = board.rows
-            columns = board.columns
-        }
+        .sheet(isPresented: $showGridSize) { GridSizeSheet(board: board) }
+        .onAppear { name = board.name }
         .onDisappear { if !name.isEmpty, name != board.name { model.store.rename(board, to: name) } }
     }
 }

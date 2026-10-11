@@ -36,8 +36,13 @@ public enum HumValidator {
                 if !tileIDs.insert(tile.id).inserted {
                     issues.append(.init(.error, "\(tName) has the same ID as another tile. Every tile needs its own ID.", path: tPath + "/id"))
                 }
+                // Folder tiles may be silent (they just open their board), but then they need a label.
                 if tile.spokenText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    issues.append(.init(.error, "\(tName) has no words to say.", path: tPath + "/spokenText"))
+                    if tile.linkedBoardID == nil {
+                        issues.append(.init(.error, "\(tName) has no words to say.", path: tPath + "/spokenText"))
+                    } else if tile.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        issues.append(.init(.error, "A folder tile on \(bName) needs a label or words to say.", path: tPath + "/label"))
+                    }
                 }
                 if !(0..<board.rows).contains(tile.row) || !(0..<board.columns).contains(tile.column) {
                     issues.append(.init(.error, "\(tName) is outside the grid of \(bName) (row \(tile.row), column \(tile.column); the grid is \(board.rows) rows × \(board.columns) columns, counting from 0).", path: tPath))

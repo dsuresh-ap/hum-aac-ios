@@ -172,18 +172,40 @@ final class BoardStore {
         board.placedTiles.filter { ($0.row ?? 0) >= rows || ($0.column ?? 0) >= columns }
     }
 
-    /// Changes the grid size. Growing never moves tiles. Shrinking is refused if it would cut tiles off.
-    func resize(_ board: Board, rows: Int, columns: Int) throws {
+    /// Changes the grid size. Growing never moves tiles.
+    ///
+    /// Shrinking is refused if it would cut tiles off, unless the parent explicitly agreed to
+    /// `moveCutOffToTray`: then those tiles go to the "needs a spot" tray (they are not deleted, and no
+    /// other tile moves). Every tile that stays keeps its exact row and column.
+    func resize(_ board: Board, rows: Int, columns: Int, moveCutOffToTray: Bool = false) throws {
         let rows = min(max(rows, 1), HumValidator.rowRange.upperBound)
         let columns = min(max(columns, 1), HumValidator.columnRange.upperBound)
         guard rows * columns >= 2 else { throw StoreError.tooSmall }
         let cut = tilesCutOff(board, rows: rows, columns: columns)
-        guard cut.isEmpty else { throw StoreError.wouldCutOff(cut.map(\.label)) }
+        guard cut.isEmpty || moveCutOffToTray else { throw StoreError.wouldCutOff(cut.map(\.label)) }
         change("Change Grid Size") {
+            let now = Date.now
+            for tile in cut {
+                tile.row = nil
+                tile.column = nil
+                tile.positionUpdatedAt = now
+            }
             board.rows = rows
             board.columns = columns
-            board.updatedAt = .now
+            board.updatedAt = now
         }
+    }
+
+    /// Makes a new board and turns `tile` into a folder that opens it. One undo step.
+    @discardableResult
+    func makeFolder(named name: String, for tile: Tile, rows: Int, columns: Int) -> Board {
+        let board = Board(name: name, rows: rows, columns: columns, isHome: false)
+        change("New Folder") {
+            context.insert(board)
+            tile.linkedBoardID = board.id
+            tile.updatedAt = .now
+        }
+        return board
     }
 }
 

@@ -63,7 +63,8 @@ and [`CONTRIBUTING.md`](CONTRIBUTING.md) to help.
 Hum stores boards on your device. If a parent turns on iCloud sync, boards go to **your own private
 iCloud database**, which the developers can't see. If a parent turns on the AI helper (Apple
 Intelligence), only the parent's text request and tile text are processed, on device or with Apple's
-Private Cloud Compute. Photos and recordings are never sent to any model. Nothing is collected by us.
+Private Cloud Compute. Photos and recordings are never sent to any model. The optional history of what
+was said stays on the device (never exported or synced) and a parent can clear it. Nothing is collected by us.
 
 ## License
 

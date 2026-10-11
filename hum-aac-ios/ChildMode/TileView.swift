@@ -53,7 +53,7 @@ struct TileView: View {
             .gesture(touchGesture(size: geo.size))
         }
         .accessibilityElement()
-        .accessibilityLabel(cell.spokenText)
+        .accessibilityLabel(cell.spokenText.isEmpty ? "\(cell.label), folder" : cell.spokenText)
         .accessibilityAddTraits(.isButton)
         .accessibilityHint(cell.linkedBoardID != nil ? Text("Opens a board") : Text(""))
         .accessibilityAction { onTap(mach_absolute_time()) }
@@ -118,10 +118,16 @@ struct TileView: View {
 /// Small folder mark in the top-right corner of tiles that open another board.
 private struct FolderCorner: View {
     var body: some View {
-        // A folded corner: this tile also opens a board.
-        Triangle()
-            .fill(Theme.ink.opacity(0.18))
-            .frame(width: 30, height: 30)
+        // A folded corner with a folder mark: this tile opens another board.
+        ZStack(alignment: .topTrailing) {
+            Triangle()
+                .fill(Theme.ink.opacity(0.16))
+                .frame(width: 44, height: 44)
+            Image(systemName: "folder.fill")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Theme.ink.opacity(0.6))
+                .padding(7)
+        }
             .accessibilityHidden(true)
     }
 }

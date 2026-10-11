@@ -17,7 +17,8 @@ struct HumApp: App {
         let defaults = testing ? UserDefaults(suiteName: "HumUITests-\(UUID().uuidString)")! : .standard
         _model = State(initialValue: AppModel(
             container: Persistence.makeContainer(inMemory: testing),
-            settings: DeviceSettings(defaults: defaults)))
+            settings: DeviceSettings(defaults: defaults),
+            history: SpeechHistory(fileURL: testing ? nil : SpeechHistory.defaultURL)))
     }
 
     var body: some Scene {
@@ -30,9 +31,17 @@ struct HumApp: App {
                     // Screenshot/UI-test helpers. Only active with -uiTesting (in-memory store).
                     let args = ProcessInfo.processInfo.arguments
                     if args.contains("-uiTesting") {
-                        if args.contains("-skipFirstRun") { model.finishFirstRun(.starter) }
+                        if args.contains("-skipFirstRun") {
+                            model.settings.hasSeenGuidedAccessTip = true
+                            model.finishFirstRun(.starter)
+                        }
                         if args.contains("-startInParent") { model.mode = .parent }
                         if args.contains("-darkMode") { model.settings.appearance = .dark }
+                        if args.contains("-demoFolder") { UITestFixtures.addFoodFolder(model) }
+                        if args.contains("-demoHistory") { UITestFixtures.addHistory(model) }
+                        if args.contains("-openFolder"), let snack = model.snapshot?.cells.joined().compactMap({ $0 }).first(where: { $0.linkedBoardID != nil }) {
+                            model.tap(snack, tapTime: mach_absolute_time())
+                        }
                     }
                 }
                 #if os(macOS)
@@ -107,5 +116,34 @@ struct RootView: View {
         case .light: .light
         case .dark: .dark
         }
+    }
+}
+
+/// Small, deterministic setups for UI tests and screenshots. Only reachable with -uiTesting.
+@MainActor
+enum UITestFixtures {
+    /// Turns the starter "snack" tile into a folder that opens a Food board.
+    static func addFoodFolder(_ model: AppModel) {
+        guard let home = model.store.boards().first(where: \.isHome),
+              let snack = home.placedTiles.first(where: { $0.label == "snack" }) else { return }
+        let food = model.store.makeFolder(named: "Food", for: snack, rows: 2, columns: 3)
+        let items: [(String, String, String)] = [("crackers", "Let's have crackers!", "🍘"), ("apple", "Let's have apple!", "🍎"),
+                                                 ("juice", "Let's have juice!", "🧃"), ("all done", "All done", "✅")]
+        for (i, item) in items.enumerated() {
+            if let tile = try? model.store.addTile(to: food, row: i / 3, column: i % 3, label: item.0, spokenText: item.1) {
+                tile.symbol = item.2
+                tile.function = item.0 == "all done" ? .protest : .request
+            }
+        }
+        model.goHome()
+    }
+
+    static func addHistory(_ model: AppModel) {
+        let start = Date.now.addingTimeInterval(-300)
+        for (i, phrase) in ["Hi!", "Let's go!", "Uh oh!", "Uh oh!", "Look at that!", "Let's have crackers!"].enumerated() {
+            model.history.add(label: phrase, spokenText: phrase, function: i % 2 == 0 ? .connection : .request, colorHex: nil,
+                              at: start.addingTimeInterval(Double(i) * 30))
+        }
+        model.settings.showHistory = true
     }
 }

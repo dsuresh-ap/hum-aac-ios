@@ -20,6 +20,9 @@ struct ChildBoardView: View {
             if model.settings.sentenceStrip {
                 SentenceStrip()
             }
+            if model.settings.showHistory {
+                HistoryBox()
+            }
             if let snapshot = model.snapshot {
                 BoardGrid(snapshot: snapshot, spacing: sizeClass == .compact ? 8 : Theme.gridSpacing)
                     .padding(padding)
@@ -41,6 +44,8 @@ struct ChildBoardView: View {
     private var topBar: some View {
         HStack {
             HomeButton(isHome: model.snapshot?.isHome ?? true) { model.goHome() }
+            // Back always has its own slot, so nothing shifts when it appears.
+            BackButton(enabled: model.canGoBack) { model.goBack() }
             Spacer()
             if let snapshot = model.snapshot, !snapshot.isHome {
                 Text(snapshot.name)
@@ -97,6 +102,31 @@ struct BoardGrid: View {
                 }
             }
         }
+    }
+}
+
+/// Back to the board this folder was opened from. Hidden (but still holding its place) on Home.
+struct BackButton: View {
+    let enabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "chevron.backward")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(Theme.ink.opacity(0.85))
+                .frame(width: 72, height: 52)
+                .background(Theme.chrome, in: .rect(cornerRadius: 16, style: .continuous))
+                .background(alignment: .bottom) {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.chrome).brightness(-0.06).offset(y: 4)
+                }
+        }
+        .buttonStyle(.plain)
+        .opacity(enabled ? 1 : 0)
+        .disabled(!enabled)
+        .accessibilityHidden(!enabled)
+        .accessibilityLabel("Back")
+        .accessibilityIdentifier("back")
     }
 }
 
@@ -165,5 +195,53 @@ private struct SentenceStrip: View {
         }
         .padding(.horizontal, Theme.gridPadding)
         .padding(.bottom, 4)
+    }
+}
+
+/// What was said recently, newest first. Tapping an entry says it again. Off by default.
+private struct HistoryBox: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let recent = model.history.recent(12)
+        HStack(spacing: 10) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Theme.ink.opacity(0.45))
+                .accessibilityHidden(true)
+            if recent.isEmpty {
+                Text("What your child says will show here.")
+                    .font(.system(.callout, design: .rounded))
+                    .foregroundStyle(Theme.ink.opacity(0.45))
+                Spacer()
+            } else {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(recent.enumerated()), id: \.element.id) { index, entry in
+                            Button {
+                                model.replay(entry)
+                            } label: {
+                                Text(entry.spokenText)
+                                    .font(.system(.body, design: .rounded, weight: index == 0 ? .semibold : .regular))
+                                    .foregroundStyle(Theme.ink.opacity(index == 0 ? 1 : 0.7))
+                                    .lineLimit(1)
+                                    .padding(.horizontal, 12).padding(.vertical, 7)
+                                    .background(Theme.tileColor(function: entry.function, hex: entry.colorHex).opacity(index == 0 ? 1 : 0.6), in: .capsule)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Said: \(entry.spokenText). Say it again.")
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 48)
+        .background(Theme.chrome.opacity(0.6), in: .rect(cornerRadius: 14, style: .continuous))
+        .padding(.horizontal, Theme.gridPadding)
+        .padding(.bottom, 4)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Recently said")
     }
 }

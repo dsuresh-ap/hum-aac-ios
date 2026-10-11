@@ -46,7 +46,8 @@ So in Hum:
           "row": 0, "column": 0,      // counting from 0; one tile per spot
           "function": "request",      // protest | request | connection | comment | regulation | other
           "color": "#CFE6CC",         // optional; otherwise from function
-          "linkedBoardID": "…",       // optional: also opens this board
+          "linkedBoardID": "…",       // optional: makes it a folder that opens this board
+                                      // (a folder may have "spokenText": "" to just open silently)
           "hidden": false,            // optional: hidden tiles keep their (empty) spot
           "image": "media/more.jpg",  // optional, inside a .hum
           "audio": "media/more.m4a",  // optional parent recording (keeps real intonation)
