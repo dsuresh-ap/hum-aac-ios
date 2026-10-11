@@ -21,24 +21,36 @@ struct TileView: View {
 
     var body: some View {
         GeometryReader { geo in
-            content(size: geo.size)
-                .frame(width: geo.size.width, height: geo.size.height)
-                .background(Theme.tileColor(function: cell.function, hex: cell.colorHex), in: .rect(cornerRadius: Theme.tileCorner))
-                .overlay {
-                    RoundedRectangle(cornerRadius: Theme.tileCorner)
-                        .fill(Color.white.opacity(pressed ? 0.35 : 0))
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: Theme.tileCorner)
-                        .strokeBorder(Theme.tileText.opacity(contrast == .increased ? 0.8 : 0.08), lineWidth: contrast == .increased ? 2 : 1)
-                }
-                .overlay(alignment: .topTrailing) {
-                    if cell.linkedBoardID != nil { FolderCorner() }
-                }
-                .clipShape(.rect(cornerRadius: Theme.tileCorner))
-                .scaleEffect(pressed && !reduceMotion ? Theme.pressScale : 1)
-                .contentShape(.rect(cornerRadius: Theme.tileCorner))
-                .gesture(touchGesture(size: geo.size))
+            // Soft physical key: a darker edge underneath, the face on top. Pressing pushes the face
+            // down onto the edge. With Reduce Motion, the face stays put and only the highlight shows.
+            let depth = pressed && !reduceMotion ? 1 : Theme.keyDepth
+            let faceHeight = geo.size.height - Theme.keyDepth
+            ZStack(alignment: .top) {
+                RoundedRectangle(cornerRadius: Theme.tileCorner, style: .continuous)
+                    .fill(Theme.tileEdge(function: cell.function, hex: cell.colorHex))
+                content(size: CGSize(width: geo.size.width, height: faceHeight))
+                    .frame(width: geo.size.width, height: faceHeight)
+                    .background(Theme.tileColor(function: cell.function, hex: cell.colorHex),
+                                in: .rect(cornerRadius: Theme.tileCorner, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: Theme.tileCorner, style: .continuous)
+                            .fill(Color.white.opacity(pressed ? 0.28 : 0))
+                    }
+                    .overlay {
+                        if contrast == .increased {
+                            RoundedRectangle(cornerRadius: Theme.tileCorner, style: .continuous)
+                                .strokeBorder(Theme.ink, lineWidth: 2.5)
+                        }
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        if cell.linkedBoardID != nil { FolderCorner() }
+                    }
+                    .clipShape(.rect(cornerRadius: Theme.tileCorner, style: .continuous))
+                    .offset(y: Theme.keyDepth - depth)
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .contentShape(.rect(cornerRadius: Theme.tileCorner, style: .continuous))
+            .gesture(touchGesture(size: geo.size))
         }
         .accessibilityElement()
         .accessibilityLabel(cell.spokenText)
@@ -79,7 +91,7 @@ struct TileView: View {
     private func label(_ font: Font) -> some View {
         Text(cell.label)
             .font(font)
-            .foregroundStyle(Theme.tileText)
+            .foregroundStyle(Theme.ink)
             .multilineTextAlignment(.center)
             .lineLimit(2)
             .minimumScaleFactor(0.6)
@@ -106,10 +118,21 @@ struct TileView: View {
 /// Small folder mark in the top-right corner of tiles that open another board.
 private struct FolderCorner: View {
     var body: some View {
-        Image(systemName: "folder.fill")
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(Theme.tileText.opacity(0.55))
-            .padding(8)
+        // A folded corner: this tile also opens a board.
+        Triangle()
+            .fill(Theme.ink.opacity(0.18))
+            .frame(width: 30, height: 30)
             .accessibilityHidden(true)
+    }
+}
+
+nonisolated private struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { p in
+            p.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            p.closeSubpath()
+        }
     }
 }

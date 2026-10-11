@@ -10,6 +10,9 @@ import HumConfig
 /// every board, so the child's motor plan never changes.
 struct ChildBoardView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// Tighter margins on iPhone so 4 columns stay close to the 88 pt minimum tile width.
+    private var padding: CGFloat { sizeClass == .compact ? 8 : Theme.gridPadding }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,8 +21,8 @@ struct ChildBoardView: View {
                 SentenceStrip()
             }
             if let snapshot = model.snapshot {
-                BoardGrid(snapshot: snapshot)
-                    .padding(Theme.gridPadding)
+                BoardGrid(snapshot: snapshot, spacing: sizeClass == .compact ? 8 : Theme.gridSpacing)
+                    .padding(padding)
             } else {
                 ContentUnavailableView("No board yet", systemImage: "square.grid.3x3",
                                        description: Text("A parent can add a board in edit mode."))
@@ -41,8 +44,8 @@ struct ChildBoardView: View {
             Spacer()
             if let snapshot = model.snapshot, !snapshot.isHome {
                 Text(snapshot.name)
-                    .font(.system(.title3, design: .rounded, weight: .semibold))
-                    .foregroundStyle(Theme.tileText.opacity(0.7))
+                    .font(.system(.title2, design: .rounded, weight: .semibold))
+                    .foregroundStyle(Theme.ink.opacity(0.6))
                     .accessibilityAddTraits(.isHeader)
             }
             Spacer()
@@ -61,12 +64,12 @@ struct ChildBoardView: View {
 /// Lays out the snapshot in a fixed rows × columns grid. Empty and hidden slots stay empty.
 struct BoardGrid: View {
     let snapshot: BoardSnapshot
+    var spacing: CGFloat = Theme.gridSpacing
     @Environment(AppModel.self) private var model
 
     var body: some View {
         let settings = model.settings
         GeometryReader { geo in
-            let spacing = Theme.gridSpacing
             let width = (geo.size.width - spacing * CGFloat(snapshot.columns - 1)) / CGFloat(snapshot.columns)
             let height = (geo.size.height - spacing * CGFloat(snapshot.rows - 1)) / CGFloat(snapshot.rows)
             VStack(spacing: spacing) {
@@ -103,12 +106,19 @@ struct HomeButton: View {
     let action: () -> Void
 
     var body: some View {
+        // Same "key" language as the tiles, so it reads as something to press. On Home it goes quiet
+        // but never moves or disappears.
         Button(action: action) {
-            Image(systemName: "house.fill")
-                .font(.system(size: 26, weight: .semibold))
-                .foregroundStyle(Theme.tileText.opacity(isHome ? 0.35 : 0.85))
-                .frame(width: 64, height: 52)
-                .background(Theme.chrome, in: .rect(cornerRadius: 14))
+            ZStack(alignment: .top) {
+                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.chrome.opacity(isHome ? 0.5 : 1))
+                    .brightness(-0.06)
+                Image(systemName: "house.fill")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(Theme.ink.opacity(isHome ? 0.3 : 0.85))
+                    .frame(width: 72, height: 52)
+                    .background(Theme.chrome.opacity(isHome ? 0.5 : 1), in: .rect(cornerRadius: 16, style: .continuous))
+            }
+            .frame(width: 72, height: 56)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Home")

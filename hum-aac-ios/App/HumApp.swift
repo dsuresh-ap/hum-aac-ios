@@ -25,7 +25,16 @@ struct HumApp: App {
             RootView()
                 .environment(model)
                 .modelContainer(model.container)
-                .task { model.launch() }
+                .task {
+                    model.launch()
+                    // Screenshot/UI-test helpers. Only active with -uiTesting (in-memory store).
+                    let args = ProcessInfo.processInfo.arguments
+                    if args.contains("-uiTesting") {
+                        if args.contains("-skipFirstRun") { model.finishFirstRun(.starter) }
+                        if args.contains("-startInParent") { model.mode = .parent }
+                        if args.contains("-darkMode") { model.settings.appearance = .dark }
+                    }
+                }
                 #if os(macOS)
                 .frame(minWidth: 480, minHeight: 400)
                 #endif

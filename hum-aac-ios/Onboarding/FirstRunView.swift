@@ -3,6 +3,7 @@
 
 import SwiftUI
 import AVFoundation
+import HumConfig
 
 /// First-run setup, under two minutes: Welcome → Voice → Grid size → Start.
 struct FirstRunView: View {
@@ -39,13 +40,22 @@ struct FirstRunView: View {
     }
 
     private var welcome: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 28) {
             Spacer()
-            Text("👋").font(.system(size: 72)).accessibilityHidden(true)
-            Text("Welcome to Hum")
-                .font(.system(.largeTitle, design: .rounded, weight: .bold))
-            Text("A voice for your child, in whole phrases, the way they learn language.")
-                .font(.title3).multilineTextAlignment(.center).foregroundStyle(.secondary)
+            // The product in one picture: whole phrases on soft keys, "no" as big as "let's go".
+            HStack(spacing: 14) {
+                SampleKey(symbol: "🚀", label: "Let's go!", function: .request)
+                SampleKey(symbol: "🙅", label: "No thank you", function: .protest)
+                SampleKey(symbol: "👀", label: "Look at that!", function: .comment)
+            }
+            .accessibilityHidden(true)
+            VStack(spacing: 12) {
+                Text("Welcome to Hum")
+                    .font(.system(size: 44, weight: .semibold, design: .serif))
+                Text("A voice for your child in whole phrases, the way they learn language.")
+                    .font(.title3).multilineTextAlignment(.center).foregroundStyle(.secondary)
+                    .frame(maxWidth: 440)
+            }
             Spacer()
             primaryButton("Let's set up") { step = .voice }
                 .accessibilityIdentifier("firstRun.start")
@@ -54,7 +64,7 @@ struct FirstRunView: View {
 
     private var voicePicker: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Pick a voice").font(.system(.title, design: .rounded, weight: .bold))
+            Text("Pick a voice").font(.system(.largeTitle, design: .serif, weight: .semibold))
             Text("Tap ▶ to listen. You can change this any time.").foregroundStyle(.secondary)
             ScrollView {
                 VStack(spacing: 10) {
@@ -95,7 +105,7 @@ struct FirstRunView: View {
 
     private var gridPicker: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("How many tiles on a screen?").font(.system(.title, design: .rounded, weight: .bold))
+            Text("How many tiles on a screen?").font(.system(.largeTitle, design: .serif, weight: .semibold))
             Text("Fewer, bigger tiles are easier to start with. Rows × columns.").foregroundStyle(.secondary)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 12)], spacing: 12) {
                 ForEach(Self.gridOptions.indices, id: \.self) { index in
@@ -129,7 +139,7 @@ struct FirstRunView: View {
 
     private var startChoice: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("How do you want to start?").font(.system(.title, design: .rounded, weight: .bold))
+            Text("How do you want to start?").font(.system(.largeTitle, design: .serif, weight: .semibold))
             choice("Starter board", "18 whole phrases like \"Let's go!\", \"All done\" and \"Too loud\". Replace the pictures with real photos later.", "sparkles") {
                 model.finishFirstRun(.starter)
                 growHomeToChosenSize()
@@ -203,6 +213,27 @@ struct FirstRunView: View {
         if newRows != home.rows || newColumns != home.columns {
             try? model.store.resize(home, rows: newRows, columns: newColumns)
             model.rebuildSnapshot()
+        }
+    }
+}
+
+/// A small, static tile for the welcome screen.
+private struct SampleKey: View {
+    let symbol: String
+    let label: String
+    let function: TileFunction
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(symbol).font(.system(size: 44))
+            Text(label).font(.system(.headline, design: .rounded)).foregroundStyle(Theme.ink)
+        }
+        .frame(width: 140, height: 140)
+        .background(Theme.tileColor(function: function, hex: nil), in: .rect(cornerRadius: Theme.tileCorner, style: .continuous))
+        .background(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: Theme.tileCorner, style: .continuous)
+                .fill(Theme.tileEdge(function: function, hex: nil))
+                .offset(y: Theme.keyDepth)
         }
     }
 }

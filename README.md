@@ -7,7 +7,11 @@ Hum is an Augmentative and Alternative Communication (AAC) app for autistic chil
 say "let's get out of here!" (from a movie) to mean "I want to leave". Most AAC apps are built around
 single core words. Hum is built around whole phrases: **one tile = one whole gestalt**.
 
-> Status: early development (milestone 1 of 6). Not on the App Store yet.
+> Status: early development. Not on the App Store yet.
+
+| Child's board (iPad) | Grown-up editing | Dark mode (iPhone) |
+|---|---|---|
+| <img src="docs/screenshots/ipad-child.png" width="260"> | <img src="docs/screenshots/ipad-parent-editor.png" width="260"> | <img src="docs/screenshots/iphone-child-dark.png" width="180"> |
 
 ## Promises
 
