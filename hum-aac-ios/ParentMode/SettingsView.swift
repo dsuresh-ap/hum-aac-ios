@@ -16,6 +16,34 @@ struct SettingsView: View {
         @Bindable var settings = model.settings
         NavigationStack {
             Form {
+                if VoiceCatalog.onlyCompactVoicesInstalled {
+                    Section {
+                        NaturalVoicesCard()
+                    }
+                }
+
+                Section {
+                    Picker("Style", selection: Binding(
+                        get: { VoiceStyle.matching(rate: settings.rate, pitch: settings.pitch) },
+                        set: { style in
+                            if let v = style.values {
+                                settings.rate = v.rate
+                                settings.pitch = v.pitch
+                                voiceChanged()
+                                model.speech.speak("Let's go to the park!")
+                            }
+                        })) {
+                        ForEach(VoiceStyle.allCases.filter { $0 != .custom || VoiceStyle.matching(rate: settings.rate, pitch: settings.pitch) == .custom }, id: \.self) {
+                            Text($0.title).tag($0)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("How it sounds")
+                } footer: {
+                    Text("“Younger” makes any voice higher and a little slower. Apple doesn't include children's voices; for a real child's voice, ask an older sibling or cousin to record tiles (edit a tile → Say it in your own voice).")
+                }
+
                 Section {
                     ForEach(voices, id: \.identifier) { voice in
                         VoiceRow(voice: voice, isSelected: voice.identifier == currentVoiceID) {
@@ -30,10 +58,10 @@ struct SettingsView: View {
                 } header: {
                     Text("Voice")
                 } footer: {
-                    Text("For more natural voices, download an Enhanced or Premium voice in Settings → Accessibility → Spoken Content → Voices, then come back here.")
+                    Text("Best voices are listed first. Voices from voice apps you install on this device show up here too.")
                 }
 
-                Section("How it sounds") {
+                Section("Fine-tune") {
                     LabeledContent("Speed") {
                         Slider(value: $settings.rate, in: 0.2...0.8, onEditingChanged: { if !$0 { voiceChanged() } })
                     }
@@ -138,10 +166,7 @@ struct SettingsView: View {
 
     /// Voices for the device's language, best quality first.
     private func loadVoices() {
-        let language = AVSpeechSynthesisVoice.currentLanguageCode().prefix(2)
-        voices = AVSpeechSynthesisVoice.speechVoices()
-            .filter { $0.language.hasPrefix(String(language)) && !$0.voiceTraits.contains(.isNoveltyVoice) }
-            .sorted { ($0.quality.rawValue, $0.name) > ($1.quality.rawValue, $1.name) }
+        voices = VoiceCatalog.voices()
     }
 
     private func voiceChanged() {
@@ -205,12 +230,30 @@ private struct VoiceRow: View {
         }
     }
 
-    private var qualityName: String {
-        if voice.voiceTraits.contains(.isPersonalVoice) { return "Personal Voice" }
-        switch voice.quality {
-        case .premium: return "Premium"
-        case .enhanced: return "Enhanced"
-        default: return "Standard"
+    private var qualityName: String { VoiceCatalog.qualityName(voice) }
+}
+
+/// Shown while only robotic "compact" voices are installed: the one-time steps to get natural ones.
+struct NaturalVoicesCard: View {
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Get a more natural voice", systemImage: "waveform.badge.plus")
+                .font(.headline)
+            Text("This device only has the basic voices, which can sound robotic. Apple's natural voices are free; download one once and Hum switches to it automatically.")
+                .font(.callout)
+            #if os(macOS)
+            Text("System Settings → Accessibility → Read & Speak (Spoken Content on older Macs) → System voice → Manage Voices… → pick a voice marked Premium or Enhanced, such as Zoe, Ava or Evan.")
+                .font(.callout).foregroundStyle(.secondary)
+            Button("Open Accessibility settings") {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.Accessibility-Settings.extension") { openURL(url) }
+            }
+            #else
+            Text("Settings → Accessibility → Read & Speak (Spoken Content on older versions) → Voices → English → pick a voice marked Premium or Enhanced, such as Zoe, Ava or Evan, and tap download. Use Wi-Fi: premium voices are large.")
+                .font(.callout).foregroundStyle(.secondary)
+            #endif
         }
+        .padding(.vertical, 4)
     }
 }

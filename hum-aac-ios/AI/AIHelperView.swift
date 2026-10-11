@@ -34,6 +34,7 @@ struct AIHelperView: View {
                         if settings.aiUsePrivateCloud {
                             Text("This sends your text request to Apple's Private Cloud Compute. Apple does not store it.")
                                 .font(.footnote).foregroundStyle(.secondary)
+                            quotaStatus
                         }
                     }
                 } footer: {
@@ -102,6 +103,24 @@ struct AIHelperView: View {
         #endif
     }
 
+    /// Today's Private Cloud Compute allowance, shown before it runs out rather than as a surprise.
+    @ViewBuilder
+    private var quotaStatus: some View {
+        if let quota = AIHelper.quotaInfo(), quota.level != .fine {
+            VStack(alignment: .leading, spacing: 6) {
+                Label(quota.level == .reached
+                      ? "Today's Private Cloud Compute requests are used up\(quota.resetDate.map { ". They refresh \($0.formatted(.relative(presentation: .named)))" } ?? ""). \"On this device\" still works."
+                      : "You're close to today's Private Cloud Compute limit.",
+                      systemImage: quota.level == .reached ? "gauge.with.dots.needle.100percent" : "gauge.with.dots.needle.67percent")
+                    .font(.footnote)
+                if quota.canShowOptions {
+                    Button("Show options") { AIHelper.showQuotaOptions() }
+                        .font(.footnote)
+                }
+            }
+        }
+    }
+
     private var mode: AIHelper.Mode { model.settings.aiUsePrivateCloud ? .privateCloud : .onDevice }
 
     private var inputIsEmpty: Bool {
@@ -119,8 +138,11 @@ struct AIHelperView: View {
                        context: contextText)
         do {
             proposal = try await AIHelper.propose(task, mode: mode, existing: existing)
+        } catch let error as AIHelper.AIError {
+            if case .quotaReached = error { model.settings.aiUsePrivateCloud = false }  // switch to on-device for next time
+            errorMessage = error.errorDescription
         } catch {
-            errorMessage = (error as? LocalizedError)?.errorDescription ?? "Please try again, or try a shorter request."
+            errorMessage = AIHelper.AIError.other.errorDescription
         }
     }
 

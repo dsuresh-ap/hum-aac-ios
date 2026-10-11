@@ -35,6 +35,14 @@ enum AIHelper {
         var parentPhrases: [String]
     }
 
+    /// Private Cloud Compute daily allowance, for the parent-facing status line.
+    struct QuotaInfo: Equatable {
+        enum Level: Equatable { case fine, approaching, reached }
+        var level: Level
+        var resetDate: Date?
+        var canShowOptions: Bool
+    }
+
     static let instructions = """
         You help a parent set up Hum, an AAC app for an autistic child who is a Gestalt Language \
         Processor (GLP). GLP children communicate with whole memorized phrases ("gestalts"), often from \
@@ -103,17 +111,29 @@ enum AIHelper {
                 """
         }
         let prompt = request + "\n\nTiles already on the boards (don't repeat them):\n" + boardsSummary(existing)
+        let shortPrompt = request + "\n\nSome tiles already on the boards (don't repeat them):\n" + boardsSummary(existing, limit: 30)
 
         #if canImport(FoundationModels)
         if #available(iOS 26.0, macOS 26.0, *) {
-            let raw = try await generate(prompt: prompt, mode: mode)
+            let result: (tiles: [AITileSuggestion], usedOnDeviceFallback: Bool)
+            do {
+                result = try await generate(prompt: prompt, mode: mode)
+            } catch AIError.contextTooLong {
+                // Big setups can overflow the on-device model's context: retry with fewer existing tiles.
+                result = try await generate(prompt: shortPrompt, mode: mode)
+            }
+            let raw = result.tiles
             let proposed = raw.map {
                 ProposedTile(label: $0.label, spokenText: $0.spokenText,
                              function: TileFunction(rawValue: $0.function.lowercased()),
                              boardName: $0.boardName?.isEmpty == true ? nil : $0.boardName)
             }
             let checked = ProposalChecker.check(proposed, parentPhrases: parentPhrases, existing: existing)
-            return Proposal(tiles: checked.tiles, notes: checked.notes, parentPhrases: parentPhrases)
+            var notes = checked.notes
+            if result.usedOnDeviceFallback {
+                notes.insert("Private Cloud Compute couldn't be reached, so these suggestions came from the model on this device.", at: 0)
+            }
+            return Proposal(tiles: checked.tiles, notes: notes, parentPhrases: parentPhrases)
         }
         #endif
         throw AIError.unavailable
@@ -143,9 +163,61 @@ enum AIHelper {
         }.filter { $0.contains(" ") || $0.count > 3 }
     }
 
-    enum AIError: LocalizedError {
+    enum AIError: LocalizedError, Equatable {
         case unavailable
-        var errorDescription: String? { "The AI helper isn't available on this device right now." }
+        case stillDownloading
+        case contextTooLong
+        case cantHelpWithThat
+        case unsupportedLanguage
+        case busy
+        case quotaReached(resetDate: Date?)
+        case cloudUnreachable
+        case other
+
+        var errorDescription: String? {
+            switch self {
+            case .unavailable: return "The AI helper isn't available on this device right now."
+            case .stillDownloading: return "Apple Intelligence is still downloading on this device. Try again a little later."
+            case .contextTooLong: return "That request is too long for the helper. Try a shorter description or fewer phrases at once."
+            case .cantHelpWithThat: return "The helper couldn't make suggestions for that. Try describing what your child says or loves in a different way."
+            case .unsupportedLanguage: return "The helper doesn't support this language yet."
+            case .busy: return "The helper is busy. Try again in a moment."
+            case .quotaReached(let date):
+                if let date { return "You've used today's Private Cloud Compute requests. They refresh \(date.formatted(.relative(presentation: .named))). You can switch to \"On this device\" now." }
+                return "You've used today's Private Cloud Compute requests. You can switch to \"On this device\" now."
+            case .cloudUnreachable: return "Private Cloud Compute couldn't be reached, and the model on this device isn't available either. Check your connection and try again."
+            case .other: return "Something went wrong. Please try again, or try a shorter request."
+            }
+        }
+    }
+
+    // MARK: Quota (Private Cloud Compute only)
+
+    @MainActor
+    static func quotaInfo() -> QuotaInfo? {
+        #if canImport(FoundationModels) && compiler(>=6.4)
+        if #available(iOS 27.0, macOS 27.0, *) {
+            let usage = PrivateCloudComputeLanguageModel().quotaUsage
+            let level: QuotaInfo.Level
+            switch usage.status {
+            case .limitReached: level = .reached
+            case .belowLimit(let info): level = info.isApproachingLimit ? .approaching : .fine
+            @unknown default: level = .fine
+            }
+            return QuotaInfo(level: level, resetDate: usage.resetDate, canShowOptions: usage.limitIncreaseSuggestion != nil)
+        }
+        #endif
+        return nil
+    }
+
+    /// Shows Apple's own options for more Private Cloud Compute requests (iCloud+). Hum sells nothing.
+    @MainActor
+    static func showQuotaOptions() {
+        #if canImport(FoundationModels) && compiler(>=6.4)
+        if #available(iOS 27.0, macOS 27.0, *) {
+            PrivateCloudComputeLanguageModel().quotaUsage.limitIncreaseSuggestion?.show()
+        }
+        #endif
     }
 }
 
@@ -171,21 +243,51 @@ struct AITileProposal {
 }
 
 extension AIHelper {
+    /// Runs the request. Private Cloud Compute falls back to the on-device model when the network or the
+    /// service is unavailable; a used-up daily quota is reported to the parent instead.
     @available(iOS 26.0, macOS 26.0, *)
     @MainActor
-    static func generate(prompt: String, mode: Mode) async throws -> [AITileSuggestion] {
-        let session: LanguageModelSession
+    static func generate(prompt: String, mode: Mode) async throws -> (tiles: [AITileSuggestion], usedOnDeviceFallback: Bool) {
         #if compiler(>=6.4)
         if mode == .privateCloud, #available(iOS 27.0, macOS 27.0, *) {
-            session = LanguageModelSession(model: PrivateCloudComputeLanguageModel(), instructions: instructions)
-        } else {
-            session = LanguageModelSession(model: SystemLanguageModel.default, instructions: instructions)
+            do {
+                let session = LanguageModelSession(model: PrivateCloudComputeLanguageModel(), instructions: instructions)
+                let response = try await session.respond(to: prompt, generating: AITileProposal.self)
+                return (response.content.tiles, false)
+            } catch let error as PrivateCloudComputeLanguageModel.Error {
+                switch error {
+                case .quotaLimitReached(let info):
+                    throw AIError.quotaReached(resetDate: info.resetDate)
+                case .networkFailure, .serviceUnavailable:
+                    guard case .available = availability(mode: .onDevice) else { throw AIError.cloudUnreachable }
+                    return (try await onDevice(prompt), true)
+                @unknown default:
+                    // Any new cloud failure: still try on-device rather than leaving the parent stuck.
+                    guard case .available = availability(mode: .onDevice) else { throw AIError.other }
+                    return (try await onDevice(prompt), true)
+                }
+            }
         }
-        #else
-        session = LanguageModelSession(model: SystemLanguageModel.default, instructions: instructions)
         #endif
-        let response = try await session.respond(to: prompt, generating: AITileProposal.self)
-        return response.content.tiles
+        return (try await onDevice(prompt), false)
+    }
+
+    @available(iOS 26.0, macOS 26.0, *)
+    @MainActor
+    private static func onDevice(_ prompt: String) async throws -> [AITileSuggestion] {
+        let session = LanguageModelSession(model: SystemLanguageModel.default, instructions: instructions)
+        do {
+            return try await session.respond(to: prompt, generating: AITileProposal.self).content.tiles
+        } catch let error as LanguageModelSession.GenerationError {
+            switch error {
+            case .exceededContextWindowSize: throw AIError.contextTooLong
+            case .assetsUnavailable: throw AIError.stillDownloading
+            case .guardrailViolation, .refusal, .decodingFailure: throw AIError.cantHelpWithThat
+            case .unsupportedLanguageOrLocale: throw AIError.unsupportedLanguage
+            case .rateLimited, .concurrentRequests: throw AIError.busy
+            default: throw AIError.other
+            }
+        }
     }
 }
 #endif

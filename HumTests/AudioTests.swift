@@ -3,6 +3,7 @@
 
 import Foundation
 import Testing
+import AVFoundation
 @testable import Hum
 
 /// Drives the real-time sampler offline, buffer by buffer, exactly as the audio thread would.
@@ -167,5 +168,29 @@ struct SpeechCacheTests {
         #expect(engine.restartCount == 5)
         engine.pause()
         engine.start()
+    }
+}
+
+@Suite("Voices")
+struct VoiceTests {
+    @Test func stylePresetsRoundTrip() {
+        for style in VoiceStyle.allCases where style != .custom {
+            let v = style.values!
+            #expect(VoiceStyle.matching(rate: v.rate, pitch: v.pitch) == style)
+        }
+        #expect(VoiceStyle.matching(rate: 0.61, pitch: 1.7) == .custom)
+    }
+
+    @Test func youngerIsHigherAndSlower() {
+        let natural = VoiceStyle.natural.values!, younger = VoiceStyle.younger.values!
+        #expect(younger.pitch > natural.pitch)
+        #expect(younger.rate < natural.rate)
+    }
+
+    @Test func catalogNeverOffersNoveltyVoicesAndPutsBestFirst() {
+        let voices = VoiceCatalog.voices()
+        #expect(!voices.contains { $0.voiceTraits.contains(.isNoveltyVoice) })
+        let qualities = voices.map(\.quality.rawValue)
+        #expect(qualities == qualities.sorted(by: >))
     }
 }

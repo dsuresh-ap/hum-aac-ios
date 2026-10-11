@@ -38,9 +38,11 @@ final class SpeechService {
         self.voice = voice ?? VoiceSettings(identifier: SpeechService.defaultVoiceIdentifier(), rate: 0.5, pitch: 1, volume: 1)
     }
 
+    /// The most natural voice installed for the device's language (see `VoiceCatalog`).
     static func defaultVoiceIdentifier() -> String {
-        AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode())?.identifier
-            ?? AVSpeechSynthesisVoice.speechVoices().first?.identifier ?? ""
+        VoiceCatalog.best()?.identifier
+            ?? AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode())?.identifier
+            ?? ""
     }
 
     func start() { engine.start() }

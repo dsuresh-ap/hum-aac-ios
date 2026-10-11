@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased: voices, AI resilience, app icon
+
+- **Voices:** Hum now uses the most natural voice installed (Premium > Enhanced > Standard, Apple's
+  default breaks ties) and switches automatically when a better one is downloaded, including the
+  Premium version of the voice a parent picked. A "Get a more natural voice" card with exact steps shows
+  while only robotic compact voices exist. Style presets: Natural, Younger (higher, a little slower) and
+  Calm. Apple has no children's voices; the app points parents to sibling recordings for a real child's voice.
+- **AI helper:** on-device by default. Private Cloud Compute (when entitled) falls back to on-device when
+  the network or service is down, shows today's quota before it runs out (with Apple's own options), and
+  switches to on-device when the quota is used. Friendly messages for every model error, and an automatic
+  retry with a shorter prompt when a big setup overflows the on-device context.
+- **App icon:** "hum", a gentle wave of five soft keys in the tile colors on Hum's teal. iOS light, dark
+  and tinted variants and a macOS icon, all rendered by `tools/render-icon.swift` so anyone can tweak it.
+
 ## Unreleased: tests and iCloud sync
 
 - **App tests:** `HumTests` (41 Swift Testing tests: motor-plan rules for every edit path and undo,

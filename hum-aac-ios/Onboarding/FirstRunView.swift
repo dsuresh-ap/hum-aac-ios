@@ -66,6 +66,11 @@ struct FirstRunView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Pick a voice").font(.system(.largeTitle, design: .serif, weight: .semibold))
             Text("Tap ▶ to listen. You can change this any time.").foregroundStyle(.secondary)
+            if VoiceCatalog.onlyCompactVoicesInstalled {
+                NaturalVoicesCard()
+                    .padding(14)
+                    .background(Theme.editBand, in: .rect(cornerRadius: 14))
+            }
             ScrollView {
                 VStack(spacing: 10) {
                     ForEach(voices.prefix(4), id: \.identifier) { voice in
@@ -199,10 +204,7 @@ struct FirstRunView: View {
         #else
         (rows, columns) = (4, 5)
         #endif
-        let language = AVSpeechSynthesisVoice.currentLanguageCode().prefix(2)
-        voices = AVSpeechSynthesisVoice.speechVoices()
-            .filter { $0.language.hasPrefix(String(language)) && !$0.voiceTraits.contains(.isNoveltyVoice) }
-            .sorted { ($0.quality.rawValue, $0.name) > ($1.quality.rawValue, $1.name) }
+        voices = VoiceCatalog.voices()
     }
 
     /// The starter board is 5 × 4. If the parent picked a bigger grid, grow Home (growing never moves tiles),

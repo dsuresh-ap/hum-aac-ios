@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import Foundation
+import AVFoundation
 import Observation
 import SwiftData
 import CoreData
@@ -170,6 +171,8 @@ final class AppModel {
     func launch() {
         speech.start()
         observeRemoteChanges()
+        observeVoiceChanges()
+        upgradeVoiceIfBetterInstalled()
         if !needsFirstRun, ((try? context.fetchCount(FetchDescriptor<Board>())) ?? 0) == 0 {
             // Every board was deleted outside first run: never leave the child with nothing.
             try? loadStarterBoard()
@@ -204,6 +207,28 @@ final class AppModel {
         try ConfigBridge.apply(plan, media: loaded.media, in: context)
         if let s = loaded.document.settings { settings.apply(s) }
         applySpeechSettings()
+    }
+
+    @ObservationIgnored private var voicesObserver: NSObjectProtocol?
+
+    /// When a parent downloads a better voice in system Settings, use it right away.
+    private func observeVoiceChanges() {
+        voicesObserver = NotificationCenter.default.addObserver(
+            forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.upgradeVoiceIfBetterInstalled() }
+        }
+    }
+
+    /// "Device default" follows the best installed voice; a chosen voice moves to its Premium/Enhanced
+    /// version of the same name when one appears. Clips are re-rendered for the new voice.
+    func upgradeVoiceIfBetterInstalled() {
+        if let chosen = settings.voiceIdentifier, let better = VoiceCatalog.upgrade(for: chosen) {
+            settings.voiceIdentifier = better.identifier
+        }
+        let before = speech.voice
+        applySpeechSettings()
+        if speech.voice != before { rebuildSnapshot() }
     }
 
     func applySpeechSettings() {
