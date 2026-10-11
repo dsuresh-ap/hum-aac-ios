@@ -1,0 +1,82 @@
+// Copyright 2026 The Hum Authors
+// SPDX-License-Identifier: Apache-2.0
+
+import Foundation
+import CoreGraphics
+#if canImport(UIKit) && canImport(WebKit)
+import UIKit
+import WebKit
+#endif
+
+/// Draws SVG symbols (Mulberry) on iOS, where `UIImage` can't read SVG. macOS doesn't need this:
+/// `NSImage` reads SVG directly (see `ImageProcessing.rasterizeSVG`).
+///
+/// Uses an off-screen WebKit view with JavaScript off, no stored website data, and a content policy
+/// that blocks every outside load, so an SVG can't run code or reach the network.
+@MainActor
+enum SVGRenderer {
+    /// A square picture of the SVG on white, or nil.
+    static func render(_ svg: Data, points: CGFloat = 512) async -> CGImage? {
+        #if canImport(UIKit) && canImport(WebKit)
+        guard let text = String(data: svg, encoding: .utf8), text.contains("<svg") else { return nil }
+        let config = WKWebViewConfiguration()
+        config.websiteDataStore = .nonPersistent()
+        config.defaultWebpagePreferences.allowsContentJavaScript = false
+        let view = WKWebView(frame: CGRect(x: 0, y: 0, width: points, height: points), configuration: config)
+        view.isOpaque = true
+        view.backgroundColor = .white
+        view.scrollView.contentInsetAdjustmentBehavior = .never
+        let html = """
+            <!doctype html><html><head>
+            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:">
+            <meta name="viewport" content="width=\(Int(points)), initial-scale=1">
+            <style>html,body{margin:0;padding:0;background:#fff;width:100%;height:100%;overflow:hidden}
+            svg{display:block;width:100%;height:100%}</style>
+            </head><body>\(text)</body></html>
+            """
+        let loader = Loader()
+        view.navigationDelegate = loader
+        guard await loader.load(html, in: view) else { return nil }
+        let snapshot = WKSnapshotConfiguration()
+        snapshot.rect = view.bounds
+        guard let image = try? await view.takeSnapshot(configuration: snapshot) else { return nil }
+        return image.cgImage
+        #else
+        return nil
+        #endif
+    }
+
+    #if canImport(UIKit) && canImport(WebKit)
+    /// Waits for the page to finish loading (or fail).
+    private final class Loader: NSObject, WKNavigationDelegate {
+        private var continuation: CheckedContinuation<Bool, Never>?
+
+        func load(_ html: String, in view: WKWebView) async -> Bool {
+            await withCheckedContinuation { continuation in
+                self.continuation = continuation
+                view.loadHTMLString(html, baseURL: nil)
+            }
+        }
+
+        private func finish(_ ok: Bool) {
+            continuation?.resume(returning: ok)
+            continuation = nil
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { finish(true) }
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { finish(false) }
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { finish(false) }
+    }
+    #endif
+}
+
+extension ImageProcessing {
+    /// `tileImageData`, plus SVG on iOS (drawn by WebKit). Use this for downloaded symbols.
+    @MainActor
+    static func tileImageDataAllowingSVG(from data: Data) async -> Data? {
+        if let ready = tileImageData(from: data) { return ready }
+        // The snapshot is at screen scale (up to 3×): run it through the normal downscale.
+        guard let image = await SVGRenderer.render(data), let full = jpegData(onWhite(image)) else { return nil }
+        return tileImageData(from: full)
+    }
+}

@@ -236,7 +236,11 @@ AVAudioEngine (started once, kept running while foreground)
 - macOS needs the sandbox **Outgoing Connections (Client)** capability for this; iOS needs nothing.
 - Privacy label: ARASAAC receives a search word that isn't linked to the user or device. Re-check the
   label wording before release.
-- Later: Mulberry (CC BY-SA, via Global Symbols) needs SVG → PNG rendering first.
+- Second set: **Mulberry** (CC BY-SA 4.0) through the Global Symbols API (`globalsymbols.com`,
+  `symbolset=mulberry`). Its pictures are SVG: macOS draws them with `NSImage`; iOS with an off-screen
+  `WKWebView` (JavaScript off, non-persistent data store, CSP `default-src 'none'`), see `SVGRenderer`.
+- Every picture is flattened onto white before JPEG encoding (symbol PNGs are transparent; JPEG would
+  turn the background black).
 
 ## 9. Privacy manifest
 

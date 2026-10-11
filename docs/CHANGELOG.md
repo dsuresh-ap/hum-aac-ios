@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased: second symbol set, duplicate, paste
+
+- **Mulberry symbols** next to ARASAAC in "Find a symbol…" (switch with the segmented control; the choice
+  is remembered). Mulberry's SVG pictures are drawn by `NSImage` on Mac and a locked-down WebKit view on iOS.
+- **Fixed:** transparent symbol pictures (ARASAAC PNGs) would have turned black when saved as JPEG; every
+  picture is now flattened onto white.
+- **Duplicate** in a tile's menu (copy goes to the first empty spot, nothing moves) and **Paste** a picture
+  into the tile editor.
+- `CLAUDE.md`: build and test through the Xcode MCP, on an iOS 27 simulator.
+
 ## Unreleased: easier tiles and folders, pictures, shortcuts
 
 - **Folders are easier.** Every empty spot offers "Tile" and (when roomy, or by right-click / long-press)

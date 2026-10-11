@@ -146,7 +146,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Text(SymbolLibrary.credit).font(.footnote).foregroundStyle(.secondary)
+                    Text(SymbolLibrary.credits).font(.footnote).foregroundStyle(.secondary)
                 } header: {
                     Text("Credits")
                 }

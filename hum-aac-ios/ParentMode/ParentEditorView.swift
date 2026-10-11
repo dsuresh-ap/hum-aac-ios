@@ -321,6 +321,11 @@ private struct EditGrid: View {
                                 }
                             }
                         }
+                        Button("Duplicate", systemImage: "plus.square.on.square") {
+                            if model.store.duplicate(tile)?.row == nil {
+                                errorMessage = "\(board.name) is full, so the copy is waiting below the board for a spot."
+                            }
+                        }
                         Button(tile.isHidden ? "Show tile" : "Hide tile", systemImage: tile.isHidden ? "eye" : "eye.slash") {
                             model.store.setHidden(tile, !tile.isHidden)
                         }

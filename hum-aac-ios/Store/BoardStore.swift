@@ -125,6 +125,28 @@ final class BoardStore {
         return spot != nil
     }
 
+    /// Copies a tile (new ID, same words, picture, recording and color) into the first empty spot of
+    /// its board, or the "needs a spot" tray when the board is full. Nothing else moves.
+    @discardableResult
+    func duplicate(_ tile: Tile) -> Tile? {
+        guard let board = tile.board else { return nil }
+        let spot = firstEmptySpot(on: board)
+        let copy = Tile(label: tile.label, spokenText: tile.spokenText, row: spot?.row, column: spot?.column)
+        change("Duplicate Tile") {
+            context.insert(copy)
+            copy.functionRaw = tile.functionRaw
+            copy.colorHex = tile.colorHex
+            copy.linkedBoardID = tile.linkedBoardID
+            copy.isHidden = tile.isHidden
+            copy.symbol = tile.symbol
+            copy.imageData = tile.imageData
+            copy.audioData = tile.audioData
+            copy.board = board
+            board.updatedAt = .now
+        }
+        return copy
+    }
+
     func setHidden(_ tile: Tile, _ hidden: Bool) {
         change(hidden ? "Hide Tile" : "Show Tile") {
             tile.isHidden = hidden

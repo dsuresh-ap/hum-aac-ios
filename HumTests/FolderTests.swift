@@ -79,6 +79,21 @@ struct FolderTests {
         #expect(folder.name == "Kitchen")
     }
 
+    @Test func duplicateTakesTheFirstEmptySpotAndMovesNothing() throws {
+        let model = makeModel()
+        let before = model.layout(model.home)
+        let original = try #require(model.home.placedTiles.first { $0.label == "snack" })
+        original.audioData = Data([4, 5, 6])
+        let spot = try #require(model.store.firstEmptySpot(on: model.home))
+        let copy = try #require(model.store.duplicate(original))
+        #expect(copy.id != original.id)
+        #expect(copy.spokenText == original.spokenText && copy.audioData == original.audioData)
+        #expect(copy.row == spot.row && copy.column == spot.column)
+        for (key, label) in before { #expect(model.layout(model.home)[key] == label) }
+        model.store.undo()
+        #expect(model.layout(model.home) == before)
+    }
+
     @Test func editorJumpsForgetTheFolderPath() throws {
         let model = makeModel()
         model.mode = .parent

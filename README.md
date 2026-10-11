@@ -19,7 +19,7 @@ single core words. Hum is built around whole phrases: **one tile = one whole ges
 - **Collects nothing.** No analytics, no tracking, no accounts, no developer servers, no third-party
   SDKs. Works fully offline. App Store label: *Data Not Collected*. The only network uses are optional
   and started by a parent: iCloud sync, Apple Private Cloud Compute, and searching the free ARASAAC
-  symbol library (only the search word is sent; the chosen symbol is saved in the tile).
+  and Mulberry symbol libraries (only the search word is sent; the chosen symbol is saved in the tile).
 - **Neurodiversity-affirming and non-behavioral.** No stars, tokens, streaks, "good job!" sounds or
   confetti. A tap speaks, and that's all.
 - **Never gates communication.** No tile is ever locked, timed out or earned. "No", "stop" and

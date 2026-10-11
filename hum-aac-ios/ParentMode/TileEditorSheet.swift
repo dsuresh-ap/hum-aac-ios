@@ -152,7 +152,7 @@ struct TileEditorSheet: View {
             .sheet(isPresented: $showEmojiPicker) {
                 EmojiPickerView(selection: Binding(get: { shownSymbol }, set: { symbol = $0; symbolTouched = true }),
                                 label: label, spokenText: spokenText,
-                                onSymbol: { imageData = ImageProcessing.tileImageData(from: $0) },
+                                onSymbol: { imageData = $0 },
                                 source: pickerSource)
             }
             .modifier(ImagePlaygroundSheet(isPresented: $showImagePlayground, concept: playgroundConcept) { data in
@@ -191,8 +191,8 @@ struct TileEditorSheet: View {
                 }
                 .frame(width: 96, height: 96)
                 .clipShape(.rect(cornerRadius: 14))
-                .dropDestination(for: Data.self) { items, _ in
-                    guard let data = items.first, let processed = ImageProcessing.tileImageData(from: data) else { return false }
+                .dropDestination(for: ImagePayload.self) { items, _ in
+                    guard let data = items.first?.data, let processed = ImageProcessing.tileImageData(from: data) else { return false }
                     imageData = processed
                     return true
                 }
@@ -210,6 +210,13 @@ struct TileEditorSheet: View {
                     #if os(macOS)
                     Button("Choose file…", systemImage: "folder") { showFileImporter = true }
                     #endif
+                    PasteButton(payloadType: ImagePayload.self) { items in
+                        if let data = items.first?.data, let processed = ImageProcessing.tileImageData(from: data) {
+                            imageData = processed
+                        }
+                    }
+                    .labelStyle(.titleAndIcon)
+                    .controlSize(.small)
                     CreateImageButton { showImagePlayground = true }
                     Button("Find a symbol…", systemImage: "square.grid.3x3.square") {
                         pickerSource = .symbols

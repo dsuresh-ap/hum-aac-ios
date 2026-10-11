@@ -15,7 +15,7 @@ struct EmojiPickerView: View {
     @Binding var selection: String
     let label: String
     let spokenText: String
-    /// A chosen symbol's picture; it becomes the tile's image, like a photo.
+    /// A chosen symbol's picture (already a tile-ready JPEG); it becomes the tile's image, like a photo.
     var onSymbol: ((Data) -> Void)? = nil
     @State var source: Source = .emoji
 
@@ -143,17 +143,18 @@ struct EmojiPickerView: View {
     }
 }
 
-/// Searches the online symbol library and shows the results as a grid. Searching is the only thing
+/// Searches the online symbol libraries and shows the results as a grid. Searching is the only thing
 /// that uses the network, and only the search word is sent.
 private struct SymbolSearchView: View {
     let initialQuery: String
     let onPick: (Data) -> Void
 
+    @AppStorage("symbolSource") private var source: SymbolLibrary.Source = .arasaac
     @State private var query = ""
     @State private var results: [SymbolLibrary.Symbol] = []
     @State private var searched = false
     @State private var working = false
-    @State private var downloading: Int?
+    @State private var downloading: String?
     @State private var errorMessage: String?
     @FocusState private var focused: Bool
 
@@ -170,6 +171,11 @@ private struct SymbolSearchView: View {
                     .keyboardShortcut(.defaultAction)
                     .disabled(query.trimmingCharacters(in: .whitespaces).isEmpty || working)
             }
+            Picker("Symbol set", selection: $source) {
+                ForEach(SymbolLibrary.Source.allCases) { Text($0.name).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: source) { Task { await runSearch() } }
             if let errorMessage {
                 Label(errorMessage, systemImage: "wifi.exclamationmark").foregroundStyle(.secondary)
             }
@@ -177,7 +183,7 @@ private struct SymbolSearchView: View {
                 if working && results.isEmpty {
                     ProgressView().frame(maxWidth: .infinity).padding()
                 } else if searched && results.isEmpty && errorMessage == nil {
-                    Text("No symbols for “\(query)”. Try a simpler word, like “drink” instead of “let's have juice”.")
+                    Text("No symbols for “\(query)”. Try a simpler word, like “drink” instead of “let's have juice”, or the other symbol set.")
                         .foregroundStyle(.secondary).padding(.vertical)
                 }
                 LazyVGrid(columns: columns, spacing: 10) {
@@ -186,14 +192,10 @@ private struct SymbolSearchView: View {
                             Task { await pick(symbol) }
                         } label: {
                             VStack(spacing: 4) {
-                                AsyncImage(url: symbol.thumbnailURL) { image in
-                                    image.resizable().scaledToFit()
-                                } placeholder: {
-                                    ProgressView()
-                                }
-                                .frame(width: 88, height: 88)
-                                .overlay { if downloading == symbol.id { ProgressView() } }
-                                Text(symbol.keyword).font(.caption).lineLimit(1)
+                                SymbolThumbnail(symbol: symbol)
+                                    .frame(width: 88, height: 88)
+                                    .overlay { if downloading == symbol.id { ProgressView() } }
+                                Text(symbol.keyword).font(.caption).foregroundStyle(.black).lineLimit(1)
                             }
                             .padding(6)
                             .background(Color.white, in: .rect(cornerRadius: 12))
@@ -205,7 +207,7 @@ private struct SymbolSearchView: View {
                     }
                 }
             }
-            Text("Searching sends only your search word to ARASAAC. The symbol you pick is saved in the tile, so it works offline. \(SymbolLibrary.credit)")
+            Text("Searching sends only your search word to \(source.name). The symbol you pick is saved in the tile, so it works offline. \(source.credit)")
                 .font(.caption2).foregroundStyle(.secondary)
         }
         .padding()
@@ -218,14 +220,15 @@ private struct SymbolSearchView: View {
     }
 
     private func runSearch() async {
+        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         working = true
         errorMessage = nil
         defer { working = false; searched = true }
         do {
-            results = try await SymbolLibrary.search(query)
+            results = try await SymbolLibrary.search(query, in: source)
             // A whole phrase rarely matches: fall back to its most picture-able word.
             if results.isEmpty, query.contains(" "), let word = EmojiSuggester.tokens(query).max(by: { $0.count < $1.count }) {
-                results = try await SymbolLibrary.search(word)
+                results = try await SymbolLibrary.search(word, in: source)
             }
         } catch {
             results = []
@@ -237,9 +240,35 @@ private struct SymbolSearchView: View {
         downloading = symbol.id
         defer { downloading = nil }
         do {
-            onPick(try await SymbolLibrary.download(symbol))
+            let raw = try await SymbolLibrary.download(symbol)
+            guard let picture = await ImageProcessing.tileImageDataAllowingSVG(from: raw) else { throw SymbolLibrary.SearchError.failed }
+            onPick(picture)
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+/// A symbol's preview. Loaded through the same image path as tiles, because Mulberry symbols are SVG.
+private struct SymbolThumbnail: View {
+    let symbol: SymbolLibrary.Symbol
+    @State private var image: CGImage?
+    @State private var failed = false
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(decorative: image, scale: 1).resizable().scaledToFit()
+            } else if failed {
+                Image(systemName: "photo").foregroundStyle(.tertiary)
+            } else {
+                ProgressView()
+            }
+        }
+        .task(id: symbol.id) {
+            guard let data = try? await SymbolLibrary.download(symbol),
+                  let jpeg = await ImageProcessing.tileImageDataAllowingSVG(from: data) else { failed = true; return }
+            image = PlatformImage.thumbnail(jpeg, maxPixels: 200)
         }
     }
 }
