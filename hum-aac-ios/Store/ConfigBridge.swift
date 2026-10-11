@@ -49,8 +49,19 @@ enum ConfigBridge {
     // MARK: Apply (MergePlanner.Plan → SwiftData)
 
     /// Writes a planned import into SwiftData. Media is only set when the package contains it.
+    /// Pictures are resized and flattened like photos added in the app (`normalizedImportImage`).
     @MainActor
     static func apply(_ plan: MergePlanner.Plan, media: [String: Data], in context: ModelContext) throws {
+        // Each file once, even if several tiles use it.
+        var pictures: [String: Data?] = [:]
+        func picture(_ path: String) -> Data? {
+            if let done = pictures[path] { return done }
+            guard let raw = media[path] else { return nil }
+            // SVG that can't be drawn here yet (iOS) is kept as is and drawn right after the import.
+            let ready = ImageProcessing.normalizedImportImage(raw) ?? (ImageProcessing.isSVG(raw) ? raw : nil)
+            pictures[path] = ready
+            return ready
+        }
         let allBoards = try context.fetch(FetchDescriptor<Board>())
         let allTiles = try context.fetch(FetchDescriptor<Tile>())
         // If sync ever produced duplicates, the first one wins; the resolver cleans up later.
@@ -75,7 +86,8 @@ enum ConfigBridge {
             tile.isHidden = humTile.hidden
             tile.symbol = humTile.symbol
             tile.extraJSON = encodeExtra(humTile.extra)
-            if let path = humTile.image, let data = media[path] { tile.imageData = data }
+            // A file that isn't a readable picture never replaces the tile's current one.
+            if let path = humTile.image, let data = picture(path) { tile.imageData = data }
             if let path = humTile.audio, let data = media[path] { tile.audioData = data }
             let newRow = placed ? humTile.row : nil
             let newColumn = placed ? humTile.column : nil

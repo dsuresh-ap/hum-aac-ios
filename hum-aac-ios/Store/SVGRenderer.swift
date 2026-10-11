@@ -18,7 +18,8 @@ enum SVGRenderer {
     /// A square picture of the SVG on white, or nil.
     static func render(_ svg: Data, points: CGFloat = 512) async -> CGImage? {
         #if canImport(UIKit) && canImport(WebKit)
-        guard let text = String(data: svg, encoding: .utf8), text.contains("<svg") else { return nil }
+        guard let raw = String(data: svg, encoding: .utf8), raw.contains("<svg") else { return nil }
+        let text = withViewBox(raw)
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
         config.defaultWebpagePreferences.allowsContentJavaScript = false
@@ -44,6 +45,21 @@ enum SVGRenderer {
         #else
         return nil
         #endif
+    }
+
+    /// An SVG with only `width`/`height` doesn't scale to fill the page; give it a matching `viewBox`.
+    nonisolated static func withViewBox(_ svg: String) -> String {
+        guard let open = svg.range(of: #"<svg\b[^>]*>"#, options: .regularExpression) else { return svg }
+        let tag = String(svg[open])
+        guard !tag.contains("viewBox") else { return svg }
+        func number(_ name: String) -> String? {
+            guard let match = tag.range(of: name + #"\s*=\s*["']\s*([0-9.]+)"#, options: .regularExpression) else { return nil }
+            return String(tag[match]).components(separatedBy: CharacterSet(charactersIn: "\"'")).dropFirst().first?
+                .trimmingCharacters(in: .whitespaces)
+        }
+        guard let width = number("width"), let height = number("height") else { return svg }
+        let fixed = tag.replacingOccurrences(of: "<svg", with: "<svg viewBox=\"0 0 \(width) \(height)\"", options: .anchored)
+        return svg.replacingCharacters(in: open, with: fixed)
     }
 
     #if canImport(UIKit) && canImport(WebKit)

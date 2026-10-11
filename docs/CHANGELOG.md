@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased: imported pictures, pictures that fit
+
+- **Imported pictures are processed like photos added in the app:** resized to 1024 px, flattened onto
+  white, saved as JPEG. Hum's own small JPEGs are kept byte for byte (no quality loss on round trips);
+  files that aren't pictures never replace a tile's picture; SVG works (on iOS it's drawn right after the
+  import). SVGs without a `viewBox` now scale correctly.
+- **Fixed:** big or square pictures (e.g. from Image Playground) spilled outside their tile in edit mode
+  and pushed the label out in child mode. Pictures now fit inside the tile, whole, with the label below.
+- Xcode previews for tile pictures (child and edit mode).
+
 ## Unreleased: second symbol set, duplicate, paste
 
 - **Mulberry symbols** next to ARASAAC in "Find a symbol…" (switch with the segmented control; the choice

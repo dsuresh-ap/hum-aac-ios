@@ -49,7 +49,7 @@ So in Hum:
           "linkedBoardID": "…",       // optional: makes it a folder that opens this board
                                       // (a folder may have "spokenText": "" to just open silently)
           "hidden": false,            // optional: hidden tiles keep their (empty) spot
-          "image": "media/more.jpg",  // optional, inside a .hum
+          "image": "media/more.jpg",  // optional, inside a .hum (JPEG, PNG, HEIC or SVG; resized on import)
           "audio": "media/more.m4a",  // optional parent recording (keeps real intonation)
           "symbol": "🔁"               // optional emoji placeholder
         }

@@ -100,11 +100,13 @@ struct TileView: View {
     @ViewBuilder
     private func picture(size: CGSize) -> some View {
         if let image = cell.image {
+            // Fit, not fill: the whole picture shows (a cropped symbol can lose its meaning), and a
+            // big picture can never push the label out of the tile.
             Image(decorative: image, scale: 1)
                 .resizable()
-                .scaledToFill()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .scaledToFit()
                 .clipShape(.rect(cornerRadius: Theme.tileCorner * 0.6))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let symbol = cell.symbol, !symbol.isEmpty {
             Text(symbol)
                 .font(.system(size: min(size.width, size.height) * 0.42))
@@ -142,3 +144,31 @@ nonisolated private struct Triangle: Shape {
         }
     }
 }
+
+#if DEBUG
+/// A square picture (like Image Playground's) on wide and tall tiles: it must fit, and the label must show.
+#Preview("Pictures fit their tiles") {
+    let picture: CGImage? = {
+        let context = CGContext(data: nil, width: 400, height: 400, bitsPerComponent: 8, bytesPerRow: 0,
+                                space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
+        context?.setFillColor(CGColor(red: 0.9, green: 0.5, blue: 0.2, alpha: 1))
+        context?.fill(CGRect(x: 0, y: 0, width: 400, height: 400))
+        context?.setFillColor(CGColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1))
+        context?.fillEllipse(in: CGRect(x: 60, y: 60, width: 280, height: 280))
+        return context?.makeImage()
+    }()
+    let cell = { (label: String, folder: Bool) in
+        BoardSnapshot.Cell(id: UUID(), label: label, spokenText: "Let's eat!", function: nil, colorHex: nil,
+                           symbol: nil, image: picture, linkedBoardID: folder ? UUID() : nil, linkedBoardExists: folder,
+                           recordingKey: nil)
+    }
+    HStack(spacing: 12) {
+        TileView(cell: cell("Food", true), showLabel: true, labelOnTop: false, speakOnTouchDown: true) { _ in }
+            .frame(width: 260, height: 150)
+        TileView(cell: cell("snack", false), showLabel: true, labelOnTop: false, speakOnTouchDown: true) { _ in }
+            .frame(width: 130, height: 200)
+    }
+    .padding()
+    .background(Theme.background)
+}
+#endif

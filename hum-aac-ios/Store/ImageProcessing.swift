@@ -32,6 +32,28 @@ nonisolated enum ImageProcessing {
         return rasterizeSVG(data).flatMap { jpegData($0) }
     }
 
+    /// For pictures from an imported file. A small, upright JPEG without location data (what Hum itself
+    /// exports) is kept byte for byte, so round trips don't lose quality. Anything else (big photos,
+    /// transparent PNGs, HEIC, SVG on macOS) is processed like a new photo. Nil when it can't be read
+    /// here, e.g. SVG on iOS (see `ImportService.renderImportedSVGs`) or a file that isn't a picture.
+    static func normalizedImportImage(_ data: Data) -> Data? {
+        if let source = CGImageSourceCreateWithData(data as CFData, nil), CGImageSourceGetCount(source) > 0,
+           CGImageSourceGetType(source) as String? == UTType.jpeg.identifier,
+           let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] {
+            let width = properties[kCGImagePropertyPixelWidth] as? Int ?? .max
+            let height = properties[kCGImagePropertyPixelHeight] as? Int ?? .max
+            let orientation = properties[kCGImagePropertyOrientation] as? Int ?? 1
+            if max(width, height) <= maxPixelSize, orientation == 1, properties[kCGImagePropertyGPSDictionary] == nil {
+                return data
+            }
+        }
+        return tileImageData(from: data)
+    }
+
+    static func isSVG(_ data: Data) -> Bool {
+        data.prefix(512).range(of: Data("<svg".utf8)) != nil
+    }
+
     /// JPEG has no transparency: without this, a symbol's see-through background turns black.
     static func onWhite(_ image: CGImage) -> CGImage {
         switch image.alphaInfo {
@@ -43,7 +65,7 @@ nonisolated enum ImageProcessing {
 
     /// Renders SVG data on white, at most `maxPixelSize` on the long edge. Nil if it isn't an image.
     static func rasterizeSVG(_ data: Data) -> CGImage? {
-        guard data.prefix(512).range(of: Data("<svg".utf8)) != nil else { return nil }
+        guard isSVG(data) else { return nil }
         #if canImport(UIKit)
         guard let image = UIImage(data: data), image.size.width > 0, image.size.height > 0 else { return nil }
         let size = image.size

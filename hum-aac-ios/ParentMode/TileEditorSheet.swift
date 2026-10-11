@@ -182,7 +182,9 @@ struct TileEditorSheet: View {
             HStack(alignment: .top, spacing: 16) {
                 Group {
                     if let imageData, let image = PlatformImage.thumbnail(imageData, maxPixels: 300) {
-                        Image(decorative: image, scale: 1).resizable().scaledToFill()
+                        Image(decorative: image, scale: 1).resizable().scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Theme.chrome)
                     } else {
                         Text(shownSymbol.isEmpty ? "📷" : shownSymbol).font(.system(size: 44))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

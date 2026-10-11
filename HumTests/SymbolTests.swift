@@ -59,6 +59,14 @@ struct SymbolTests {
         #expect(await ImageProcessing.tileImageDataAllowingSVG(from: Data("hello".utf8)) == nil)
     }
 
+    @Test func svgWithoutViewBoxGetsOne() {
+        #expect(SVGRenderer.withViewBox(#"<svg xmlns="x" width="40" height="30.5"><g/></svg>"#)
+                == #"<svg viewBox="0 0 40 30.5" xmlns="x" width="40" height="30.5"><g/></svg>"#)
+        let ready = #"<svg viewBox="0 0 10 10" width="5" height="5"/>"#
+        #expect(SVGRenderer.withViewBox(ready) == ready)
+        #expect(SVGRenderer.withViewBox("<svg><g/></svg>") == "<svg><g/></svg>")
+    }
+
     // MARK: Helpers
 
     static func transparentPNG() -> Data? {

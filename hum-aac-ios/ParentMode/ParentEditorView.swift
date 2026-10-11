@@ -412,9 +412,10 @@ struct EditTileCard: View {
             VStack(spacing: 4) {
                 Group {
                     if let data = tile.imageData, let image = PlatformImage.thumbnail(data) {
-                        Image(decorative: image, scale: 1).resizable().scaledToFill()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        // Fit, like child mode: never wider or taller than the tile.
+                        Image(decorative: image, scale: 1).resizable().scaledToFit()
                             .clipShape(.rect(cornerRadius: Theme.tileCorner * 0.6, style: .continuous))
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         Text(tile.symbol ?? "")
                             .font(.system(size: size * 0.36))
@@ -573,3 +574,27 @@ private struct OpenFolderLabelStyle: LabelStyle {
         }
     }
 }
+
+#if DEBUG
+/// Edit-mode cards with a square picture (like Image Playground's): it must stay inside the tile.
+#Preview("Edit cards fit pictures") {
+    let picture: Data? = {
+        let context = CGContext(data: nil, width: 400, height: 400, bitsPerComponent: 8, bytesPerRow: 0,
+                                space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
+        context?.setFillColor(CGColor(red: 0.9, green: 0.5, blue: 0.2, alpha: 1))
+        context?.fill(CGRect(x: 0, y: 0, width: 400, height: 400))
+        return context?.makeImage().flatMap { ImageProcessing.jpegData($0) }
+    }()
+    let folder = Tile(label: "Food", spokenText: "", row: 0, column: 0)
+    folder.imageData = picture
+    folder.linkedBoardID = UUID()
+    let tile = Tile(label: "snack", spokenText: "Let's have a snack", row: 0, column: 1)
+    tile.imageData = picture
+    return HStack(spacing: 12) {
+        EditTileCard(tile: folder, onOpenFolder: {}).frame(width: 260, height: 150)
+        EditTileCard(tile: tile).frame(width: 130, height: 200)
+    }
+    .padding()
+    .background(Theme.background)
+}
+#endif

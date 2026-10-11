@@ -72,6 +72,24 @@ struct ImportService {
         } else {
             model.scheduleSnapshotRefresh()
         }
+        Task { await Self.renderImportedSVGs(model) }
+    }
+
+    /// iOS can only draw SVG pictures (e.g. Mulberry symbols in a hand-made file) asynchronously, with
+    /// WebKit, so imported SVGs are converted to JPEG just after the import. Not an undo step of its own:
+    /// undoing the import removes these tiles anyway.
+    static func renderImportedSVGs(_ model: AppModel) async {
+        let tiles = ((try? model.context.fetch(FetchDescriptor<Tile>())) ?? []).filter { $0.imageData.map(ImageProcessing.isSVG) ?? false }
+        guard !tiles.isEmpty else { return }
+        for tile in tiles {
+            guard let svg = tile.imageData else { continue }
+            let jpeg = await ImageProcessing.tileImageDataAllowingSVG(from: svg)
+            model.context.undoManager?.disableUndoRegistration()
+            tile.imageData = jpeg  // nil if it can't be drawn: no picture beats a broken one
+            model.context.undoManager?.enableUndoRegistration()
+        }
+        try? model.context.save()
+        model.scheduleSnapshotRefresh()
     }
 
     // MARK: Suggested tiles
