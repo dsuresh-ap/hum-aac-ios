@@ -1,20 +1,65 @@
-# Xcode
+# Hum .gitignore
+# This is a public repo: never commit signing secrets, personal settings or build output.
+
+# --- Xcode: per-user state ---
 xcuserdata/
 *.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+# Keep shared schemes and workspace checks (xcshareddata/) tracked.
+
+# --- Xcode: build output ---
 DerivedData/
 build/
+*.hmap
 *.ipa
-*.dSYM.zip
+*.xcarchive
+*.xcresult
 *.dSYM
+*.dSYM.zip
+timeline.xctimeline
+playground.xcworkspace
+*.profraw
 
-# Swift Package Manager
+# --- Swift Package Manager ---
 .build/
 .swiftpm/
-Packages/HumConfig/.build/
 Package.resolved
 
-# macOS
-.DS_Store
+# --- Code signing and secrets (never commit) ---
+*.p8
+*.p12
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+AuthKey_*.p8
+.env
+.env.*
+*.secret
+*.pem
+*.key
 
-# Local tool config
+# --- CI / release tooling output ---
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/
+
+# --- Editors and OS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon[]
+._*
+.Spotlight-V100
+.Trashes
+.vscode/
+.idea/
+*.swp
+*~
+
+# --- Local tool config ---
 .mcp.json
+.claude/settings.local.json
