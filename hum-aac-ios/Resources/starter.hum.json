@@ -1,0 +1,184 @@
+{
+  "boards": [
+    {
+      "columns": 4,
+      "id": "af4376e6-882d-50ba-af8e-44d87b6aa819",
+      "isHome": true,
+      "name": "Home",
+      "rows": 5,
+      "tiles": [
+        {
+          "column": 0,
+          "function": "connection",
+          "id": "53406025-e024-5308-8222-680d514266a7",
+          "label": "hi",
+          "row": 0,
+          "spokenText": "Hi!",
+          "symbol": "🤗"
+        },
+        {
+          "column": 1,
+          "function": "connection",
+          "id": "2ee6bb61-ed79-541b-8a1a-7c1a5315a8f7",
+          "label": "bye-bye",
+          "row": 0,
+          "spokenText": "Bye-bye!",
+          "symbol": "👋"
+        },
+        {
+          "column": 2,
+          "function": "comment",
+          "id": "dc350b7d-caa6-5785-8430-ebd6fd95c681",
+          "label": "look!",
+          "row": 0,
+          "spokenText": "Look at that!",
+          "symbol": "👀"
+        },
+        {
+          "column": 3,
+          "function": "comment",
+          "id": "deeb087f-9cdb-51aa-a414-7a218ba4e0ca",
+          "label": "uh oh",
+          "row": 0,
+          "spokenText": "Uh oh!",
+          "symbol": "😮"
+        },
+        {
+          "column": 0,
+          "function": "comment",
+          "id": "ab236b47-df50-5c43-96e0-1eda0341d00c",
+          "label": "funny",
+          "row": 1,
+          "spokenText": "That's funny!",
+          "symbol": "😂"
+        },
+        {
+          "column": 1,
+          "function": "connection",
+          "id": "49ccd584-749d-5cb4-b4d8-337309d078bd",
+          "label": "again!",
+          "row": 1,
+          "spokenText": "Let's do it again!",
+          "symbol": "🔁"
+        },
+        {
+          "column": 2,
+          "function": "request",
+          "id": "8416c5de-9e8c-5022-8d0f-1fd6d835d3d1",
+          "label": "let's go",
+          "row": 1,
+          "spokenText": "Let's go!",
+          "symbol": "🚀"
+        },
+        {
+          "column": 3,
+          "function": "request",
+          "id": "ec4dccc5-26d7-5a1a-95d4-0db21bf27303",
+          "label": "up",
+          "row": 1,
+          "spokenText": "Up!",
+          "symbol": "⬆️"
+        },
+        {
+          "column": 0,
+          "function": "request",
+          "id": "d2dec5d7-b550-5cae-a7f1-ee7e1075d006",
+          "label": "more",
+          "row": 2,
+          "spokenText": "I want more",
+          "symbol": "➕"
+        },
+        {
+          "column": 1,
+          "function": "request",
+          "id": "ddf06b11-c7a7-5f39-a02b-dba8c4e35750",
+          "label": "snack",
+          "row": 2,
+          "spokenText": "Let's have a snack",
+          "symbol": "🍎"
+        },
+        {
+          "column": 2,
+          "function": "request",
+          "id": "95847a9e-43f3-5924-905c-b4e1d4a62419",
+          "label": "play",
+          "row": 2,
+          "spokenText": "Let's play",
+          "symbol": "🧸"
+        },
+        {
+          "column": 3,
+          "function": "request",
+          "id": "6b546a34-c460-5ada-9cea-231a23f0a206",
+          "label": "outside",
+          "row": 2,
+          "spokenText": "I want to go outside",
+          "symbol": "🌳"
+        },
+        {
+          "column": 0,
+          "function": "regulation",
+          "id": "a72c10c0-1eef-5d2a-8c6e-e412dbeaea30",
+          "label": "help",
+          "row": 3,
+          "spokenText": "Help me",
+          "symbol": "🙋"
+        },
+        {
+          "column": 1,
+          "function": "regulation",
+          "id": "fff8c8c2-165d-5323-9665-eadcb3f4418c",
+          "label": "break",
+          "row": 3,
+          "spokenText": "I need a break",
+          "symbol": "🛋️"
+        },
+        {
+          "column": 2,
+          "function": "regulation",
+          "id": "94fb4ce3-0a4b-509c-8316-8a9c0c5eead7",
+          "label": "too loud",
+          "row": 3,
+          "spokenText": "Too loud",
+          "symbol": "🙉"
+        },
+        {
+          "column": 0,
+          "function": "protest",
+          "id": "f247d35f-cac2-559f-bc3f-573c1c54af8d",
+          "label": "no thank you",
+          "row": 4,
+          "spokenText": "No thank you",
+          "symbol": "🙅"
+        },
+        {
+          "column": 1,
+          "function": "protest",
+          "id": "81dec0d4-5abe-570a-ba18-ee951dfbe63f",
+          "label": "stop",
+          "row": 4,
+          "spokenText": "Stop!",
+          "symbol": "✋"
+        },
+        {
+          "column": 2,
+          "function": "protest",
+          "id": "43216c4a-7c31-5cdf-ab57-3b79f8bb9835",
+          "label": "all done",
+          "row": 4,
+          "spokenText": "All done",
+          "symbol": "✅"
+        }
+      ]
+    }
+  ],
+  "formatVersion": 1,
+  "name": "Hum starter",
+  "settings": {
+    "activation": "touchDown",
+    "labelPosition": "bottom",
+    "retrigger": "restart",
+    "sentenceStrip": false,
+    "showLabels": true
+  }
+}

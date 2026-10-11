@@ -1,0 +1,20 @@
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/HumConfig/.build/
+Package.resolved
+
+# macOS
+.DS_Store
+
+# Local tool config
+.mcp.json

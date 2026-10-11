@@ -1,0 +1,122 @@
+{
+  "boards": [
+    {
+      "columns": 4,
+      "id": "41a3e299-c04e-59fb-a4b4-1668955dfa1f",
+      "name": "Food",
+      "rows": 3,
+      "tiles": [
+        {
+          "column": 0,
+          "function": "request",
+          "id": "11dbfb97-02b6-5e72-93fa-8e56f06b4022",
+          "label": "crackers",
+          "row": 0,
+          "spokenText": "Let's have crackers!",
+          "symbol": "🍘"
+        },
+        {
+          "column": 1,
+          "function": "request",
+          "id": "4058e874-0591-5993-b6c3-fb93641ad730",
+          "label": "apple",
+          "row": 0,
+          "spokenText": "Let's have apple!",
+          "symbol": "🍎"
+        },
+        {
+          "column": 2,
+          "function": "request",
+          "id": "9d086dc2-3cba-5969-abad-d3c96485008e",
+          "label": "banana",
+          "row": 0,
+          "spokenText": "Let's have banana!",
+          "symbol": "🍌"
+        },
+        {
+          "column": 3,
+          "function": "request",
+          "id": "41a81994-ab66-5f55-91c6-d1ff242ae0da",
+          "label": "yogurt",
+          "row": 0,
+          "spokenText": "Let's have yogurt!",
+          "symbol": "🥣"
+        },
+        {
+          "column": 0,
+          "function": "request",
+          "id": "7671122f-fcd5-5eac-8340-b6ea13fb1fd5",
+          "label": "pasta",
+          "row": 1,
+          "spokenText": "Let's have pasta!",
+          "symbol": "🍝"
+        },
+        {
+          "column": 1,
+          "function": "request",
+          "id": "b928a8a6-cd31-588a-8cec-d508bc1e6ac5",
+          "label": "pizza",
+          "row": 1,
+          "spokenText": "Let's have pizza!",
+          "symbol": "🍕"
+        },
+        {
+          "column": 2,
+          "function": "request",
+          "id": "93475c88-f0aa-5aa2-994b-333c363703e3",
+          "label": "water",
+          "row": 1,
+          "spokenText": "Let's have water!",
+          "symbol": "💧"
+        },
+        {
+          "column": 3,
+          "function": "request",
+          "id": "e4fba475-10ec-50d3-a2b6-8f4e5ac45ed1",
+          "label": "juice",
+          "row": 1,
+          "spokenText": "Let's have juice!",
+          "symbol": "🧃"
+        },
+        {
+          "column": 0,
+          "function": "request",
+          "id": "b4fe864c-a50c-5a69-8629-84489c3404c9",
+          "label": "something else",
+          "row": 2,
+          "spokenText": "Let's have something else",
+          "symbol": "🔄"
+        },
+        {
+          "column": 1,
+          "function": "comment",
+          "id": "564e23fb-a6e2-5507-9c1c-ca88d6d1fda7",
+          "label": "still hungry",
+          "row": 2,
+          "spokenText": "I'm still hungry!",
+          "symbol": "🍽️"
+        },
+        {
+          "column": 2,
+          "function": "protest",
+          "id": "5f466faa-689e-5fc6-827c-1a0297130907",
+          "label": "no thank you",
+          "row": 2,
+          "spokenText": "No thank you",
+          "symbol": "🙅"
+        },
+        {
+          "column": 3,
+          "function": "protest",
+          "id": "d3d5540b-6a60-5676-b1bb-7f7440fd7a3a",
+          "label": "all done",
+          "row": 2,
+          "spokenText": "All done",
+          "symbol": "✅"
+        }
+      ]
+    }
+  ],
+  "formatVersion": 1,
+  "name": "Food board"
+}

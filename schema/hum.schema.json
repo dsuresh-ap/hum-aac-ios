@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/dsuresh-ap/hum-aac-ios/schema/hum.schema.json",
+  "title": "Hum setup (hum.json)",
+  "description": "A complete Hum AAC setup: boards of tiles for a child who is a Gestalt Language Processor (GLP). GLP children learn language in whole chunks (gestalts) like \"let's get out of here!\" rather than single words. Rules for anyone (human or coding agent) writing this file: (1) one tile = one whole gestalt; never split a phrase into several tiles; (2) never add praise, reward or compliance phrases (\"good job\", \"quiet hands\", \"first work then...\"); (3) protest and regulation tiles (\"no thank you\", \"stop!\", \"I need a break\") are as important as requests and must be on the Home board; (4) when editing an existing file keep every existing id, row and column exactly as they are, because the child has learned where each tile is (motor planning). Unknown fields are allowed and are preserved by Hum.",
+  "type": "object",
+  "required": ["formatVersion", "boards"],
+  "properties": {
+    "formatVersion": {
+      "description": "Version of this file format. Always 1 for now. Hum refuses files with a newer version and upgrades older ones.",
+      "type": "integer",
+      "const": 1
+    },
+    "name": {
+      "description": "Optional human-friendly name for the whole setup, e.g. \"Maya's boards\".",
+      "type": "string",
+      "maxLength": 200
+    },
+    "boards": {
+      "description": "All boards in the setup. Exactly one should have isHome: true in a full setup (a single exported board may have none). Order does not matter.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/board" }
+    },
+    "settings": { "$ref": "#/$defs/settings" }
+  },
+  "$defs": {
+    "uuid": {
+      "description": "A UUID such as \"3f2504e0-4f89-11d3-9a0c-0305e82c3301\". IDs are stable forever: Hum matches boards and tiles by id when importing, so an edited file updates existing tiles instead of creating duplicates. Generate a fresh random UUID only for brand-new boards or tiles.",
+      "type": "string",
+      "format": "uuid"
+    },
+    "board": {
+      "description": "One screen of tiles arranged in a fixed grid. The child never scrolls; every tile must fit in rows × columns.",
+      "type": "object",
+      "required": ["id", "name", "rows", "columns", "tiles"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "name": {
+          "description": "Board name shown to the parent (and on the folder tile that opens it), e.g. \"Food\" or \"Outside\".",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "\\S"
+        },
+        "rows": {
+          "description": "Number of grid rows (1-8). Changing this on an existing board must not move tiles; only grow it, never shrink it below tiles that are in use.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "columns": {
+          "description": "Number of grid columns (1-8). Common sizes: 3x3 on iPhone, 4x5 or 5x4 on iPad and Mac.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "isHome": {
+          "description": "True for the board the app opens on and returns to with the Home button. Protest and regulation tiles belong here.",
+          "type": "boolean"
+        },
+        "tiles": {
+          "description": "Tiles on this board. Each tile sits at its own (row, column); two tiles can never share a spot. Empty spots are fine and stay empty for the child.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/tile" }
+        }
+      }
+    },
+    "tile": {
+      "description": "One button the child taps to speak. One tile = one whole gestalt.",
+      "type": "object",
+      "required": ["id", "spokenText", "row", "column"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "label": {
+          "description": "Short text printed on the tile (a few words), e.g. \"more\" or \"all aboard\". If missing, Hum uses spokenText. Keep labels short; the full phrase goes in spokenText.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60,
+          "pattern": "\\S"
+        },
+        "spokenText": {
+          "description": "Exactly what the tile says out loud: one whole gestalt; do not split into words. Keep the child's own phrasing, including scripts from shows or songs (e.g. \"to infinity and beyond!\" may mean \"let's go fast\"). Never a praise, reward or compliance phrase.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "pattern": "\\S"
+        },
+        "row": {
+          "description": "Grid row, counting from 0 at the top. Never change this for an existing tile unless the parent asked to move it.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7
+        },
+        "column": {
+          "description": "Grid column, counting from 0 at the left. Never change this for an existing tile unless the parent asked to move it.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7
+        },
+        "function": {
+          "description": "What the gestalt is for. Used only for color and grouping; it never locks or hides a tile. protest = refusing or stopping (\"no thank you\", \"stop!\"); request = asking for something (\"let's have a snack\"); connection = social (\"hi!\", \"bye-bye!\"); comment = sharing an observation (\"look at that!\", \"uh oh!\"); regulation = body and feelings (\"I need a break\", \"too loud\"); other = anything else.",
+          "type": "string",
+          "enum": ["protest", "request", "connection", "comment", "regulation", "other"]
+        },
+        "color": {
+          "description": "Optional background color as #RRGGBB. If missing, Hum picks a calm color from the function.",
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "linkedBoardID": {
+          "description": "Optional id of another board. Tapping the tile speaks its phrase and then opens that board (shown with a small folder mark).",
+          "$ref": "#/$defs/uuid"
+        },
+        "hidden": {
+          "description": "True to hide the tile from the child for now. A hidden tile keeps its spot as empty space, so nothing else moves.",
+          "type": "boolean"
+        },
+        "image": {
+          "description": "Optional relative path to a photo inside the .hum package, e.g. \"media/snack.jpg\". Real photos of the real thing often work better than drawings. Missing files are skipped with a warning.",
+          "type": "string",
+          "pattern": "^media/[^\\\\:]+$"
+        },
+        "audio": {
+          "description": "Optional relative path to a recording of the phrase (m4a/caf/wav), e.g. \"media/snack.m4a\". A parent recording keeps the real intonation, which carries meaning for gestalts. Plays instead of the synthetic voice.",
+          "type": "string",
+          "pattern": "^media/[^\\\\:]+$"
+        },
+        "symbol": {
+          "description": "Optional emoji shown when there is no photo, e.g. \"🍎\". A placeholder until the parent adds a real photo.",
+          "type": "string",
+          "maxLength": 16
+        }
+      }
+    },
+    "settings": {
+      "description": "Optional display and voice settings. iCloud sync and AI features are intentionally not part of this file: only a parent can turn those on, inside the app.",
+      "type": "object",
+      "properties": {
+        "voice": {
+          "description": "Speech voice. Device-specific; ignored if the voice is not installed.",
+          "type": "object",
+          "properties": {
+            "identifier": { "description": "An AVSpeechSynthesisVoice identifier, e.g. \"com.apple.voice.premium.en-US.Zoe\".", "type": "string" },
+            "rate": { "description": "Speaking rate from 0 to 1 (0.5 is normal).", "type": "number", "minimum": 0, "maximum": 1 },
+            "pitch": { "description": "Pitch from 0.5 to 2 (1 is normal).", "type": "number", "minimum": 0.5, "maximum": 2 },
+            "volume": { "description": "Volume from 0 to 1.", "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "showLabels": { "description": "Show the label text on tiles.", "type": "boolean" },
+        "labelPosition": { "description": "Where the label sits relative to the picture.", "type": "string", "enum": ["top", "bottom"] },
+        "sentenceStrip": { "description": "Collect tapped tiles in a strip (for NLA Stage 3+). Off by default; each tile still speaks on tap.", "type": "boolean" },
+        "appearance": { "description": "Light, dark, or follow the system.", "type": "string", "enum": ["system", "light", "dark"] },
+        "retrigger": { "description": "What happens when a tile is tapped while speech is playing: restart (default; stop and play the new tap at once), finish (let the current phrase finish, then play the latest tap), overlap (play both).", "type": "string", "enum": ["restart", "finish", "overlap"] },
+        "activation": { "description": "Speak when the finger touches the tile (touchDown, default, fastest) or when it lifts (touchUp).", "type": "string", "enum": ["touchDown", "touchUp"] }
+      }
+    }
+  }
+}

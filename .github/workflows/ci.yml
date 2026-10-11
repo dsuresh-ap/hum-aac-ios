@@ -1,0 +1,53 @@
+# Copyright 2026 The Hum Authors
+# SPDX-License-Identifier: Apache-2.0
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # HumConfig is dependency-free and must build on Linux too (CI, cloud agents, contributors).
+  config-linux:
+    runs-on: ubuntu-latest
+    container: swift:6.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test HumConfig
+        run: swift test --package-path Packages/HumConfig
+      - name: Validate example configs against the schema
+        run: swift run --package-path Packages/HumConfig hum-config validate examples/*.json
+
+  apple:
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            destination: "platform=macOS"
+          - name: iOS
+            destination: "generic/platform=iOS Simulator"
+    name: Build (${{ matrix.name }})
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+      - name: Test HumConfig (macOS)
+        if: matrix.name == 'macOS'
+        run: swift test --package-path Packages/HumConfig
+      - name: Build Hum
+        run: |
+          xcodebuild -project hum-aac-ios.xcodeproj -scheme Hum \
+            -destination "${{ matrix.destination }}" \
+            CODE_SIGNING_ALLOWED=NO build
