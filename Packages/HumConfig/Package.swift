@@ -21,7 +21,8 @@ let package = Package(
             resources: [.copy("Resources/hum.schema.json")]
         ),
         .executableTarget(name: "hum-config", dependencies: ["HumConfig"]),
-        .testTarget(name: "HumConfigTests", dependencies: ["HumConfig"]),
+        // Fixtures are read from disk by path (see SnapImporterTests), not bundled.
+        .testTarget(name: "HumConfigTests", dependencies: ["HumConfig"], exclude: ["Fixtures"]),
     ],
     swiftLanguageModes: [.v6]
 )

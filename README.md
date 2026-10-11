@@ -43,7 +43,7 @@ for humans **and** AI coding agents:
 
 - Guide: [`docs/CONFIG.md`](docs/CONFIG.md) · Schema: [`schema/hum.schema.json`](schema/hum.schema.json)
 - Agent rules: [`AGENTS.md`](AGENTS.md)
-- CLI: `swift run --package-path Packages/HumConfig hum-config validate|pack|unpack`
+- CLI: `swift run --package-path Packages/HumConfig hum-config validate|pack|unpack|import-snap`
 
 Ask an agent, for example *"Add a Trains board with 'all aboard!' to my setup, keep every tile where it
 is"*, then import the file into Hum. You'll see a preview before anything changes.

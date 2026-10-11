@@ -89,7 +89,17 @@ swift run --package-path Packages/HumConfig hum-config pack my-setup my-setup.hu
 
 # Unpack an exported setup to edit it
 swift run --package-path Packages/HumConfig hum-config unpack exported.hum my-setup
+
+# Turn a TD Snap page set (.sps) into a .hum (or into a folder, to edit before packing)
+swift run --package-path Packages/HumConfig hum-config import-snap MyPageSet.sps my-setup.hum
 ```
+
+**From TD Snap:** every page you can reach from Snap's Home becomes a board, and each button keeps its
+spot, words, colour and ID. Snap's Back and Home buttons are left out because Hum has its own; a left
+column that only held Snap's navigation is removed, and "Next page" moves to the bottom-right corner.
+Snap's symbols become SVG pictures. Symbols from Snap's built-in library aren't saved in the `.sps`, so
+those tiles get an emoji placeholder until you add a picture. Keyboards, the dashboard and pages over
+8 × 8 are left out; the command lists everything it left out.
 
 Errors are written for people, e.g. `Tile 'snack' has no words to say.`
 

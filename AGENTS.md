@@ -24,9 +24,11 @@ agents asked by a parent to **write or edit a Hum setup** (`hum.json` / `.hum`).
    swift run --package-path Packages/HumConfig hum-config validate path/to/hum.json
    ```
    Fix every `error`. Read every `warning` and fix it unless the parent wants it.
-8. To bundle photos: put `hum.json` and a `media/` folder in one folder, then
+8. Coming from TD Snap? `hum-config import-snap <file.sps> <folder>` writes a `hum.json` + `media/`
+   folder to start from (Snap's IDs and positions are kept). Then edit and `pack` it as below.
+9. To bundle photos: put `hum.json` and a `media/` folder in one folder, then
    `hum-config pack <folder> <out.hum>`. Reference images as `"image": "media/apple.jpg"`.
-9. Do not add `iCloud` or AI settings to config files. Only a parent can turn those on, inside the app.
+10. Do not add `iCloud` or AI settings to config files. Only a parent can turn those on, inside the app.
 
 ## If you are changing the app's code
 
