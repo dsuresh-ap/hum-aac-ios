@@ -210,6 +210,7 @@ final class BoardStore {
             copy.isHidden = tile.isHidden
             copy.symbol = tile.symbol
             copy.imageData = tile.imageData
+            copy.imageCredit = tile.imageCredit
             copy.audioData = tile.audioData
             copy.board = board
             board.updatedAt = .now
@@ -378,6 +379,7 @@ final class BoardStore {
                 tile.isHidden = source.isHidden
                 tile.symbol = source.symbol
                 tile.imageData = source.imageData
+                tile.imageCredit = source.imageCredit
                 tile.audioData = source.audioData
                 tile.board = copy
             }
@@ -469,6 +471,7 @@ struct SavedTile {
     var row, column, phonePage, phoneRow, phoneColumn: Int?
     var positionUpdatedAt, createdAt: Date
     var imageData, audioData, extraJSON: Data?
+    var imageCredit: String?
 
     @MainActor
     init(_ tile: Tile) {
@@ -489,6 +492,7 @@ struct SavedTile {
         positionUpdatedAt = tile.positionUpdatedAt
         createdAt = tile.createdAt
         imageData = tile.imageData
+        imageCredit = tile.imageCredit
         audioData = tile.audioData
         extraJSON = tile.extraJSON
     }
@@ -507,6 +511,7 @@ struct SavedTile {
         tile.positionUpdatedAt = positionUpdatedAt
         tile.createdAt = createdAt
         tile.imageData = imageData
+        tile.imageCredit = imageCredit
         tile.audioData = audioData
         tile.extraJSON = extraJSON
         return tile

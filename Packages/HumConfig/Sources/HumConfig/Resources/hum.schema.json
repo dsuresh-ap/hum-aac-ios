@@ -127,6 +127,11 @@
           "description": "Optional emoji shown when there is no photo, e.g. \"🍎\". A placeholder until the parent adds a real photo.",
           "type": "string",
           "maxLength": 16
+        },
+        "imageCredit": {
+          "description": "Credit and licence of the picture, for example a symbol set's attribution. Kept when the picture is exported.",
+          "type": "string",
+          "maxLength": 500
         }
       }
     },

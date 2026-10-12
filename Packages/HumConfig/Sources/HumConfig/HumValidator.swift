@@ -58,6 +58,9 @@ public enum HumValidator {
                     // A warning, not an error: a single-board export may link to boards in the full setup.
                     issues.append(.init(.warning, "\(tName) opens a board that isn't in this file. It will still speak; the link is ignored until that board exists.", path: tPath + "/linkedBoardID"))
                 }
+                if tile.imageCredit != nil && tile.image == nil {
+                    issues.append(.init(.warning, "\(tName) has a picture credit but no picture. The credit is kept, but it has nothing to describe.", path: tPath + "/imageCredit"))
+                }
                 if let phrase = GLPRules.discouragedPhrase(in: tile.spokenText) ?? GLPRules.discouragedPhrase(in: tile.label) {
                     issues.append(.init(.warning, "\(tName) uses \"\(phrase)\". Hum avoids praise, reward and compliance phrases. Tiles are the child's voice.", path: tPath))
                 }

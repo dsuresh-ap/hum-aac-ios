@@ -38,7 +38,8 @@ enum ConfigBridge {
                         id: tile.id, label: tile.label, spokenText: tile.spokenText,
                         row: tile.row ?? 0, column: tile.column ?? 0, function: tile.function,
                         color: tile.colorHex, linkedBoardID: tile.linkedBoardID, hidden: tile.isHidden,
-                        image: image, audio: audio, symbol: tile.symbol, extra: decodeExtra(tile.extraJSON))
+                        image: image, audio: audio, symbol: tile.symbol,
+                        imageCredit: image == nil ? nil : tile.imageCredit, extra: decodeExtra(tile.extraJSON))
                 }
             return HumBoard(id: board.id, name: board.name, rows: board.rows, columns: board.columns,
                             isHome: board.isHome, tiles: tiles, extra: decodeExtra(board.extraJSON))
@@ -157,7 +158,11 @@ enum ConfigBridge {
             tile.symbol = humTile.symbol
             tile.extraJSON = encodeExtra(humTile.extra)
             // A file that isn't a readable picture never replaces the tile's current one.
-            if let path = humTile.image, let data = picture(path) { tile.imageData = data }
+            // The credit comes with the picture it describes.
+            if let path = humTile.image, let data = picture(path) {
+                tile.imageData = data
+                tile.imageCredit = humTile.imageCredit
+            }
             if let path = humTile.audio, let data = media[path] { tile.audioData = data }
             let newRow = placed ? humTile.row : nil
             let newColumn = placed ? humTile.column : nil

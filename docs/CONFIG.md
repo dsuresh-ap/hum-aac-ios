@@ -51,7 +51,8 @@ So in Hum:
           "hidden": false,            // optional: hidden tiles keep their (empty) spot
           "image": "media/more.jpg",  // optional, inside a .hum (JPEG, PNG, HEIC or SVG; resized on import)
           "audio": "media/more.m4a",  // optional parent recording (keeps real intonation)
-          "symbol": "🔁"               // optional emoji placeholder
+          "symbol": "🔁",              // optional emoji placeholder
+          "imageCredit": "Mulberry Symbols by Steve Lee …"  // optional: credit and licence of the picture
         }
       ]
     }
@@ -64,6 +65,11 @@ So in Hum:
   }
 }
 ```
+
+`imageCredit` is filled in by Hum when a parent picks a symbol from ARASAAC or Mulberry: their
+licences ask for the credit to travel with the picture. Keep it when you copy the tile or its
+picture. If any tile has one, an exported `.hum` also has a `CREDITS.txt` at the top that lists each
+credit once. Hum makes that file again on every export and ignores it on import.
 
 Unknown fields are allowed and **kept**: Hum writes them back out on export. iCloud sync and AI are
 intentionally not in the file; only a parent can switch those on, inside the app.

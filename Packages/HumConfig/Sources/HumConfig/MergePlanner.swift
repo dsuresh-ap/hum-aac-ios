@@ -132,7 +132,11 @@ public enum MergePlanner {
                     updated.hidden = incomingTile.hidden
                     updated.symbol = incomingTile.symbol
                     // Media is only ever added or replaced in a merge, never removed by a file that lacks it.
-                    if incomingTile.image != nil { updated.image = incomingTile.image }
+                    // A picture's credit comes and goes with the picture.
+                    if incomingTile.image != nil {
+                        updated.image = incomingTile.image
+                        updated.imageCredit = incomingTile.imageCredit
+                    }
                     if incomingTile.audio != nil { updated.audio = incomingTile.audio }
                     updated.extra.merge(incomingTile.extra) { _, new in new }
                     if updated != before {

@@ -99,6 +99,9 @@ case "unpack":
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try data.write(to: url)
         }
+        if let credits = contents.credits {
+            try credits.write(to: folder.appendingPathComponent(HumPackage.creditsName))
+        }
         print("✓ Unpacked hum.json and \(contents.media.count) media file(s) → \(args[2])")
     } catch {
         fail("Couldn't write to \(args[2]): \(error.localizedDescription)")

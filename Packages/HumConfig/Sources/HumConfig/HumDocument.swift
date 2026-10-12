@@ -96,13 +96,15 @@ public struct HumTile: Equatable, Sendable, Identifiable {
     public var audio: String?
     /// Placeholder emoji shown when there is no photo.
     public var symbol: String?
+    /// Credit and licence of the picture (e.g. a symbol set's attribution). Travels with the picture.
+    public var imageCredit: String?
     public var extra: [String: JSONValue]
 
     public init(
         id: UUID = UUID(), label: String, spokenText: String, row: Int, column: Int,
         function: TileFunction? = nil, color: String? = nil, linkedBoardID: UUID? = nil,
         hidden: Bool = false, image: String? = nil, audio: String? = nil, symbol: String? = nil,
-        extra: [String: JSONValue] = [:]
+        imageCredit: String? = nil, extra: [String: JSONValue] = [:]
     ) {
         self.id = id
         self.label = label
@@ -116,6 +118,7 @@ public struct HumTile: Equatable, Sendable, Identifiable {
         self.image = image
         self.audio = audio
         self.symbol = symbol
+        self.imageCredit = imageCredit
         self.extra = extra
     }
 }
@@ -228,7 +231,7 @@ extension HumBoard: Codable {
 extension HumTile: Codable {
     static let knownKeys: Set<String> = [
         "id", "label", "spokenText", "row", "column", "function", "color", "linkedBoardID",
-        "hidden", "image", "audio", "symbol",
+        "hidden", "image", "audio", "symbol", "imageCredit",
     ]
 
     public init(from decoder: any Decoder) throws {
@@ -246,6 +249,7 @@ extension HumTile: Codable {
         image = try c.decodeIfPresent(String.self, forKey: AnyKey("image"))
         audio = try c.decodeIfPresent(String.self, forKey: AnyKey("audio"))
         symbol = try c.decodeIfPresent(String.self, forKey: AnyKey("symbol"))
+        imageCredit = try c.decodeIfPresent(String.self, forKey: AnyKey("imageCredit"))
         extra = try c.unknownFields(excluding: Self.knownKeys)
     }
 
@@ -264,6 +268,7 @@ extension HumTile: Codable {
         try c.encodeIfPresent(image, forKey: AnyKey("image"))
         try c.encodeIfPresent(audio, forKey: AnyKey("audio"))
         try c.encodeIfPresent(symbol, forKey: AnyKey("symbol"))
+        try c.encodeIfPresent(imageCredit, forKey: AnyKey("imageCredit"))
     }
 }
 
