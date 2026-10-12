@@ -190,7 +190,12 @@ struct AIHelperView: View {
         } header: {
             Text("Privacy")
         } footer: {
-            Text("Only your words and your tiles' text are used, never photos or recordings.")
+            // Shown for both "On this device" and Private Cloud Compute.
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Only your words and your tiles' text are used, never photos or recordings.")
+                Text("Suggestions come from AI and can be wrong. Nothing is added until you choose it.")
+                    .accessibilityIdentifier("ai.mayBeWrong")
+            }
         }
     }
 

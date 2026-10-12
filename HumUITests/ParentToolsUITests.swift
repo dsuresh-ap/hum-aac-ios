@@ -46,6 +46,9 @@ final class ParentToolsUITests: XCTestCase {
             // On a device where the model isn't ready, the reason shows instead.
             XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'Apple Intelligence'")).firstMatch.exists)
         }
+        let mayBeWrong = el(app, "ai.mayBeWrong")
+        scrollTo(app, mayBeWrong)
+        XCTAssertTrue(mayBeWrong.exists, "The helper says suggestions can be wrong and nothing is added until chosen")
     }
 
     /// Scenario: the first time a parent opens grown-up mode on iPhone/iPad, Hum explains Guided Access,
