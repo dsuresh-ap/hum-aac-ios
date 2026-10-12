@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased: About Hum and picture credits
+
+- **Settings → About Hum** shows the version, what Hum is (a communication tool, not a medical device
+  or therapy), links to the privacy policy, help, source code and licence, and the symbol credits.
+- **First run** says how to get back into settings and links to the privacy policy.
+- **The AI helper** says that suggestions can be wrong and nothing is added until you choose it.
+- **Symbol credits travel with the picture.** A symbol from ARASAAC or Mulberry keeps its credit in the
+  tile (shown under the picture in the tile editor), in exported files (`imageCredit`, plus a
+  `CREDITS.txt` in the `.hum`) and through undo, duplicate and import. A photo clears it.
+
 ## Unreleased: fixes from the end-to-end test pass
 
 All 47 bugs in `docs/testing/BUGS.md` except HUM-014 (not reproduced). The biggest:
@@ -23,16 +33,6 @@ All 47 bugs in `docs/testing/BUGS.md` except HUM-014 (not reproduced). The bigge
   The latency screen is removed. Robotic legacy voices are no longer offered.
 - Long-press Delete asks first; renaming a folder renames its tile; making a board Home warns when it
   lacks the protest tiles; labels shrink instead of breaking mid-word.
-
-## Unreleased: About Hum and picture credits
-
-- **Settings → About Hum** shows the version, what Hum is (a communication tool, not a medical device
-  or therapy), links to the privacy policy, help, source code and licence, and the symbol credits.
-- **First run** says how to get back into settings and links to the privacy policy.
-- **The AI helper** says that suggestions can be wrong and nothing is added until you choose it.
-- **Symbol credits travel with the picture.** A symbol from ARASAAC or Mulberry keeps its credit in the
-  tile (shown under the picture in the tile editor), in exported files (`imageCredit`, plus a
-  `CREDITS.txt` in the `.hum`) and through undo, duplicate and import. A photo clears it.
 
 ## Unreleased
 
