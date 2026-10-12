@@ -26,19 +26,31 @@ extension XCTestCase {
 
     /// Taps an editor toolbar button. On iPhone some of them sit in the toolbar's "More" (⋯) menu.
     func tapToolbar(_ app: XCUIApplication, _ id: String, label: String) {
+        XCTAssertTrue(tapToolbarIfPresent(app, id, label: label), "\(label) should be in the toolbar's More menu")
+    }
+
+    /// Like `tapToolbar`, but returns false instead of failing when the button isn't there at all
+    /// (for buttons only some devices have, like the AI helper).
+    @discardableResult
+    func tapToolbarIfPresent(_ app: XCUIApplication, _ id: String, label: String) -> Bool {
         let direct = el(app, id)
         // Give a sheet that is closing a moment to get out of the way.
         let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND hittable == true"), object: direct)
-        if XCTWaiter.wait(for: [ready], timeout: 3) == .completed { return direct.tap() }
+        if XCTWaiter.wait(for: [ready], timeout: 3) == .completed {
+            direct.tap()
+            return true
+        }
         let more = app.buttons["OverflowBarButtonItem"].firstMatch
+        guard more.exists else { return false }
         let item = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@ AND identifier != %@", label, id)).firstMatch
         // The first tap on "More" right after entering the editor is sometimes ignored (BUGS.md, HUM-014).
         for _ in 0..<2 where !item.exists {
             more.tap()
             _ = item.waitForExistence(timeout: 2)
         }
-        XCTAssertTrue(item.exists, "\(label) should be in the toolbar's More menu")
+        guard item.exists else { return false }
         item.tap()
+        return true
     }
 
     /// The element whose accessibility label is exactly `label` (menu items, dialog buttons, rows).
