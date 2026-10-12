@@ -43,7 +43,7 @@ for humans **and** AI coding agents:
 
 - Guide: [`docs/CONFIG.md`](docs/CONFIG.md) · Schema: [`schema/hum.schema.json`](schema/hum.schema.json)
 - Agent rules: [`AGENTS.md`](AGENTS.md)
-- CLI: `swift run --package-path Packages/HumConfig hum-config validate|pack|unpack|import-snap`
+- CLI: `swift run --package-path Packages/HumConfig hum-config validate|pack|unpack`
 
 Ask an agent, for example *"Add a Trains board with 'all aboard!' to my setup, keep every tile where it
 is"*, then import the file into Hum. You'll see a preview before anything changes.
@@ -68,6 +68,15 @@ Intelligence), only the parent's text request and tile text are processed, on de
 Private Cloud Compute. Photos and recordings are never sent to any model. The optional history of what
 was said stays on the device (never exported or synced) and a parent can clear it. Nothing is collected by us.
 
+Full policy: [`docs/privacy.md`](docs/privacy.md) · Help: [`docs/support.md`](docs/support.md)
+
+## Important
+
+Hum is a communication tool. It is not a medical device or therapy, and it doesn't replace a
+speech-language pathologist. Don't rely on Hum as the only way to call for help in an emergency.
+
 ## License
 
-[Apache-2.0](LICENSE)
+[Apache-2.0](LICENSE). Hum includes no symbol sets; symbols a parent picks from ARASAAC
+(CC BY-NC-SA 4.0, non-commercial) or Mulberry (CC BY-SA 4.0) keep their own licences. A commercial fork
+must remove the ARASAAC search. See [`NOTICE`](NOTICE).

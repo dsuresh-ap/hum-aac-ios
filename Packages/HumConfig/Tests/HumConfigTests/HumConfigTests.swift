@@ -209,6 +209,51 @@ struct ZipTests {
         #expect(loaded.warnings.isEmpty)
     }
 
+    @Test func imageCreditRoundTrips() throws {
+        let credit = "Mulberry Symbols by Steve Lee (mulberrysymbols.org), via Global Symbols. License: CC BY-SA 4.0."
+        let data = doc(tile: """
+            {"id": "22222222-2222-2222-2222-222222222222", "spokenText": "hi", "row": 0, "column": 0,
+             "image": "media/hi.png", "imageCredit": "\(credit)"}
+            """)
+        let document = try HumConfigLoader.loadJSON(data).document
+        #expect(document.boards[0].tiles[0].imageCredit == credit)
+        #expect(document.boards[0].tiles[0].extra.isEmpty, "imageCredit is a known field")
+        let again = try HumConfigLoader.loadJSON(try document.encodedJSON()).document
+        #expect(again == document)
+    }
+
+    @Test func creditWithoutPictureIsOnlyAWarning() throws {
+        let data = doc(tile: """
+            {"id": "22222222-2222-2222-2222-222222222222", "spokenText": "hi", "row": 0, "column": 0,
+             "imageCredit": "Some credit"}
+            """)
+        let loaded = try HumConfigLoader.loadJSON(data)
+        #expect(loaded.warnings.contains { $0.severity == .warning && $0.path.hasSuffix("/imageCredit") })
+    }
+
+    @Test func creditsFileOnlyWhenATileHasACredit() throws {
+        var document = try HumConfigLoader.load(try example("starter.hum.json")).document
+        document.boards[0].tiles[0].image = "media/hi.jpg"
+        let jpeg = Data([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3])
+        let plain = try ZipArchive.read(try HumPackage.write(document, media: ["media/hi.jpg": jpeg]))
+        #expect(!plain.contains { $0.path == HumPackage.creditsName })
+
+        let credit = "ARASAAC pictograms by Sergio Palao. License: CC BY-NC-SA 4.0."
+        document.boards[0].tiles[0].imageCredit = credit
+        document.boards[0].tiles[1].imageCredit = credit  // the same credit is listed once
+        let packed = try HumPackage.write(document, media: ["media/hi.jpg": jpeg])
+        let entry = try #require(try ZipArchive.read(packed).first { $0.path == HumPackage.creditsName })
+        let text = String(decoding: entry.data, as: UTF8.self)
+        #expect(text.components(separatedBy: credit).count == 2)
+        #expect(text.contains(HumPackage.creditsNote))
+
+        // It still imports, and CREDITS.txt never becomes media.
+        let loaded = try HumConfigLoader.load(packed)
+        #expect(loaded.document == document)
+        #expect(loaded.media == ["media/hi.jpg": jpeg])
+        #expect(try HumPackage.read(packed).credits == entry.data)
+    }
+
     @Test func unsafePathsAreRejected() {
         for path in ["../evil", "/etc/passwd", "media/../../x", "C:\\x", "media\\x"] {
             #expect(!HumPackage.isSafe(path))

@@ -67,6 +67,9 @@ final class Tile {
     /// Placeholder emoji until the parent adds a photo.
     var symbol: String?
     @Attribute(.externalStorage) var imageData: Data?
+    /// Credit and licence of the picture, for symbols from a symbol set. Cleared when the picture changes.
+    /// Optional, so SwiftData's lightweight migration and CloudKit both accept it.
+    var imageCredit: String?
     @Attribute(.externalStorage) var audioData: Data?
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now

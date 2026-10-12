@@ -6,7 +6,6 @@
 //   hum-config validate <file.hum | hum.json>...
 //   hum-config pack <folder> <out.hum>       (folder holds hum.json and media/)
 //   hum-config unpack <file.hum> <folder>
-//   hum-config import-snap <file.sps> <out.hum | folder>
 //
 // Exit codes: 0 = OK (warnings allowed), 1 = the file has errors, 2 = usage or I/O problem.
 
@@ -18,8 +17,6 @@ let usage = """
       hum-config validate <file>...        Check .hum or hum.json files against the Hum format and GLP rules
       hum-config pack <folder> <out.hum>   Zip a folder (hum.json + media/) into a .hum package
       hum-config unpack <file.hum> <folder> Extract a .hum package into a folder
-      hum-config import-snap <file.sps> <out.hum | folder>
-                                           Convert a TD Snap page set into a .hum (or a folder to edit)
     """
 
 func fail(_ message: String, code: Int32 = 2) -> Never {
@@ -102,41 +99,13 @@ case "unpack":
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try data.write(to: url)
         }
+        if let credits = contents.credits {
+            try credits.write(to: folder.appendingPathComponent(HumPackage.creditsName))
+        }
         print("✓ Unpacked hum.json and \(contents.media.count) media file(s) → \(args[2])")
     } catch {
         fail("Couldn't write to \(args[2]): \(error.localizedDescription)")
     }
-
-case "import-snap":
-    guard args.count == 3 else { fail(usage) }
-    let result: SnapImporter.Result
-    do { result = try SnapImporter.convert(readFile(args[1])) } catch {
-        fail((error as? LocalizedError)?.errorDescription ?? "\(error)", code: 1)
-    }
-    let package: Data
-    do { package = try HumPackage.write(result.document, media: result.media) } catch {
-        fail("Couldn't build the setup: \(error.localizedDescription)")
-    }
-    let out = URL(fileURLWithPath: args[2])
-    do {
-        if out.pathExtension == HumPackage.fileExtension {
-            try package.write(to: out)
-        } else {
-            // A folder (hum.json + media/) to look at or edit, then `pack`.
-            let contents = try HumPackage.read(package)
-            try FileManager.default.createDirectory(at: out.appendingPathComponent("media"), withIntermediateDirectories: true)
-            try contents.json.write(to: out.appendingPathComponent(HumPackage.jsonName))
-            for (path, data) in contents.media where HumPackage.isSafe(path) {
-                try data.write(to: out.appendingPathComponent(path))
-            }
-        }
-    } catch {
-        fail("Couldn't write \(args[2]): \(error.localizedDescription)")
-    }
-    let tiles = result.document.boards.reduce(0) { $0 + $1.tiles.count }
-    print("✓ Converted \(result.document.boards.count) board(s), \(tiles) tile(s), \(result.media.count) picture(s) → \(args[2])")
-    for note in result.notes { print("  note: \(note)") }
-    exit(report(args[2], HumConfigLoader.validate(package)) ? 0 : 1)
 
 case "-h", "--help", "help":
     print(usage)

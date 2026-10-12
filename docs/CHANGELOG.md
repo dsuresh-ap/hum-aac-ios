@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased: About Hum and picture credits
+
+- **Settings → About Hum** shows the version, what Hum is (a communication tool, not a medical device
+  or therapy), links to the privacy policy, help, source code and licence, and the symbol credits.
+- **First run** says how to get back into settings and links to the privacy policy.
+- **The AI helper** says that suggestions can be wrong and nothing is added until you choose it.
+- **Symbol credits travel with the picture.** A symbol from ARASAAC or Mulberry keeps its credit in the
+  tile (shown under the picture in the tile editor), in exported files (`imageCredit`, plus a
+  `CREDITS.txt` in the `.hum`) and through undo, duplicate and import. A photo clears it.
+
 ## Unreleased: fixes from the end-to-end test pass
 
 All 47 bugs in `docs/testing/BUGS.md` except HUM-014 (not reproduced). The biggest:
@@ -24,14 +34,8 @@ All 47 bugs in `docs/testing/BUGS.md` except HUM-014 (not reproduced). The bigge
 - Long-press Delete asks first; renaming a folder renames its tile; making a board Home warns when it
   lacks the protest tiles; labels shrink instead of breaking mid-word.
 
-## Unreleased: import from TD Snap
+## Unreleased
 
-- **`hum-config import-snap <file.sps> <out.hum | folder>`** turns a TD Snap page set into a Hum setup.
-  Every page reachable from Snap's Home becomes a board, and each button keeps its spot, words, colour and
-  ID (so re-importing a newer export updates tiles instead of copying them). Snap's symbols (WMF/EMF)
-  become SVG. Snap's Back/Home buttons are dropped (Hum has its own), and a left column that only held
-  navigation is removed. Keyboards, the dashboard and grids over 8 × 8 are left out and listed.
-  HumConfig reads the `.sps` with a small built-in SQLite reader, so it still has no dependencies.
 - **Fixed:** importing from Setup & sharing showed the preview only after the sheet was closed. The
   preview now opens right over it.
 - **Fixed:** pictures saved as SVG (by builds before "Process imported pictures", or synced from another
@@ -53,7 +57,7 @@ All 47 bugs in `docs/testing/BUGS.md` except HUM-014 (not reproduced). The bigge
   its own starter board, and the "two Homes" repair kept the *oldest* Home. Now a family's own Home
   always beats the starter, then the newest Home wins (the latest import sticks on every device), and
   a starter board nobody changed is removed instead of lingering as a second "Home".
-- **Fixed:** tiles with their own colour (e.g. Snap's near-white) had light labels in Dark Mode and were
+- **Fixed:** tiles with their own colour (e.g. a near-white one from an import) had light labels in Dark Mode and were
   unreadable. Labels, folder marks, the sentence strip and history now pick dark or light text by the
   tile colour's contrast.
 

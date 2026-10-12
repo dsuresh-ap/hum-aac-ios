@@ -182,6 +182,7 @@ struct ParentEditorView: View {
             } label: {
                 Label("Home & folders", systemImage: "rectangle.stack")
             }
+            .help("Go to another board, or manage Home and folders")
             .accessibilityIdentifier("boardsMenu")
 
             Button {
@@ -191,6 +192,7 @@ struct ParentEditorView: View {
             }
             .disabled(!(model.store.undoManager?.canUndo ?? false))
             .keyboardShortcut("z", modifiers: .command)
+            .help("Undo the last change")
 
             // Only on devices with Apple Intelligence (hidden elsewhere, as the spec asks).
             if AIHelper.isSupportedOnThisDevice {
@@ -208,6 +210,7 @@ struct ParentEditorView: View {
             } label: {
                 Label("History", systemImage: "clock.arrow.circlepath")
             }
+            .help("What your child said recently")
             .accessibilityIdentifier("history")
 
             Button {
@@ -215,6 +218,7 @@ struct ParentEditorView: View {
             } label: {
                 Label("Setup & sharing", systemImage: "square.and.arrow.up.on.square")
             }
+            .help("Import, export and share your boards")
             .accessibilityIdentifier("setupSharing")
 
             #if os(macOS)
@@ -223,6 +227,7 @@ struct ParentEditorView: View {
             } label: {
                 Label("Settings", systemImage: "gearshape")
             }
+            .help("Voice, tiles and the grown-up lock")
             .accessibilityIdentifier("settings")
             #endif
         }
@@ -352,6 +357,7 @@ private struct EditGrid: View {
             Button { model.editingPage = page - 1 } label: { Image(systemName: "chevron.left") }
                 .disabled(page == 0)
                 .accessibilityLabel("Previous page")
+                .help("Previous page")
             Spacer()
             Text("Page \(page + 1) of \(pageCount)")
                 .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
@@ -359,6 +365,7 @@ private struct EditGrid: View {
             Spacer()
             Button { model.editingPage = page + 1 } label: { Image(systemName: "chevron.right") }
                 .accessibilityLabel(page + 1 < pageCount ? "Next page" : "New page")
+                .help(page + 1 < pageCount ? "Next page" : "New page")
         }
         .buttonStyle(.bordered)
         .controlSize(.small)
@@ -680,7 +687,8 @@ private struct ImportBanner: View {
             }
             Button(action: onClose) { Image(systemName: "xmark") }
                 .buttonStyle(.borderless)
-                .accessibilityLabel("Close")
+                .accessibilityLabel("Close this message")
+                .help("Close this message")
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
         .background(.regularMaterial, in: .rect(cornerRadius: 16))

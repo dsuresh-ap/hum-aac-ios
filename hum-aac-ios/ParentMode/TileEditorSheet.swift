@@ -49,6 +49,8 @@ struct TileEditorSheet: View {
     @State private var symbol = ""
     @State private var symbolTouched = false
     @State private var imageData: Data?
+    /// The symbol set's credit while the picture is a symbol from it. Set only through `setPicture`.
+    @State private var imageCredit: String?
     @State private var audioData: Data?
     @State private var recorder = PhraseRecorder()
     @State private var photoItem: PhotosPickerItem?
@@ -139,7 +141,7 @@ struct TileEditorSheet: View {
                 guard let item else { return }
                 Task {
                     if let data = try? await item.loadTransferable(type: Data.self) {
-                        imageData = ImageProcessing.tileImageData(from: data)
+                        setPicture(ImageProcessing.tileImageData(from: data))
                     }
                 }
             }
@@ -147,27 +149,27 @@ struct TileEditorSheet: View {
                 guard case .success(let url) = result else { return }
                 let access = url.startAccessingSecurityScopedResource()
                 defer { if access { url.stopAccessingSecurityScopedResource() } }
-                if let data = try? Data(contentsOf: url) { imageData = ImageProcessing.tileImageData(from: data) }
+                if let data = try? Data(contentsOf: url) { setPicture(ImageProcessing.tileImageData(from: data)) }
             }
             .sheet(isPresented: $showEmojiPicker) {
                 EmojiPickerView(selection: Binding(get: { shownSymbol }, set: {
                     symbol = $0
                     symbolTouched = true
                     // A photo always wins over an emoji, so choosing an emoji means "use this instead".
-                    if pickerSource == .emoji { imageData = nil }
+                    if pickerSource == .emoji { setPicture(nil) }
                 }),
                                 label: label, spokenText: spokenText,
-                                onSymbol: { imageData = $0 },
+                                onSymbol: { setPicture($0, credit: $1) },
                                 source: pickerSource)
             }
             .modifier(ImagePlaygroundSheet(isPresented: $showImagePlayground, concept: playgroundConcept) { data in
-                imageData = ImageProcessing.tileImageData(from: data)
+                setPicture(ImageProcessing.tileImageData(from: data))
             })
             #if os(iOS)
             .fullScreenCover(isPresented: $showCamera) {
                 // Cancel (nil) keeps the photo the tile already has.
                 CameraPicker { data in
-                    if let photo = data.flatMap(ImageProcessing.tileImageData(from:)) { imageData = photo }
+                    if let photo = data.flatMap(ImageProcessing.tileImageData(from:)) { setPicture(photo) }
                 }
                     .ignoresSafeArea()
             }
@@ -203,7 +205,7 @@ struct TileEditorSheet: View {
                 .clipShape(.rect(cornerRadius: 14))
                 .dropDestination(for: ImagePayload.self) { items, _ in
                     guard let data = items.first?.data, let processed = ImageProcessing.tileImageData(from: data) else { return false }
-                    imageData = processed
+                    setPicture(processed)
                     return true
                 }
                 .accessibilityLabel(imageData == nil ? "Picture: \(shownSymbol.isEmpty ? "none" : shownSymbol)" : "Picture: photo")
@@ -222,7 +224,7 @@ struct TileEditorSheet: View {
                     #endif
                     PasteButton(payloadType: ImagePayload.self) { items in
                         if let data = items.first?.data, let processed = ImageProcessing.tileImageData(from: data) {
-                            imageData = processed
+                            setPicture(processed)
                         }
                     }
                     .labelStyle(.titleAndIcon)
@@ -237,10 +239,17 @@ struct TileEditorSheet: View {
                         showEmojiPicker = true
                     }
                     if imageData != nil {
-                        Button("Remove photo", systemImage: "xmark.circle", role: .destructive) { imageData = nil }
+                        Button("Remove photo", systemImage: "xmark.circle", role: .destructive) { setPicture(nil) }
                     }
                 }
                 .buttonStyle(.borderless)
+            }
+            if imageData != nil, let imageCredit {
+                Text(imageCredit)
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel("Picture credit: \(imageCredit)")
+                    .accessibilityIdentifier("tileEditor.imageCredit")
             }
             if imageData == nil {
                 let ideas = EmojiSuggester.suggestions(label: label, spokenText: spokenText, limit: 6)
@@ -286,7 +295,8 @@ struct TileEditorSheet: View {
                 }
                 .buttonStyle(.borderless)
                 .disabled(!hasWords)
-                .accessibilityLabel("Play")
+                .accessibilityLabel("Hear the phrase")
+                .help("Hear the phrase")
             }
             if let phrase = GLPRules.discouragedPhrase(in: spokenText) {
                 Text("“\(phrase)” sounds like praise or an instruction. Hum tiles are your child's own voice, so we suggest a phrase your child would say.")
@@ -334,8 +344,9 @@ struct TileEditorSheet: View {
                     if let audioData {
                         Button("Play", systemImage: "play.circle") { recorder.play(audioData) }
                         Spacer()
-                        Button("Remove", systemImage: "trash", role: .destructive) { self.audioData = nil }
+                        Button("Remove recording", systemImage: "trash", role: .destructive) { self.audioData = nil }
                             .labelStyle(.iconOnly)
+                            .help("Remove the recording")
                     }
                 }
             }
@@ -443,8 +454,16 @@ struct TileEditorSheet: View {
         isHidden = tile.isHidden
         symbol = tile.symbol ?? ""
         imageData = tile.imageData
+        imageCredit = tile.imageData == nil ? nil : tile.imageCredit
         audioData = tile.audioData
         initial.symbol = symbol
+    }
+
+    /// Every picture change goes through here. A photo, a drawing or no picture clears the credit;
+    /// only a symbol from a symbol set brings one.
+    private func setPicture(_ data: Data?, credit: String? = nil) {
+        imageData = data
+        imageCredit = data == nil ? nil : credit
     }
 
     /// Return in a text field saves, when there's enough to save.
@@ -472,6 +491,7 @@ struct TileEditorSheet: View {
             tile.isHidden = isHidden
             tile.symbol = finalSymbol.isEmpty ? nil : finalSymbol
             tile.imageData = imageData
+            tile.imageCredit = imageData == nil ? nil : imageCredit
             tile.audioData = audioData
         }
         let rows = model.settings.newBoardRows, columns = model.settings.newBoardColumns

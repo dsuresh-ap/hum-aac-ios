@@ -1,0 +1,17 @@
+Hum
+Copyright 2026 The Hum Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Hum's source code has no third-party dependencies. Hum does not include any symbol sets. A parent can
+search two free symbol libraries online; a symbol they choose is saved into their own tile. Those
+symbols keep their own licences:
+
+- ARASAAC pictograms by Sergio Palao. Origin: ARASAAC (https://arasaac.org). Licence: CC BY-NC-SA 4.0.
+  Owner: Government of Aragón (Spain). Non-commercial: a paid or commercial fork of Hum must remove
+  the ARASAAC search.
+- Mulberry Symbols by Steve Lee (https://mulberrysymbols.org), via Global Symbols
+  (https://globalsymbols.com). Licence: CC BY-SA 4.0.
+
+Apple, iCloud, Apple Intelligence, iPad, iPhone and Mac are trademarks of Apple Inc. Hum is not
+affiliated with or endorsed by Apple, ARASAAC or Global Symbols.

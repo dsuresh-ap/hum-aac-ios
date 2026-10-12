@@ -51,7 +51,8 @@ struct HistoryView: View {
                                     Image(systemName: "play.circle")
                                 }
                                 .buttonStyle(.borderless)
-                                .accessibilityLabel("Play")
+                                .accessibilityLabel("Say “\(entry.spokenText)” again")
+                                .help("Say it again")
                             }
                         }
                     }

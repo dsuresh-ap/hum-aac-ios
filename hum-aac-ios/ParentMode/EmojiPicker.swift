@@ -15,8 +15,9 @@ struct EmojiPickerView: View {
     @Binding var selection: String
     let label: String
     let spokenText: String
-    /// A chosen symbol's picture (already a tile-ready JPEG); it becomes the tile's image, like a photo.
-    var onSymbol: ((Data) -> Void)? = nil
+    /// A chosen symbol's picture (already a tile-ready JPEG) and its symbol set's credit. The picture
+    /// becomes the tile's image, like a photo; the credit stays with it.
+    var onSymbol: ((Data, String) -> Void)? = nil
     @State var source: Source = .emoji
 
     @Environment(\.dismiss) private var dismiss
@@ -41,8 +42,8 @@ struct EmojiPickerView: View {
                 switch source {
                 case .emoji: emojiList
                 case .symbols:
-                    SymbolSearchView(initialQuery: label.isEmpty ? spokenText : label) { data in
-                        onSymbol?(data)
+                    SymbolSearchView(initialQuery: label.isEmpty ? spokenText : label) { data, credit in
+                        onSymbol?(data, credit)
                         dismiss()
                     }
                 }
@@ -147,7 +148,8 @@ struct EmojiPickerView: View {
 /// that uses the network, and only the search word is sent.
 private struct SymbolSearchView: View {
     let initialQuery: String
-    let onPick: (Data) -> Void
+    /// The picture and the credit of the set it came from.
+    let onPick: (Data, String) -> Void
 
     @AppStorage("symbolSource") private var source: SymbolLibrary.Source = .arasaac
     @State private var query = ""
@@ -239,10 +241,12 @@ private struct SymbolSearchView: View {
     private func pick(_ symbol: SymbolLibrary.Symbol) async {
         downloading = symbol.id
         defer { downloading = nil }
+        // The set the symbol came from, even if the parent switches sets while it downloads.
+        let credit = source.credit
         do {
             let raw = try await SymbolLibrary.download(symbol)
             guard let picture = await ImageProcessing.tileImageDataAllowingSVG(from: raw) else { throw SymbolLibrary.SearchError.failed }
-            onPick(picture)
+            onPick(picture, credit)
         } catch {
             errorMessage = error.localizedDescription
         }

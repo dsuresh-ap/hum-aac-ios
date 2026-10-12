@@ -132,7 +132,11 @@ public enum MergePlanner {
                     updated.hidden = incomingTile.hidden
                     updated.symbol = incomingTile.symbol
                     // Media is only ever added or replaced in a merge, never removed by a file that lacks it.
-                    if incomingTile.image != nil { updated.image = incomingTile.image }
+                    // A picture's credit comes and goes with the picture.
+                    if incomingTile.image != nil {
+                        updated.image = incomingTile.image
+                        updated.imageCredit = incomingTile.imageCredit
+                    }
                     if incomingTile.audio != nil { updated.audio = incomingTile.audio }
                     updated.extra.merge(incomingTile.extra) { _, new in new }
                     if updated != before {
@@ -154,7 +158,7 @@ public enum MergePlanner {
             }
         }
 
-        // A tile on your Home that opens the file's Home (like TD Snap's "import and link"), so the child
+        // A tile on your Home that opens the file's Home (an "import and link"), so the child
         // can reach everything that came in. First empty spot, else the "needs a spot" tray.
         if let importedHome, let homeIndex = result.boards.firstIndex(where: \.isHome) {
             let home = result.boards[homeIndex]

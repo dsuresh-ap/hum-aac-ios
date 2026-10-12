@@ -78,7 +78,7 @@ struct TileView: View {
                 if !speakOnTouchDown, CGRect(origin: .zero, size: size).contains(value.location) {
                     onTap(mach_absolute_time())
                 }
-                withAnimation(Theme.pressAnimation) { pressed = false }
+                withAnimation(reduceMotion ? nil : Theme.pressAnimation) { pressed = false }
             }
     }
 

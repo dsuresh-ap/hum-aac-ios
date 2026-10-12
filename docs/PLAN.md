@@ -232,7 +232,7 @@ AVAudioEngine (started once, kept running while foreground)
   **Symbols** tab searches ARASAAC (`api.arasaac.org`, pictograms CC BY-NC-SA 4.0; Hum is free, so
   non-commercial use fits). Only the parent's search word is sent, from an ephemeral `URLSession` (no
   cookies, no disk cache). A chosen symbol is downloaded once and saved in the tile like a photo, so child
-  mode never touches the network. Credit is shown in the picker and in Settings → Credits.
+  mode never touches the network. Credit is shown in the picker and in Settings → About Hum.
 - macOS needs the sandbox **Outgoing Connections (Client)** capability for this; iOS needs nothing.
 - Privacy label: ARASAAC receives a search word that isn't linked to the user or device. Re-check the
   label wording before release.
@@ -245,8 +245,9 @@ AVAudioEngine (started once, kept running while foreground)
 ## 9. Privacy manifest
 
 `PrivacyInfo.xcprivacy`: `NSPrivacyTracking = false`, no tracking domains, no collected data types.
-Required-reason APIs actually used: `UserDefaults` (CA92.1 — app's own data), file timestamps for the
-disk cache (C617.1 — inside app container). Re-audited each milestone.
+Required-reason APIs actually used: `UserDefaults` (CA92.1 — app's own data) and `mach_absolute_time()`
+for the tap-to-sound latency probe (35F9.1). No file timestamp APIs are used (re-checked 2026-10-12).
+Re-audited each milestone.
 
 ## 10. CI
 

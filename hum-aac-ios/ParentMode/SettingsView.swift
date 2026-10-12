@@ -154,9 +154,14 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Text(SymbolLibrary.credits).font(.footnote).foregroundStyle(.secondary)
-                } header: {
-                    Text("Credits")
+                    NavigationLink {
+                        AboutView()
+                    } label: {
+                        Label("About Hum", systemImage: "info.circle")
+                    }
+                    .accessibilityIdentifier("settings.about")
+                } footer: {
+                    Text("Version, privacy policy, help, symbol credits and licence.")
                 }
             }
             .formStyle(.grouped)
@@ -256,6 +261,7 @@ private struct VoiceRow: View {
             }
             .buttonStyle(.borderless)
             .accessibilityLabel("Play \(voice.name)")
+            .help("Hear \(voice.name)")
         }
     }
 

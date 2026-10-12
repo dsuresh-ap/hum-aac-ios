@@ -51,7 +51,8 @@ So in Hum:
           "hidden": false,            // optional: hidden tiles keep their (empty) spot
           "image": "media/more.jpg",  // optional, inside a .hum (JPEG, PNG, HEIC or SVG; resized on import)
           "audio": "media/more.m4a",  // optional parent recording (keeps real intonation)
-          "symbol": "🔁"               // optional emoji placeholder
+          "symbol": "🔁",              // optional emoji placeholder
+          "imageCredit": "Mulberry Symbols by Steve Lee …"  // optional: credit and licence of the picture
         }
       ]
     }
@@ -64,6 +65,11 @@ So in Hum:
   }
 }
 ```
+
+`imageCredit` is filled in by Hum when a parent picks a symbol from ARASAAC or Mulberry: their
+licences ask for the credit to travel with the picture. Keep it when you copy the tile or its
+picture. If any tile has one, an exported `.hum` also has a `CREDITS.txt` at the top that lists each
+credit once. Hum makes that file again on every export and ignores it on import.
 
 Unknown fields are allowed and **kept**: Hum writes them back out on export. iCloud sync and AI are
 intentionally not in the file; only a parent can switch those on, inside the app.
@@ -89,17 +95,7 @@ swift run --package-path Packages/HumConfig hum-config pack my-setup my-setup.hu
 
 # Unpack an exported setup to edit it
 swift run --package-path Packages/HumConfig hum-config unpack exported.hum my-setup
-
-# Turn a TD Snap page set (.sps) into a .hum (or into a folder, to edit before packing)
-swift run --package-path Packages/HumConfig hum-config import-snap MyPageSet.sps my-setup.hum
 ```
-
-**From TD Snap:** every page you can reach from Snap's Home becomes a board, and each button keeps its
-spot, words, colour and ID. Snap's Back and Home buttons are left out because Hum has its own; a left
-column that only held Snap's navigation is removed, and "Next page" moves to the bottom-right corner.
-Snap's symbols become SVG pictures. Symbols from Snap's built-in library aren't saved in the `.sps`, so
-those tiles get an emoji placeholder until you add a picture. Keyboards, the dashboard and pages over
-8 × 8 are left out; the command lists everything it left out.
 
 Errors are written for people, e.g. `Tile 'snack' has no words to say.`
 

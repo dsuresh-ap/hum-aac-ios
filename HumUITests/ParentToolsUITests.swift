@@ -46,6 +46,9 @@ final class ParentToolsUITests: XCTestCase {
             // On a device where the model isn't ready, the reason shows instead.
             XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'Apple Intelligence'")).firstMatch.exists)
         }
+        let mayBeWrong = el(app, "ai.mayBeWrong")
+        scrollTo(app, mayBeWrong)
+        XCTAssertTrue(mayBeWrong.exists, "The helper says suggestions can be wrong and nothing is added until chosen")
     }
 
     /// Scenario: the first time a parent opens grown-up mode on iPhone/iPad, Hum explains Guided Access,
@@ -91,11 +94,30 @@ final class ParentToolsUITests: XCTestCase {
     func testSettingsHaveNoDeveloperSection() {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
         tapToolbar(app, "settings", label: "Settings")
-        let credits = app.staticTexts["Credits"].firstMatch
-        scrollTo(app, credits)
-        XCTAssertTrue(credits.exists)
+        let about = el(app, "settings.about")
+        scrollTo(app, about)
+        XCTAssertTrue(about.exists)
         XCTAssertFalse(app.staticTexts["For developers"].exists)
         XCTAssertFalse(app.buttons["Tap-to-sound latency"].exists)
+    }
+
+    /// Scenario: Settings → About Hum shows the version, the "Important" note, the links and the credits.
+    @MainActor
+    func testAboutHumOpensFromSettings() {
+        let app = launchHum(["-skipFirstRun", "-startInParent"])
+        tapToolbar(app, "settings", label: "Settings")
+        let about = el(app, "settings.about")
+        scrollTo(app, about)
+        about.tap()
+        let privacy = el(app, "about.privacy")
+        XCTAssertTrue(privacy.waitForExistence(timeout: 5), "About Hum opens from Settings")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Version'")).firstMatch.exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Hum is a communication tool'")).firstMatch.exists)
+        XCTAssertTrue(app.buttons["Help and support"].exists)
+        let credits = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'ARASAAC'")).firstMatch
+        scrollTo(app, credits)
+        XCTAssertTrue(credits.exists, "The symbol credits are on About Hum")
+        shot(app, "about hum")
     }
 
     /// Scenario: switching the appearance to Dark changes the child's screen at once.
