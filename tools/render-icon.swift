@@ -29,8 +29,10 @@ let faces: [(UInt32, UInt32)] = tinted
     : [(0xCFE4C6, 0xA9C79C), (0xC5DFEC, 0x99BFD3), (0xF2CBC2, 0xD9A497), (0xF6DCB4, 0xDDB985)] // moss, sky, rosehip, apricot
 
 let S = CGFloat(size)
+// iOS icons are opaque (App Store Connect rejects an alpha channel); only the macOS icon needs one, for its shadow.
+let alpha: CGImageAlphaInfo = mac ? .premultipliedLast : .noneSkipLast
 let ctx = CGContext(data: nil, width: Int(S), height: Int(S), bitsPerComponent: 8, bytesPerRow: 0,
-                    space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+                    space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: alpha.rawValue)!
 ctx.translateBy(x: 0, y: S); ctx.scaleBy(x: S / 1024, y: -S / 1024)  // draw in a 1024 top-left space
 
 func rr(_ r: CGRect, _ radius: CGFloat) -> CGPath { CGPath(roundedRect: r, cornerWidth: radius, cornerHeight: radius, transform: nil) }
