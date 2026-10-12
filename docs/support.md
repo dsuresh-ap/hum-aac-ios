@@ -6,6 +6,7 @@ Hum is a free, open-source AAC app for Gestalt Language Processors, made by volu
 
 - **Questions, bugs and ideas:** open an issue at <https://github.com/dsuresh-ap/hum-aac-ios/issues>.
   Please don't put your child's name, photos or recordings in an issue: issues are public.
+- **Private questions:** email <apps@dhananjaysuresh.com>.
 - **Making boards with a file or a coding agent:** see the [setup guide](CONFIG.md).
 
 ## Common answers

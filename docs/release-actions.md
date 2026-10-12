@@ -124,7 +124,7 @@ Report the results in the PR; change nothing else.
 
 ## Part 2: owner tasks (not code)
 
-- [ ] **Contact email** in [`privacy.md`](privacy.md) (replace the `TODO(owner)` line).
+- [x] **Contact email** in [`privacy.md`](privacy.md): apps@dhananjaysuresh.com. Make sure it forwards to an inbox you read.
 - [ ] **Name check:** search "HUM" in class 9 (software) on USPTO (and EUIPO for the EU). Search the
       App Store. Consider "Hum AAC" as the App Store name.
 - [ ] **Privacy policy URL** and **Support URL** in App Store Connect: the GitHub links in Task 1, or a

@@ -47,5 +47,4 @@ public repository.
 
 ## Contact
 
-Open an issue at <https://github.com/dsuresh-ap/hum-aac-ios/issues>.
-<!-- TODO(owner): add a contact email here before release. -->
+Email <apps@dhananjaysuresh.com>, or open an issue at <https://github.com/dsuresh-ap/hum-aac-ios/issues>.
