@@ -55,8 +55,12 @@ final class ScreenTourTests: XCTestCase {
         shot(app, "22 new tile empty")
         el(app, "spokenTextField").typeText("Let's go to the playground!")
         shot(app, "23 new tile typed")
-        app.swipeUp()
-        app.buttons["More options"].firstMatch.tap()
+        // Swipe the form itself: with the keyboard up, iOS 18 doesn't scroll it for a swipe on the app.
+        let more = app.buttons["More options"].firstMatch
+        for _ in 0..<6 where !(more.exists && more.isHittable) {
+            app.cells.allElementsBoundByIndex.first { $0.isHittable }?.swipeUp()
+        }
+        more.tap()
         app.swipeUp()
         shot(app, "24 new tile more options")
         app.buttons["Cancel"].firstMatch.tap()
@@ -123,7 +127,8 @@ final class ScreenTourTests: XCTestCase {
         app.buttons["Cancel"].firstMatch.tap()
         app.buttons["Discard"].firstMatch.tap()
 
-        tapToolbar(app, "aiHelper", label: "Help me set up")
+        // Only devices with Apple Intelligence have the helper (none on iOS 18).
+        guard tapToolbarIfPresent(app, "aiHelper", label: "Help me set up") else { return }
         shot(app, "50 ai helper off")
         el(app, "turnOnAI").tap()
         shot(app, "51 ai helper on")
