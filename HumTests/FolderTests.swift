@@ -73,8 +73,12 @@ struct FolderTests {
         model.store.update(tile) { $0.label = "food" }
         #expect(folder.name == "Food")
 
-        // A folder the parent named differently keeps its own name.
+        // Renaming the folder renames its tile too (BUGS.md, HUM-039).
         model.store.rename(folder, to: "Kitchen")
+        #expect(tile.label == "Kitchen")
+
+        // A folder the parent named differently from its tile keeps its own name.
+        tile.label = "treats"
         model.store.update(tile) { $0.label = "eat" }
         #expect(folder.name == "Kitchen")
     }

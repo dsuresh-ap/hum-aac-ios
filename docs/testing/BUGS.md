@@ -10,53 +10,58 @@ or misleading) · Medium (works, but confusing or against the spec) · Low (poli
 **Kind:** Bug · UI (layout/sizing) · Text (wording) · Jargon (words a parent shouldn't see) · A11y.
 **Found by:** the UI test that shows it, “code” (read in the source, not run), or “by hand”.
 
-| ID | Sev | Kind | Screen | Summary |
-|----|-----|------|--------|---------|
-| [HUM-001](#hum-001) | Critical | Bug | Import | Merging a whole setup strands its Home: all imported boards (and its protest tiles) become unreachable |
-| [HUM-002](#hum-002) | Critical | Bug | Editor | Undo after deleting a tile doesn't bring it back; the tile is lost |
-| [HUM-037](#hum-037) | High | Bug | Import (iOS) | Imported SVG symbols stay blank for minutes after import (1 of ~40 appeared in 90 s) |
-| [HUM-038](#hum-038) | High | Bug | Import | Undo after “Replace everything” doesn't bring the old boards back |
-| [HUM-047](#hum-047) | High | Bug | AI helper | AI tiles with their own folder go to a new folder nothing opens, so they seem to vanish |
-| [HUM-004](#hum-004) | High | Bug | First run | “Import a setup” makes an empty Home first; cancelling leaves a blank board, importing hits HUM-001 |
-| [HUM-015](#hum-015) | High | Bug | Tile editor | Cancelling the camera deletes the tile's existing photo |
-| [HUM-003](#hum-003) | Medium | Bug | First run | The grid size picked in setup is ignored for the starter board |
-| [HUM-006](#hum-006) | Medium | UI | Editor (iPhone) | Tapping a folder tile opens the folder instead of editing it |
-| [HUM-008](#hum-008) | Medium | Bug | Editor | “Delete tile” in the long-press menu deletes without asking |
-| [HUM-009](#hum-009) | Medium | UI | Welcome (iPhone) | Sample tiles are wider than the screen; the subtitle is cut off on both sides |
-| [HUM-017](#hum-017) | Medium | Bug | First run, Settings | Robotic legacy voices (Fred, Junior, Kathy, Ralph…) are offered as top picks |
-| [HUM-027](#hum-027) | Medium | UX | Import, Editor | After a big import nothing says where the boards went; the board menu is a flat list of 116 |
-| [HUM-022](#hum-022) | Medium | Jargon | Settings | “For developers” section and latency screen are visible to every parent |
-| [HUM-023](#hum-023) | Medium | Jargon | Setup & sharing | iCloud rows show CloudKit console steps and raw error text |
-| [HUM-031](#hum-031) | Medium | Bug | AI helper | Settings says the AI isn't ready, but the helper shows the “Suggest tiles” form anyway |
-| [HUM-036](#hum-036) | Medium | UX | Editor (iPhone) | “Done” is a bare checkmark; History, Setup & sharing and Settings hide in “⋯” |
-| [HUM-040](#hum-040) | Medium | Bug | Home & folders | “Make Home board” on a board without protest tiles gives no warning |
-| [HUM-041](#hum-041) | Medium | Bug | Editor | The one-time Guided Access tip sometimes never appears |
-| [HUM-043](#hum-043) | Medium | UI | Child, Editor | Labels break in the middle of words on narrow tiles (“Clothin/g”, “Weathe/r”) |
-| [HUM-044](#hum-044) | Medium | Bug | Child (iPad) | The 3-second lock needs a much longer hold on iPad (3.5 s fails, 6 s works) |
-| [HUM-005](#hum-005) | Low | Jargon/UI | Editor | “Tiles are smaller than 88 points…” is developer wording, and cut off |
-| [HUM-007](#hum-007) | Low | UI | Editor (iPhone) | Pencil and camera badges cover the tile's picture |
-| [HUM-010](#hum-010) | Low | UI | Editor (iPhone) | Inside a folder, the help text is squeezed into a 9-line column; it takes a quarter of the screen |
-| [HUM-011](#hum-011) | Low | Text | Import preview | `Chat: “”` for folders, `I need a break.: “I need a break.”`, list silently stops at 30 |
-| [HUM-012](#hum-012) | Low | Text | Settings | Footer points to “Say it in your own voice”; the button is called “Record your voice” |
-| [HUM-013](#hum-013) | Low | Bug | Settings, Home & folders | New-board size can be set to 1 × 1, which the grid sheet says is too small |
-| [HUM-016](#hum-016) | Low | UI | First run (voice) | The natural-voice help card is cut off with “…” |
-| [HUM-018](#hum-018) | Low | Text | Tile editor, Paste phrases | Suggested label stops after four words: “Let's go to the” |
-| [HUM-019](#hum-019) | Low | Text | Tile editor, Paste phrases | First emoji idea for “Let's go to the park/playground” is a door 🚪 |
-| [HUM-020](#hum-020) | Low | UI | AI helper | Intro bullet points are cut off (“…are us…”, “…until yo…”) |
-| [HUM-021](#hum-021) | Low | A11y | Child (history box) | VoiceOver reads “Said: Hi!. Say it again.” |
-| [HUM-024](#hum-024) | Low | Text | Editor tray | Tiles moved off a shrunk board are called “new tiles” |
-| [HUM-025](#hum-025) | Low | Text | Settings | “Start the new tap right away”, “Speak when the finger” are hard to read |
-| [HUM-026](#hum-026) | Low | UX | History | “Clear” sits right next to “Done” |
-| [HUM-028](#hum-028) | Low | UX | Tile editor | Picking an emoji while a photo is set does nothing visible |
-| [HUM-029](#hum-029) | Low | UX | Grid size | The board's current size (5 × 4 starter) isn't a quick size, so nothing is selected |
-| [HUM-032](#hum-032) | Low | Jargon | Grid size, Editor | “phone layout”, “wider than 4 or taller than 8”, “Phone page 1 of 2” |
-| [HUM-034](#hum-034) | Low | Text | Home & folders | Section header “Home and folders” repeats the title |
-| [HUM-035](#hum-035) | Low | A11y | Child | A tile with no words is read as “<label>, folder” even when it isn't a folder |
-| [HUM-039](#hum-039) | Low | Bug | Home & folders | Renaming a folder doesn't rename the tile that opens it |
-| [HUM-042](#hum-042) | Low | UX | Setup & sharing | Export can take over 10 s with no “preparing…” feedback |
-| [HUM-045](#hum-045) | Low | UI | All sheets (iPad) | Sheets are small form sheets on a 13" iPad; Settings needs lots of scrolling |
-| [HUM-046](#hum-046) | Low | UI | First run (iPad) | Welcome and grid steps use a small block in the middle of a big screen |
-| [HUM-014](#hum-014) | ? | Bug? | Editor | First tap on “⋯” (and after a sheet closes) sometimes ignored; simulator panel only so far |
+**2026-10-12:** every bug below except HUM-014 is fixed on branch `e2e-tests-and-bug-log`. The
+`XCTExpectFailure` wrappers are gone: the same UI tests now check the fixed behavior, and
+`HumTests/BugFixTests.swift` covers the store-level fixes. How each one was fixed is in
+[Fixes](#fixes-2026-10-12) at the end. Ones marked “confirm on device” are in section 12 of the human test plan.
+
+| ID | Sev | Kind | Screen | Summary | Status |
+|----|-----|------|--------|---------|--------|
+| [HUM-001](#hum-001) | Critical | Bug | Import | Merging a whole setup strands its Home: all imported boards (and its protest tiles) become unreachable | Fixed |
+| [HUM-002](#hum-002) | Critical | Bug | Editor | Undo after deleting a tile doesn't bring it back; the tile is lost | Fixed |
+| [HUM-037](#hum-037) | High | Bug | Import (iOS) | Imported SVG symbols stay blank for minutes after import (1 of ~40 appeared in 90 s) | Fixed |
+| [HUM-038](#hum-038) | High | Bug | Import | Undo after “Replace everything” doesn't bring the old boards back | Fixed |
+| [HUM-047](#hum-047) | High | Bug | AI helper | AI tiles with their own folder go to a new folder nothing opens, so they seem to vanish | Fixed |
+| [HUM-004](#hum-004) | High | Bug | First run | “Import a setup” makes an empty Home first; cancelling leaves a blank board, importing hits HUM-001 | Fixed |
+| [HUM-015](#hum-015) | High | Bug | Tile editor | Cancelling the camera deletes the tile's existing photo | Fixed (confirm on device) |
+| [HUM-003](#hum-003) | Medium | Bug | First run | The grid size picked in setup is ignored for the starter board | Fixed |
+| [HUM-006](#hum-006) | Medium | UI | Editor (iPhone) | Tapping a folder tile opens the folder instead of editing it | Fixed |
+| [HUM-008](#hum-008) | Medium | Bug | Editor | “Delete tile” in the long-press menu deletes without asking | Fixed |
+| [HUM-009](#hum-009) | Medium | UI | Welcome (iPhone) | Sample tiles are wider than the screen; the subtitle is cut off on both sides | Fixed |
+| [HUM-017](#hum-017) | Medium | Bug | First run, Settings | Robotic legacy voices (Fred, Junior, Kathy, Ralph…) are offered as top picks | Fixed |
+| [HUM-027](#hum-027) | Medium | UX | Import, Editor | After a big import nothing says where the boards went; the board menu is a flat list of 116 | Fixed |
+| [HUM-022](#hum-022) | Medium | Jargon | Settings | “For developers” section and latency screen are visible to every parent | Fixed |
+| [HUM-023](#hum-023) | Medium | Jargon | Setup & sharing | iCloud rows show CloudKit console steps and raw error text | Fixed |
+| [HUM-031](#hum-031) | Medium | Bug | AI helper | Settings says the AI isn't ready, but the helper shows the “Suggest tiles” form anyway | Fixed (confirm on device) |
+| [HUM-036](#hum-036) | Medium | UX | Editor (iPhone) | “Done” is a bare checkmark; History, Setup & sharing and Settings hide in “⋯” | Fixed |
+| [HUM-040](#hum-040) | Medium | Bug | Home & folders | “Make Home board” on a board without protest tiles gives no warning | Fixed |
+| [HUM-041](#hum-041) | Medium | Bug | Editor | The one-time Guided Access tip sometimes never appears | Fixed |
+| [HUM-043](#hum-043) | Medium | UI | Child, Editor | Labels break in the middle of words on narrow tiles (“Clothin/g”, “Weathe/r”) | Fixed |
+| [HUM-044](#hum-044) | Medium | Bug | Child (iPad) | The 3-second lock needs a much longer hold on iPad (3.5 s fails, 6 s works) | Fixed (confirm on device) |
+| [HUM-005](#hum-005) | Low | Jargon/UI | Editor | “Tiles are smaller than 88 points…” is developer wording, and cut off | Fixed |
+| [HUM-007](#hum-007) | Low | UI | Editor (iPhone) | Pencil and camera badges cover the tile's picture | Fixed |
+| [HUM-010](#hum-010) | Low | UI | Editor (iPhone) | Inside a folder, the help text is squeezed into a 9-line column; it takes a quarter of the screen | Fixed |
+| [HUM-011](#hum-011) | Low | Text | Import preview | `Chat: “”` for folders, `I need a break.: “I need a break.”`, list silently stops at 30 | Fixed |
+| [HUM-012](#hum-012) | Low | Text | Settings | Footer points to “Say it in your own voice”; the button is called “Record your voice” | Fixed |
+| [HUM-013](#hum-013) | Low | Bug | Settings, Home & folders | New-board size can be set to 1 × 1, which the grid sheet says is too small | Fixed |
+| [HUM-016](#hum-016) | Low | UI | First run (voice) | The natural-voice help card is cut off with “…” | Fixed |
+| [HUM-018](#hum-018) | Low | Text | Tile editor, Paste phrases | Suggested label stops after four words: “Let's go to the” | Fixed |
+| [HUM-019](#hum-019) | Low | Text | Tile editor, Paste phrases | First emoji idea for “Let's go to the park/playground” is a door 🚪 | Fixed |
+| [HUM-020](#hum-020) | Low | UI | AI helper | Intro bullet points are cut off (“…are us…”, “…until yo…”) | Fixed |
+| [HUM-021](#hum-021) | Low | A11y | Child (history box) | VoiceOver reads “Said: Hi!. Say it again.” | Fixed |
+| [HUM-024](#hum-024) | Low | Text | Editor tray | Tiles moved off a shrunk board are called “new tiles” | Fixed |
+| [HUM-025](#hum-025) | Low | Text | Settings | “Start the new tap right away”, “Speak when the finger” are hard to read | Fixed |
+| [HUM-026](#hum-026) | Low | UX | History | “Clear” sits right next to “Done” | Fixed |
+| [HUM-028](#hum-028) | Low | UX | Tile editor | Picking an emoji while a photo is set does nothing visible | Fixed |
+| [HUM-029](#hum-029) | Low | UX | Grid size | The board's current size (5 × 4 starter) isn't a quick size, so nothing is selected | Fixed |
+| [HUM-032](#hum-032) | Low | Jargon | Grid size, Editor | “phone layout”, “wider than 4 or taller than 8”, “Phone page 1 of 2” | Fixed |
+| [HUM-034](#hum-034) | Low | Text | Home & folders | Section header “Home and folders” repeats the title | Fixed |
+| [HUM-035](#hum-035) | Low | A11y | Child | A tile with no words is read as “<label>, folder” even when it isn't a folder | Fixed |
+| [HUM-039](#hum-039) | Low | Bug | Home & folders | Renaming a folder doesn't rename the tile that opens it | Fixed |
+| [HUM-042](#hum-042) | Low | UX | Setup & sharing | Export can take over 10 s with no “preparing…” feedback | Fixed |
+| [HUM-045](#hum-045) | Low | UI | All sheets (iPad) | Sheets are small form sheets on a 13" iPad; Settings needs lots of scrolling | Fixed (confirm on device) |
+| [HUM-046](#hum-046) | Low | UI | First run (iPad) | Welcome and grid steps use a small block in the middle of a big screen | Fixed |
+| [HUM-014](#hum-014) | ? | Bug? | Editor | First tap on “⋯” (and after a sheet closes) sometimes ignored; simulator panel only so far | Open (device) |
 
 ---
 
@@ -390,8 +395,62 @@ so this may be the panel, not Hum. Listed in the human test plan to check on a d
 
 ---
 
+## Fixes (2026-10-12)
+
+Decisions from the owner: a merged file's Home becomes a folder on Home, like TD Snap's “import and
+link” (HUM-001); the starter stays 5 × 4 and says so (HUM-003); a Home without protest tiles gets a
+warning only (HUM-040); developer screens are removed, not hidden (HUM-022, HUM-023).
+
+| Bug | Fix |
+|-----|-----|
+| HUM-001 | `MergePlanner` turns the file's Home into a folder named after the file and adds a folder tile in your Home's first empty spot (or the tray). The preview says so. |
+| HUM-002 | Deleting a tile or folder registers its own undo (`BoardStore.change(_:undo:_:)`), which rebuilds it with the same ID, spot, picture and recording. SwiftData can't undo deletes. Because Undo makes new objects, older undo steps are forgotten after a delete (they'd point at the deleted ones and crash). |
+| HUM-003 | The starter card says “A 5 × 4 board…” when a smaller size was picked, and every start choice sets the new-folder size to the picked grid. |
+| HUM-004 | “Import a setup” no longer makes a Home first; setup finishes only when the import does. The file's own Home stays Home. |
+| HUM-005 | Plain wording, wraps instead of truncating, and only shows below 64 pt (the starter on iPhone no longer triggers it). |
+| HUM-006, 007 | On narrow edit tiles the badges sit in a strip above the picture, the camera reminder is hidden, and the folder's Open button moves to the top-left corner. |
+| HUM-008 | The long-press “Delete tile” asks first, like the tile editor. |
+| HUM-009 | The welcome tiles take the largest of three sizes that fits the width. |
+| HUM-010 | On iPhone the band shows one short help line on Home and none in folders. |
+| HUM-011 | Folder tiles read “Chat (opens a folder)”, a label equal to its phrase isn't repeated, and the list ends “and N more”. |
+| HUM-012 | Footer says “Record your voice”. |
+| HUM-013 | Every rows/columns stepper keeps at least 2 spots. |
+| HUM-015 | Cancelling the camera keeps the current photo. |
+| HUM-016 | The natural-voice card is never truncated. |
+| HUM-017 | MacinTalk voices are filtered out, Eloquence voices go last, Settings shows the best 5 (plus the one in use) with “Show all”, and first run marks the voice in use. |
+| HUM-018 | Labels drop a dangling small word: “Let's go to the park!” → “Let's go” (shared by the tile editor, Paste phrases and AI). |
+| HUM-019 | “let's go”/“go” no longer suggest 🚪. |
+| HUM-020 | The AI intro wraps. |
+| HUM-021 | No added period after a phrase that already ends in punctuation. |
+| HUM-022 | The “For developers” section and the latency screen are removed. |
+| HUM-023 | iCloud shows plain status and one plain error line; the CloudKit steps moved to `docs/testing/ICLOUD.md`. |
+| HUM-024 | “3 tiles need a spot”. |
+| HUM-025 | “If a tile is tapped while Hum is talking: Stop and say the new tile / Finish first / Say both”; “Speak: As soon as a finger touches / When the finger lifts off”. |
+| HUM-026 | “Clear history…” moved to the bottom of the list. |
+| HUM-027 | After any import the editor shows a banner saying where things went, with Open. The board menu is Home first, then A→Z; Home & folders gets a search field past 12 boards. |
+| HUM-028 | Choosing an emoji over a photo replaces the photo; the button says “Use an emoji instead…”. |
+| HUM-029 | The board's own size is shown first among the quick sizes when it isn't one of them. |
+| HUM-031 | The Settings AI rows that disagreed with the helper are gone (with HUM-022); the helper itself shows the plain reason when it can't run. |
+| HUM-032 | “Page 1 of 2”, and “On iPhone, big boards are split into pages…”. |
+| HUM-034 | The repeated header is gone. |
+| HUM-035 | A silent tile is read as “folder” only when it opens one. |
+| HUM-036 | “Done” is a word, and Settings sits next to it on iPhone. |
+| HUM-037 | SVG pictures are drawn during the import's own progress bar, a few at a time, reusing web views, with a 10 s limit per picture. |
+| HUM-038 | Replace everything undoes by putting the exported setup from just before back (and Redo replaces again). Background picture conversion and phone-page saves no longer land on the undo stack. The editor no longer reads tiles the undo deleted. |
+| HUM-039 | Renaming a folder renames folder tiles that showed its old name. |
+| HUM-040 | “Make Home board” warns when the board lacks Home's protest/regulation tiles (“Make Home anyway”). |
+| HUM-041 | The tip is asked for 0.7 s after the editor appears, once the transition has settled. |
+| HUM-043 | `TileLabel` sizes the font so the longest word fits, and keeps one-word labels on one line. |
+| HUM-044 | The hold counts from the touch's own timestamp, so iPadOS holding back top-edge touches (~0.8 s) no longer stretches it; child mode also defers system top-edge gestures. |
+| HUM-045 | Settings, the tile editor, Home & folders and Setup & sharing open page-sized on iPad. |
+| HUM-046 | Bigger welcome tiles, title and grid choices on iPad and Mac. |
+| HUM-047 | AI tiles stay on the board being edited unless the model names a folder that board opens (or Home, for protest tiles). A new folder gets a folder tile on that board, and the banner says where the tiles went. |
+| HUM-014 | Not fixed: not reproduced by UI tests; check on a device. |
+
+---
+
 ## Not bugs, but worth a look
 - Setup & sharing says “.hum file” and “coding agent”. Fine for the agent section; consider “Hum file”
-  in the export footer.
+  in the export footer. (First run now says “A Hum file”.)
 - The welcome progress bar is empty on the first screen and has no step labels.
 - 115 boards import in about 20 seconds with a clear “Preparing pictures… 680 of 1581” progress bar. Good.

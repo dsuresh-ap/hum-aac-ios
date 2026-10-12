@@ -4,7 +4,8 @@
 import Foundation
 import Observation
 
-/// Measures tap-to-sound latency on real devices, for the hidden developer screen.
+/// Measures tap-to-sound latency on real devices. Kept in memory only; nothing in the app shows it since
+/// the developer screen was removed (BUGS.md, HUM-022).
 ///
 /// latency = (render cycle that started the clip − touch time) + one I/O buffer + output latency.
 /// Only the last 200 samples are kept, in memory. Nothing is stored or sent anywhere; this is not analytics.

@@ -30,7 +30,7 @@ final class SpeechService {
     /// Recorded audio clips, decoded when the board loads (keyed by tile ID + data size as a cheap version).
     @ObservationIgnored private var recordings: [String: PCMClip] = [:]
 
-    /// Number of clips waiting to render (shown on the developer screen).
+    /// Number of clips waiting to render (for tests).
     private(set) var pendingRenders = 0
     private(set) var voice: VoiceSettings
 
@@ -156,7 +156,7 @@ final class SpeechService {
         renderTask = nil
     }
 
-    /// Waits until everything queued has rendered (tests and the developer screen).
+    /// Waits until everything queued has rendered (tests).
     func waitUntilIdle() async {
         while let task = renderTask { await task.value }
     }

@@ -25,6 +25,13 @@ func makeModel(starter: Bool = true) -> AppModel {
 
 @MainActor
 extension AppModel {
+    /// Ends the current "event", like a tap does in the app. Tests don't turn the run loop by themselves,
+    /// so without this the undo manager's per-event group would hold every change the test made, and one
+    /// Undo would undo all of them.
+    func endEvent() {
+        RunLoop.current.run(until: .now)
+    }
+
     /// Never force-unwrap in tests: a crash takes down the whole test host app.
     var home: Board { store.boards().first(where: \.isHome) ?? Board(name: "MISSING HOME", rows: 1, columns: 2) }
 

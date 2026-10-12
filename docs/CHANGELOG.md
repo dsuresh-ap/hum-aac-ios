@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased: fixes from the end-to-end test pass
+
+All 45 bugs in `docs/testing/BUGS.md` except HUM-014 (not reproduced). The biggest:
+
+- **Merging a setup with its own Home** makes that Home a folder named after the file, with a tile on
+  your Home that opens it (like TD Snap's "import and link"). Before, every imported board was unreachable.
+- **Undo after deleting a tile or folder, and after "Replace everything"**, brings back exactly what was
+  there. After one of these, older steps can't be undone.
+- **AI suggestions stay on the board you're editing.** A suggested new folder gets a folder tile there,
+  and a banner after any import or Add says where things went.
+- **Imported SVG symbols are drawn during the import**, so the board has its pictures when it closes.
+- **First run:** "Import a setup" no longer makes an empty Home first; the starter card says it is 5 × 4.
+- **The lock opens after 3 seconds on iPad too.**
+- **Plainer wording:** no "88 points", "phone layout", developer screens, CloudKit steps or raw errors.
+  The latency screen is removed. Robotic legacy voices are no longer offered.
+- Long-press Delete asks first; renaming a folder renames its tile; making a board Home warns when it
+  lacks the protest tiles; labels shrink instead of breaking mid-word.
+
 ## Unreleased: import from TD Snap
 
 - **`hum-config import-snap <file.sps> <out.hum | folder>`** turns a TD Snap page set into a Hum setup.

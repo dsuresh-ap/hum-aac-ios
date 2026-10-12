@@ -57,18 +57,31 @@ final class FirstRunUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["How many tiles on a screen?"].waitForExistence(timeout: 3))
     }
 
-    /// Scenario: a parent picks 2 × 2 ("fewer, bigger tiles") and then the starter board.
-    /// They expect big tiles, but the starter is always 5 × 4, so the choice is silently ignored.
+    /// Scenario: a parent picks 2 × 2 ("fewer, bigger tiles"). The starter board keeps its own 5 × 4 size,
+    /// and its card says so before they choose it; new folders use 2 × 2 (HUM-003).
     @MainActor
-    func testStarterBoardHonorsASmallGridChoice() {
+    func testStarterCardSaysItsOwnSize() {
         let app = launchHum()
         goToStartChoice(app, grid: "2 × 2")
-        el(app, "firstRun.starter").tap()
-        let hi = el(app, "tile.hi")
-        XCTAssertTrue(hi.waitForExistence(timeout: 5))
-        XCTExpectFailure("HUM-003: the grid size picked in setup is ignored for the starter board") {
-            XCTAssertGreaterThan(hi.frame.width, app.frame.width / 3, "2 × 2 should give tiles about half the screen wide")
-        }
+        let starter = el(app, "firstRun.starter")
+        XCTAssertTrue(starter.waitForExistence(timeout: 3))
+        XCTAssertTrue(starter.label.contains("5 × 4"), "The starter card says it's 5 × 4")
+        XCTAssertTrue(starter.label.contains("2 × 2"), "…and that new folders use the chosen size")
+        starter.tap()
+        XCTAssertTrue(el(app, "tile.hi").waitForExistence(timeout: 5))
+    }
+
+    /// Scenario: "Import a setup", then cancel the file picker. Setup is still open, and nothing was
+    /// made behind the parent's back (HUM-004).
+    @MainActor
+    func testCancellingFirstRunImportKeepsSetupOpen() {
+        let app = launchHum()
+        goToStartChoice(app, grid: "3 × 3")
+        el(app, "firstRun.import").tap()
+        let cancel = app.buttons["Cancel"].firstMatch
+        if cancel.waitForExistence(timeout: 5) { cancel.tap() }
+        XCTAssertTrue(app.staticTexts["How do you want to start?"].waitForExistence(timeout: 5), "Still on the start step")
+        XCTAssertFalse(el(app, "editGate").exists, "No board was made")
     }
 
     /// Scenario: picking a bigger grid than the starter grows Home. Nothing moves, and the

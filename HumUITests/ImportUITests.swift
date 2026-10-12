@@ -38,10 +38,14 @@ final class ImportUITests: XCTestCase {
         let app = launchHum(["-skipFirstRun", "-startInParent", "-importFile", try bigFixture()])
         let summary = el(app, "importSummary")
         XCTAssertTrue(summary.waitForExistence(timeout: 30))
-        XCTAssertEqual(summary.label, "115 new boards, 1866 new tiles, 0 changed tiles, 0 removed. No tiles will move.")
-        XCTExpectFailure("HUM-011: silent folder tiles are listed with empty quotes") {
-            XCTAssertFalse(app.staticTexts["Chat: “”"].exists)
-        }
+        // 1,866 tiles from the file, plus the folder tile on Home that opens the file's Home (HUM-001).
+        XCTAssertEqual(summary.label, "115 new boards, 1867 new tiles, 0 changed tiles, 0 removed. No tiles will move. "
+                       + "The file's Home becomes a folder called “Express2-v2” on your Home.")
+        // HUM-011: folder tiles say so, instead of empty quotes; the list says how many more there are.
+        XCTAssertFalse(app.staticTexts["Chat: “”"].exists)
+        let chat = app.staticTexts["Chat (opens a folder)"]
+        scrollTo(app, chat)
+        XCTAssertTrue(chat.exists)
         app.buttons["Cancel"].firstMatch.tap()
         XCTAssertTrue(el(app, "editTile.hi").waitForExistence(timeout: 3), "Cancel changes nothing")
     }
@@ -54,13 +58,16 @@ final class ImportUITests: XCTestCase {
         XCTAssertTrue(el(app, "importSummary").waitForExistence(timeout: 30))
         applyAndWait(app)
         XCTAssertTrue(el(app, "editTile.hi").exists, "The starter tiles stay where they were")
+        // HUM-001 and HUM-027: a folder tile on Home opens the file's Home, and a banner says where it went.
+        XCTAssertTrue(el(app, "importBanner").waitForExistence(timeout: 5), "A banner says where the boards went")
+        shot(app, "after merge")
+        XCTAssertTrue(el(app, "editTile.Express2-v2").exists, "A folder tile on Home opens the imported setup")
+        el(app, "openImported").tap()
+        XCTAssertTrue(app.staticTexts["Editing Express2-v2"].waitForExistence(timeout: 5))
         el(app, "boardsMenu").tap()
         let homes = app.buttons.matching(NSPredicate(format: "label == 'Home'"))
         XCTAssertTrue(homes.firstMatch.waitForExistence(timeout: 3))
-        shot(app, "board menu after merge")
-        XCTExpectFailure("HUM-001: the imported Home becomes a second board called “Home” that no tile opens") {
-            XCTAssertEqual(homes.count, 1, "Only one board should be called Home")
-        }
+        XCTAssertEqual(homes.count, 1, "Only one board is called Home")
     }
 
     /// Scenario: "Replace everything" asks first, then the child's Home is the file's Home, shown in
@@ -95,9 +102,7 @@ final class ImportUITests: XCTestCase {
         let undo = app.buttons["Undo"].firstMatch
         XCTAssertTrue(undo.isEnabled, "Replacing everything can be undone")
         undo.tap()
-        XCTExpectFailure("HUM-038: Undo after “Replace everything” doesn't bring the old boards back") {
-            XCTAssertTrue(el(app, "editTile.hi").waitForExistence(timeout: 30), "Undo restores the starter board")
-        }
+        XCTAssertTrue(el(app, "editTile.hi").waitForExistence(timeout: 30), "Undo restores the starter board (HUM-038)")
     }
 
     /// Scenario: a broken file shows a friendly message and changes nothing.

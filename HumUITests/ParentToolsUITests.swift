@@ -3,8 +3,7 @@
 
 import XCTest
 
-/// The rest of grown-up mode: Paste phrases, the AI helper, export, the Guided Access tip and the
-/// latency screen.
+/// The rest of grown-up mode: Paste phrases, the AI helper, export, the Guided Access tip and Settings.
 final class ParentToolsUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -63,9 +62,7 @@ final class ParentToolsUITests: XCTestCase {
         let tip = app.alerts["Tip: lock the app with Guided Access"]
         let shown = tip.waitForExistence(timeout: 5)
         shot(app, "first time in grown-up mode")
-        XCTExpectFailure("HUM-041: the one-time Guided Access tip sometimes never appears", options: .nonStrict()) {
-            XCTAssertTrue(shown, "The tip explains Guided Access the first time")
-        }
+        XCTAssertTrue(shown, "The tip explains Guided Access the first time (HUM-041)")
         guard shown else { return }
         tip.buttons["Got it"].tap()
         finishEditing(app)
@@ -87,18 +84,16 @@ final class ParentToolsUITests: XCTestCase {
         XCTAssertTrue(opened, "The save sheet should open")
     }
 
-    /// Scenario: the latency pad measures taps.
+    /// Scenario: Settings has no developer screens or jargon (HUM-022).
     @MainActor
-    func testLatencyPadMeasuresTaps() {
+    func testSettingsHaveNoDeveloperSection() {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
         tapToolbar(app, "settings", label: "Settings")
-        let latency = el(app, "developerLatency")
-        scrollTo(app, latency)
-        latency.tap()
-        let pad = el(app, "latencyPad")
-        XCTAssertTrue(pad.waitForExistence(timeout: 3))
-        for _ in 0..<5 { pad.tap() }
-        XCTAssertTrue(app.staticTexts["Taps measured"].waitForExistence(timeout: 5))
+        let credits = app.staticTexts["Credits"].firstMatch
+        scrollTo(app, credits)
+        XCTAssertTrue(credits.exists)
+        XCTAssertFalse(app.staticTexts["For developers"].exists)
+        XCTAssertFalse(app.buttons["Tap-to-sound latency"].exists)
     }
 
     /// Scenario: switching the appearance to Dark changes the child's screen at once.

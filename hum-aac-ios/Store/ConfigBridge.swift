@@ -63,11 +63,15 @@ enum ConfigBridge {
 
     /// Prepares every picture `plan` uses, several at a time off the main thread (a big setup can have
     /// well over a thousand). `progress` gets (done, total) on the main actor after each one.
+    /// On iOS, SVG symbols are drawn here too (with WebKit, a few at a time), so the boards have their
+    /// pictures as soon as the import finishes.
     @MainActor
     static func preparePictures(for plan: MergePlanner.Plan, media: [String: Data],
                                 progress: (Int, Int) -> Void) async -> [String: Data?] {
         let paths = picturePaths(in: plan, media: media)
         var prepared: [String: Data?] = [:]
+        var done = 0
+        var svgs: [String] = []
         progress(0, paths.count)
         await withTaskGroup(of: (String, Data?).self) { group in
             var next = paths.makeIterator()
@@ -78,12 +82,41 @@ enum ConfigBridge {
             for _ in 0..<max(2, ProcessInfo.processInfo.activeProcessorCount) { addNext() }
             for await (path, data) in group {
                 prepared[path] = data
-                progress(prepared.count, paths.count)
+                if let data, ImageProcessing.isSVG(data) {
+                    svgs.append(path)
+                } else {
+                    done += 1
+                    progress(done, paths.count)
+                }
                 addNext()
             }
         }
+        #if canImport(UIKit)
+        // Three at a time: each one is drawn by a web view on the main thread.
+        for start in stride(from: 0, to: svgs.count, by: 3) {
+            let batch: [(String, Data)] = svgs[start..<min(start + 3, svgs.count)].compactMap { path in
+                (prepared[path] ?? nil).map { (path, $0) }
+            }
+            async let a = render(batch, 0)
+            async let b = render(batch, 1)
+            async let c = render(batch, 2)
+            for (path, jpeg) in await [a, b, c].compactMap({ $0 }) {
+                prepared[path] = .some(jpeg)  // nil if it can't be drawn: no picture beats a broken one
+                done += 1
+                progress(done, paths.count)
+            }
+        }
+        #endif
         return prepared
     }
+
+    #if canImport(UIKit)
+    @MainActor
+    private static func render(_ batch: [(String, Data)], _ index: Int) async -> (String, Data?)? {
+        guard index < batch.count else { return nil }
+        return (batch[index].0, await ImageProcessing.tileImageDataAllowingSVG(from: batch[index].1))
+    }
+    #endif
 
     /// Writes a planned import into SwiftData. Media is only set when the package contains it.
     /// `prepared` holds pictures already processed by `preparePictures`; others are processed here.

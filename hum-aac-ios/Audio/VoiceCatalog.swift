@@ -11,20 +11,33 @@ import AVFoundation
 /// version appears. Voices from third-party voice apps installed on the device (iOS 17+ speech provider
 /// extensions) appear here too.
 enum VoiceCatalog {
-    /// Voices for the device's language, best first. Novelty voices ("Bubbles", "Jester") are left out.
+    /// Voices for the device's language, best first. Novelty voices ("Bubbles", "Jester") and the old
+    /// robotic MacinTalk voices ("Fred", "Junior", "Kathy", "Ralph"), which aren't flagged as novelty,
+    /// are left out.
     static func voices(language: String = AVSpeechSynthesisVoice.currentLanguageCode()) -> [AVSpeechSynthesisVoice] {
         let prefix = String(language.prefix(2))
         let current = AVSpeechSynthesisVoice.currentLanguageCode()
         let systemDefault = AVSpeechSynthesisVoice(language: current)?.identifier
         return AVSpeechSynthesisVoice.speechVoices()
-            .filter { $0.language.hasPrefix(prefix) && !$0.voiceTraits.contains(.isNoveltyVoice) }
+            .filter { $0.language.hasPrefix(prefix) && !$0.voiceTraits.contains(.isNoveltyVoice) && !isLegacy($0) }
             .sorted { isBetter($0, $1, current: current, systemDefault: systemDefault) }
     }
 
+    /// The 1990s MacinTalk voices. They're still installed, but sound like a robot.
+    static func isLegacy(_ voice: AVSpeechSynthesisVoice) -> Bool {
+        voice.identifier.hasPrefix("com.apple.speech.synthesis.voice.")
+    }
+
+    /// The Eloquence voices (Eddy, Flo, Reed, Sandy…) are clear but synthetic: listed after the others.
+    static func isEloquence(_ voice: AVSpeechSynthesisVoice) -> Bool {
+        voice.identifier.hasPrefix("com.apple.eloquence.")
+    }
+
     /// Premium > Enhanced > Standard, then the system's own default voice, then the device's exact
-    /// locale (en-US over en-GB), then A→Z.
+    /// locale (en-US over en-GB), then Eloquence voices last, then A→Z.
     private static func isBetter(_ a: AVSpeechSynthesisVoice, _ b: AVSpeechSynthesisVoice, current: String, systemDefault: String?) -> Bool {
         if a.quality != b.quality { return a.quality.rawValue > b.quality.rawValue }
+        if isEloquence(a) != isEloquence(b) { return isEloquence(b) }
         if (a.identifier == systemDefault) != (b.identifier == systemDefault) { return a.identifier == systemDefault }
         let aLocal = a.language == current, bLocal = b.language == current
         if aLocal != bLocal { return aLocal }

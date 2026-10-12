@@ -20,13 +20,8 @@ enum SVGRenderer {
         #if canImport(UIKit) && canImport(WebKit)
         guard let raw = String(data: svg, encoding: .utf8), raw.contains("<svg") else { return nil }
         let text = withViewBox(raw)
-        let config = WKWebViewConfiguration()
-        config.websiteDataStore = .nonPersistent()
-        config.defaultWebpagePreferences.allowsContentJavaScript = false
-        let view = WKWebView(frame: CGRect(x: 0, y: 0, width: points, height: points), configuration: config)
-        view.isOpaque = true
-        view.backgroundColor = .white
-        view.scrollView.contentInsetAdjustmentBehavior = .never
+        let view = takeView(points: points)
+        defer { putBack(view) }
         let html = """
             <!doctype html><html><head>
             <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:">
@@ -37,6 +32,7 @@ enum SVGRenderer {
             """
         let loader = Loader()
         view.navigationDelegate = loader
+        defer { view.navigationDelegate = nil }
         guard await loader.load(html, in: view) else { return nil }
         let snapshot = WKSnapshotConfiguration()
         snapshot.rect = view.bounds
@@ -46,6 +42,31 @@ enum SVGRenderer {
         return nil
         #endif
     }
+
+    #if canImport(UIKit) && canImport(WebKit)
+    /// Web views are slow to start (each one starts a web process), so a big import reuses a few.
+    private static var idle: [WKWebView] = []
+
+    private static func takeView(points: CGFloat) -> WKWebView {
+        let frame = CGRect(x: 0, y: 0, width: points, height: points)
+        if let view = idle.popLast() {
+            view.frame = frame
+            return view
+        }
+        let config = WKWebViewConfiguration()
+        config.websiteDataStore = .nonPersistent()
+        config.defaultWebpagePreferences.allowsContentJavaScript = false
+        let view = WKWebView(frame: frame, configuration: config)
+        view.isOpaque = true
+        view.backgroundColor = .white
+        view.scrollView.contentInsetAdjustmentBehavior = .never
+        return view
+    }
+
+    private static func putBack(_ view: WKWebView) {
+        if idle.count < 4 { idle.append(view) }
+    }
+    #endif
 
     /// An SVG with only `width`/`height` doesn't scale to fill the page; give it a matching `viewBox`.
     nonisolated static func withViewBox(_ svg: String) -> String {
@@ -63,7 +84,8 @@ enum SVGRenderer {
     }
 
     #if canImport(UIKit) && canImport(WebKit)
-    /// Waits for the page to finish loading (or fail).
+    /// Waits for the page to finish loading (or fail). Gives up after 10 seconds, so one bad picture
+    /// can't stall a whole import.
     private final class Loader: NSObject, WKNavigationDelegate {
         private var continuation: CheckedContinuation<Bool, Never>?
 
@@ -71,6 +93,10 @@ enum SVGRenderer {
             await withCheckedContinuation { continuation in
                 self.continuation = continuation
                 view.loadHTMLString(html, baseURL: nil)
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: .seconds(10))
+                    self?.finish(false)
+                }
             }
         }
 

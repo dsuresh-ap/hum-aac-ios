@@ -17,6 +17,9 @@ struct EmojiSuggesterTests {
         ("swinging", "Let's go swinging!", "🔄"),
         ("bye-bye", "Bye-bye!", "👋"),
         ("to infinity", "To infinity and beyond!", "🚀"),
+        // HUM-019: "let's go" isn't a door.
+        ("Let's go", "Let's go to the park!", "🌳"),
+        ("Let's go", "Let's go to the playground!", "🛝"),
     ])
     func guessesFromWords(label: String, phrase: String, expected: String) {
         #expect(EmojiSuggester.suggestion(label: label, spokenText: phrase) == expected)
@@ -68,6 +71,6 @@ struct EmojiSuggesterTests {
     @Test func pastedLinesStayWhole() {
         let tiles = ProposalChecker.tiles(fromLines: "To infinity and beyond!\n\n  Let's get out of here!  \r\nAll done")
         #expect(tiles.map(\.spokenText) == ["To infinity and beyond!", "Let's get out of here!", "All done"])
-        #expect(tiles.map(\.label) == ["To infinity and beyond", "Let's get out of", "All done"])
+        #expect(tiles.map(\.label) == ["To infinity and beyond", "Let's get out", "All done"])
     }
 }

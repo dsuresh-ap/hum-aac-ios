@@ -55,10 +55,7 @@ final class BoardsUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Food and drink"].waitForExistence(timeout: 3))
         closeSheet(app)
         app.buttons["Back to Home"].firstMatch.tap()
-        XCTAssertTrue(el(app, "editTile.Food").waitForExistence(timeout: 3) || el(app, "editTile.Food and drink").exists)
-        XCTExpectFailure("HUM-039: renaming a folder in Home & folders leaves its folder tile with the old name") {
-            XCTAssertTrue(el(app, "editTile.Food and drink").waitForExistence(timeout: 3))
-        }
+        XCTAssertTrue(el(app, "editTile.Food and drink").waitForExistence(timeout: 3), "The folder tile is renamed too (HUM-039)")
     }
 
     /// Scenario: Duplicate makes "Home copy". No tile opens it yet, and the list says so.
@@ -91,16 +88,16 @@ final class BoardsUITests: XCTestCase {
     }
 
     /// Scenario: the parent makes a folder the Home board. The child starts there, and Home goes there.
-    /// Protest tiles should still be reachable; Hum doesn't warn when the new Home has none.
+    /// Food has no "stop" or "no thank you", so Hum warns first (HUM-040).
     @MainActor
     func testMakeAFolderHome() {
         let app = launchHum(["-skipFirstRun", "-demoFolder", "-startInParent"])
         openBoards(app)
         boardRow(app, "Food").press(forDuration: 1.2)
         app.buttons["Make Home board"].firstMatch.tap()
-        XCTExpectFailure("HUM-040: making a board without “stop”/“no thank you” the Home board gives no warning") {
-            XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 2))
-        }
+        let warning = app.alerts["Make Food the Home board?"]
+        XCTAssertTrue(warning.waitForExistence(timeout: 3), "Hum warns that Food lacks the protest tiles")
+        warning.buttons["Make Home anyway"].tap()
         closeSheet(app)
         finishEditing(app)
         el(app, "home").tap()

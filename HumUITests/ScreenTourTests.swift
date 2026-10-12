@@ -114,9 +114,6 @@ final class ScreenTourTests: XCTestCase {
             app.swipeUp()
             shot(app, "47 settings \(i)")
         }
-        el(app, "developerLatency").tap()
-        shot(app, "48 latency")
-        goBack(app, from: "Settings")
         closeSheet(app)
 
         el(app, "addMenu").tap()

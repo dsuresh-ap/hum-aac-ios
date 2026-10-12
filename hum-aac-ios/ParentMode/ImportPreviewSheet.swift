@@ -59,10 +59,14 @@ struct ImportPreviewSheet: View {
                 if !changedTiles.isEmpty || !newTiles.isEmpty {
                     Section("What changes") {
                         ForEach(newTiles, id: \.id) { tile in
-                            Label { Text("\(tile.label): “\(tile.spokenText)”") } icon: { Image(systemName: "plus.circle.fill").foregroundStyle(.green) }
+                            Label { Text(Self.describe(tile)) } icon: { Image(systemName: "plus.circle.fill").foregroundStyle(.green) }
                         }
                         ForEach(changedTiles, id: \.id) { tile in
-                            Label { Text("\(tile.label): “\(tile.spokenText)”") } icon: { Image(systemName: "pencil.circle.fill").foregroundStyle(.blue) }
+                            Label { Text(Self.describe(tile)) } icon: { Image(systemName: "pencil.circle.fill").foregroundStyle(.blue) }
+                        }
+                        let more = allNewCount + allChangedCount - newTiles.count - changedTiles.count
+                        if more > 0 {
+                            Text("and \(more) more").foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -109,6 +113,17 @@ struct ImportPreviewSheet: View {
     }
     private var newTiles: [HumTile] { allIncomingTiles.filter { plan.newTileIDs.contains($0.id) }.prefix(30).map { $0 } }
     private var changedTiles: [HumTile] { allIncomingTiles.filter { plan.changedTileIDs.contains($0.id) }.prefix(30).map { $0 } }
+    private var allNewCount: Int { plan.newTileIDs.count }
+    private var allChangedCount: Int { plan.changedTileIDs.count }
+
+    /// One line per tile: “Let's go!”, or “snack: Let's have a snack.”, or “Chat (opens a folder)”.
+    static func describe(_ tile: HumTile) -> String {
+        let phrase = tile.spokenText.trimmingCharacters(in: .whitespaces)
+        if phrase.isEmpty { return tile.linkedBoardID != nil ? "\(tile.label) (opens a folder)" : tile.label }
+        let bare = { (text: String) in text.trimmingCharacters(in: .punctuationCharacters).lowercased() }
+        if bare(phrase) == bare(tile.label) { return "“\(phrase)”" }
+        return "\(tile.label): “\(phrase)”"
+    }
 
     private func apply() {
         guard progress == nil else { return }

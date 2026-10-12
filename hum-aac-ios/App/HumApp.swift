@@ -89,9 +89,10 @@ struct RootView: View {
         .preferredColorScheme(colorScheme)
         // "Open in Hum", AirDrop and Finder double-click.
         .onOpenURL { url in if url.isFileURL { model.requestImport(url: url) } }
-        // The preview only appears in parent mode. A file that arrives while the child is using
-        // Hum waits until a parent opens grown-up settings. Setup & sharing shows its own.
-        .modifier(ImportPreviewHost(isActive: (model.mode == .parent || showFirstRunImporter) && !model.importHostedBySheet))
+        // The preview only appears in parent mode (or during setup, where a parent is choosing "Import a
+        // setup"). A file that arrives while the child is using Hum waits until a parent opens grown-up
+        // settings. Setup & sharing shows its own.
+        .modifier(ImportPreviewHost(isActive: (model.mode == .parent || model.needsFirstRun) && !model.importHostedBySheet))
         .fileImporter(isPresented: $showFirstRunImporter, allowedContentTypes: [.humPackage, .json, .zip]) { result in
             if case .success(let url) = result { model.requestImport(url: url) }
         }

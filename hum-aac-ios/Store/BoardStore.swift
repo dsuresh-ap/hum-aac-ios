@@ -34,6 +34,40 @@ final class BoardStore {
         try body()
     }
 
+    /// Runs `body` as one undo step, with `undo` as the way back instead of SwiftData's own record.
+    /// SwiftData can't undo a delete properly: the object comes back without its board, so the tile is
+    /// lost (BUGS.md, HUM-002). `undo` runs as a change of its own, so whatever it registers is the redo.
+    ///
+    /// Undo makes *new* objects with the old IDs. SwiftData's older undo steps still point at the deleted
+    /// ones and would crash, so a change like this (not an undo or redo of one) forgets the older steps.
+    func change(_ name: String, undo: @escaping @MainActor (BoardStore) -> Void, _ body: () throws -> Void) rethrows {
+        guard let undoManager else {
+            try body()
+            try? context.save()
+            return
+        }
+        if !undoManager.isUndoing && !undoManager.isRedoing { undoManager.removeAllActions() }
+        undoManager.beginUndoGrouping()
+        undoManager.disableUndoRegistration()
+        defer {
+            try? context.save()  // while registration is off, so SwiftData records nothing
+            undoManager.enableUndoRegistration()
+            undoManager.registerUndo(withTarget: self) { store in MainActor.assumeIsolated { undo(store) } }
+            undoManager.setActionName(name)
+            undoManager.endUndoGrouping()
+        }
+        try body()
+    }
+
+    /// Saves changes that aren't an undo step of their own (converted pictures, phone spots), without
+    /// leaving anything on the undo stack. Undo after an import must undo the import, not these.
+    func withoutUndo(_ body: () -> Void) {
+        undoManager?.disableUndoRegistration()
+        body()
+        try? context.save()
+        undoManager?.enableUndoRegistration()
+    }
+
     /// Forgets all undo steps (after first-run setup, so the starter board can't be undone away).
     func clearUndo() {
         undoManager?.removeAllActions()
@@ -190,9 +224,29 @@ final class BoardStore {
         }
     }
 
-    /// Deletes a tile. Its slot simply becomes empty; nothing else moves.
+    /// Deletes a tile. Its slot simply becomes empty; nothing else moves. Undo puts it back, with the
+    /// same ID, spot, picture and recording.
     func delete(_ tile: Tile) {
-        change("Delete Tile") { context.delete(tile) }
+        let saved = SavedTile(tile)
+        change("Delete Tile", undo: { $0.restore(saved) }) { context.delete(tile) }
+    }
+
+    private func restore(_ saved: SavedTile) {
+        guard let boardID = saved.boardID, let board = board(boardID) else { return }
+        let tile = saved.make()
+        change("Delete Tile", undo: { store in
+            if let tile = store.liveTile(saved.id) { store.delete(tile) }
+        }) {
+            context.insert(tile)
+            tile.board = board
+            board.updatedAt = .now
+        }
+    }
+
+    func liveTile(_ id: UUID) -> Tile? {
+        var descriptor = FetchDescriptor<Tile>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
     }
 
     /// Saves edits from the tile editor as one undo step.
@@ -275,11 +329,32 @@ final class BoardStore {
         return board
     }
 
+    /// Renames a board. Folder tiles that open it and still show its old name get the new name too,
+    /// so the child sees the same word on the tile and at the top of the folder.
     func rename(_ board: Board, to name: String) {
         change("Rename Board") {
+            let oldName = board.name
             board.name = name
             board.updatedAt = .now
+            let id = board.id
+            for tile in (try? context.fetch(FetchDescriptor<Tile>())) ?? []
+            where tile.linkedBoardID == id && tile.label.localizedCaseInsensitiveCompare(oldName) == .orderedSame {
+                tile.label = name
+                tile.updatedAt = .now
+            }
         }
+    }
+
+    /// Protest and regulation tiles on the current Home ("No thank you", "Stop!", "Help me") that
+    /// `board` doesn't have. Making `board` Home would leave the child without them there.
+    func protestTilesMissing(from board: Board) -> [String] {
+        guard let home = boards().first(where: \.isHome), home.id != board.id else { return [] }
+        let there = Set(board.placedTiles.map { GLPRules.normalize($0.spokenText) })
+        return home.placedTiles
+            .filter { $0.function.map(GLPRules.mustStayOnHome.contains) == true && !$0.isHidden }
+            .sorted { ($0.row ?? 0, $0.column ?? 0) < ($1.row ?? 0, $1.column ?? 0) }
+            .filter { !there.contains(GLPRules.normalize($0.spokenText)) }
+            .map(\.label)
     }
 
     func setHome(_ board: Board) {
@@ -313,12 +388,31 @@ final class BoardStore {
     /// Deletes a board and its tiles. Tiles elsewhere that opened it keep speaking; their link is cleared.
     func delete(_ board: Board) throws {
         if board.isHome && boards().count > 1 { throw StoreError.cannotDeleteHome }
-        change("Delete Board") {
-            let id = board.id
+        let saved = SavedBoard(board)
+        let id = board.id
+        let links = ((try? context.fetch(FetchDescriptor<Tile>())) ?? []).filter { $0.linkedBoardID == id }.map(\.id)
+        change("Delete Board", undo: { $0.restore(saved, links: links) }) {
             for tile in (try? context.fetch(FetchDescriptor<Tile>())) ?? [] where tile.linkedBoardID == id {
                 tile.linkedBoardID = nil
             }
             context.delete(board)
+        }
+    }
+
+    private func restore(_ saved: SavedBoard, links: [UUID]) {
+        change("Delete Board", undo: { store in
+            if let board = store.board(saved.id) { try? store.delete(board) }
+        }) {
+            let board = Board(id: saved.id, name: saved.name, rows: saved.rows, columns: saved.columns, isHome: saved.isHome)
+            board.createdAt = saved.createdAt
+            board.extraJSON = saved.extraJSON
+            context.insert(board)
+            for savedTile in saved.tiles {
+                let tile = savedTile.make()
+                context.insert(tile)
+                tile.board = board
+            }
+            for id in links { liveTile(id)?.linkedBoardID = saved.id }
         }
     }
 
@@ -361,6 +455,84 @@ final class BoardStore {
             tile.updatedAt = .now
         }
         return board
+    }
+}
+
+/// Everything about a deleted tile, so Undo can make it again.
+struct SavedTile {
+    var id: UUID
+    var boardID: UUID?
+    var label, spokenText: String
+    var functionRaw, colorHex, symbol: String?
+    var linkedBoardID: UUID?
+    var isHidden: Bool
+    var row, column, phonePage, phoneRow, phoneColumn: Int?
+    var positionUpdatedAt, createdAt: Date
+    var imageData, audioData, extraJSON: Data?
+
+    @MainActor
+    init(_ tile: Tile) {
+        id = tile.id
+        boardID = tile.board?.id
+        label = tile.label
+        spokenText = tile.spokenText
+        functionRaw = tile.functionRaw
+        colorHex = tile.colorHex
+        symbol = tile.symbol
+        linkedBoardID = tile.linkedBoardID
+        isHidden = tile.isHidden
+        row = tile.row
+        column = tile.column
+        phonePage = tile.phonePage
+        phoneRow = tile.phoneRow
+        phoneColumn = tile.phoneColumn
+        positionUpdatedAt = tile.positionUpdatedAt
+        createdAt = tile.createdAt
+        imageData = tile.imageData
+        audioData = tile.audioData
+        extraJSON = tile.extraJSON
+    }
+
+    @MainActor
+    func make() -> Tile {
+        let tile = Tile(id: id, label: label, spokenText: spokenText, row: row, column: column)
+        tile.functionRaw = functionRaw
+        tile.colorHex = colorHex
+        tile.symbol = symbol
+        tile.linkedBoardID = linkedBoardID
+        tile.isHidden = isHidden
+        tile.phonePage = phonePage
+        tile.phoneRow = phoneRow
+        tile.phoneColumn = phoneColumn
+        tile.positionUpdatedAt = positionUpdatedAt
+        tile.createdAt = createdAt
+        tile.imageData = imageData
+        tile.audioData = audioData
+        tile.extraJSON = extraJSON
+        return tile
+    }
+}
+
+/// Everything about a deleted board and its tiles.
+struct SavedBoard {
+    var id: UUID
+    var name: String
+    var rows, columns: Int
+    var isHome: Bool
+    var createdAt: Date
+    var extraJSON: Data?
+    var tiles: [SavedTile]
+
+    @MainActor
+    init(_ board: Board) {
+        id = board.id
+        name = board.name
+        rows = board.rows
+        columns = board.columns
+        isHome = board.isHome
+        createdAt = board.createdAt
+        extraJSON = board.extraJSON
+        tiles = (board.tiles ?? []).map(SavedTile.init)
     }
 }
 

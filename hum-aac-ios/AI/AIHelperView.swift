@@ -71,6 +71,7 @@ struct AIHelperView: View {
                     Label("Runs on this device by default.", systemImage: "lock")
                     Label("It only suggests. Nothing changes until you tap Add.", systemImage: "hand.tap")
                 }
+                .fixedSize(horizontal: false, vertical: true)  // whole sentences, never "…are us…"
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 Button("Turn on the helper") {

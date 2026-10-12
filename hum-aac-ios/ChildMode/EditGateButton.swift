@@ -32,7 +32,7 @@ struct EditGateButton: View {
         .contentShape(.rect)
         .gesture(
             DragGesture(minimumDistance: 0)
-                .onChanged { _ in if holdTask == nil { beginHold() } }
+                .onChanged { value in if holdTask == nil { beginHold(touchedAt: value.time) } }
                 .onEnded { _ in cancelHold() }
         )
         .accessibilityLabel("Grown-up settings")
@@ -41,15 +41,30 @@ struct EditGateButton: View {
         .accessibilityIdentifier("editGate")
     }
 
-    private func beginHold() {
-        withAnimation(.linear(duration: Self.holdDuration)) { progress = 1 }
+    /// Counts from when the finger touched, not from when the touch reached Hum: near the top edge
+    /// iPadOS holds touches back for its own gestures (about 0.8 s in the simulator), so a 3-second hold
+    /// used to need much longer (BUGS.md, HUM-044).
+    private func beginHold(touchedAt: Date) {
+        let held = min(Self.secondsSinceTouch(touchedAt), Self.holdDuration - 0.2)
+        let remaining = Self.holdDuration - held
+        progress = held / Self.holdDuration
+        withAnimation(.linear(duration: remaining)) { progress = 1 }
         holdTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(Self.holdDuration))
+            try? await Task.sleep(for: .seconds(remaining))
             guard !Task.isCancelled else { return }
             holdTask = nil
             progress = 0
             onUnlock()
         }
+    }
+
+    /// A gesture's `time` is the touch's timestamp: seconds since the device started, stored as a date
+    /// after 2001-01-01. Anything that doesn't look like a recent touch counts as "just now".
+    static func secondsSinceTouch(_ touchedAt: Date) -> TimeInterval {
+        let age = ProcessInfo.processInfo.systemUptime - touchedAt.timeIntervalSinceReferenceDate
+        if (0..<holdDuration).contains(age) { return age }
+        let wallClock = Date.now.timeIntervalSince(touchedAt)
+        return (0..<holdDuration).contains(wallClock) ? wallClock : 0
     }
 
     private func cancelHold() {

@@ -11,6 +11,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var voices: [AVSpeechSynthesisVoice] = []
     @State private var personalVoiceStatus = ""
+    /// The voice list starts short (the best few, plus the one in use), so the other settings are close.
+    @State private var showAllVoices = false
 
     var body: some View {
         @Bindable var settings = model.settings
@@ -41,15 +43,18 @@ struct SettingsView: View {
                 } header: {
                     Text("How it sounds")
                 } footer: {
-                    Text("“Younger” makes any voice higher and a little slower. Apple doesn't include children's voices; for a real child's voice, ask an older sibling or cousin to record tiles (edit a tile → Say it in your own voice).")
+                    Text("“Younger” makes any voice higher and a little slower. Apple doesn't include children's voices; for a real child's voice, ask an older sibling or cousin to record tiles (edit a tile → Record your voice).")
                 }
 
                 Section {
-                    ForEach(voices, id: \.identifier) { voice in
+                    ForEach(shownVoices, id: \.identifier) { voice in
                         VoiceRow(voice: voice, isSelected: voice.identifier == currentVoiceID) {
                             settings.voiceIdentifier = voice.identifier
                             voiceChanged()
                         }
+                    }
+                    if voices.count > shownVoices.count {
+                        Button("Show all \(voices.count) voices") { showAllVoices = true }
                     }
                     Button("Use my own voice (Personal Voice)…", systemImage: "person.wave.2") { requestPersonalVoice() }
                     if !personalVoiceStatus.isEmpty {
@@ -75,15 +80,15 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Picker("When a tile is tapped while talking", selection: $settings.retrigger) {
-                        Text("Start the new tap right away").tag(HumSettings.Retrigger.restart)
-                        Text("Let speech finish first").tag(HumSettings.Retrigger.finish)
-                        Text("Play both together").tag(HumSettings.Retrigger.overlap)
+                    Picker("If a tile is tapped while Hum is talking", selection: $settings.retrigger) {
+                        Text("Stop and say the new tile").tag(HumSettings.Retrigger.restart)
+                        Text("Finish first").tag(HumSettings.Retrigger.finish)
+                        Text("Say both").tag(HumSettings.Retrigger.overlap)
                     }
                     .onChange(of: settings.retrigger) { model.applySpeechSettings() }
-                    Picker("Speak when the finger", selection: $settings.activation) {
-                        Text("Touches the tile (fastest)").tag(HumSettings.Activation.touchDown)
-                        Text("Lifts off the tile").tag(HumSettings.Activation.touchUp)
+                    Picker("Speak", selection: $settings.activation) {
+                        Text("As soon as a finger touches (fastest)").tag(HumSettings.Activation.touchDown)
+                        Text("When the finger lifts off").tag(HumSettings.Activation.touchUp)
                     }
                     #if os(iOS)
                     if UIDevice.current.userInterfaceIdiom == .phone {
@@ -124,8 +129,11 @@ struct SettingsView: View {
                             Text("\(settings.newBoardRows) × \(settings.newBoardColumns)").monospacedDigit()
                         }
                     }
-                    Stepper("Rows: \(settings.newBoardRows)", value: $settings.newBoardRows, in: 1...8)
-                    Stepper("Columns: \(settings.newBoardColumns)", value: $settings.newBoardColumns, in: 1...8)
+                    // A board needs at least 2 spots, like the grid size sheet says.
+                    Stepper("Rows: \(settings.newBoardRows)", value: $settings.newBoardRows,
+                            in: (settings.newBoardColumns > 1 ? 1 : 2)...8)
+                    Stepper("Columns: \(settings.newBoardColumns)", value: $settings.newBoardColumns,
+                            in: (settings.newBoardRows > 1 ? 1 : 2)...8)
                 } header: {
                     Text("Folders and boards")
                 } footer: {
@@ -149,17 +157,6 @@ struct SettingsView: View {
                     Text(SymbolLibrary.credits).font(.footnote).foregroundStyle(.secondary)
                 } header: {
                     Text("Credits")
-                }
-
-                Section("For developers") {
-                    NavigationLink("Tap-to-sound latency") { DeveloperLatencyView() }
-                        .accessibilityIdentifier("developerLatency")
-                    LabeledContent("AI helper (on this device)") {
-                        Text(aiStatus(.onDevice)).multilineTextAlignment(.trailing)
-                    }
-                    LabeledContent("AI helper (Private Cloud Compute)") {
-                        Text(aiStatus(.privateCloud)).multilineTextAlignment(.trailing)
-                    }
                 }
             }
             .formStyle(.grouped)
@@ -187,11 +184,13 @@ struct SettingsView: View {
 
     private var currentVoiceID: String { model.speech.voice.identifier }
 
-    private func aiStatus(_ mode: AIHelper.Mode) -> String {
-        switch AIHelper.availability(mode: mode) {
-        case .available: return "Available"
-        case .unavailable(let reason): return reason
-        }
+    /// The best 5 voices and the one in use, or all of them.
+    private var shownVoices: [AVSpeechSynthesisVoice] {
+        if showAllVoices { return voices }
+        let top = Array(voices.prefix(5))
+        guard !top.contains(where: { $0.identifier == currentVoiceID }),
+              let current = voices.first(where: { $0.identifier == currentVoiceID }) else { return top }
+        return top + [current]
     }
 
     /// Voices for the device's language, best quality first.

@@ -56,14 +56,17 @@ struct HistoryView: View {
                         }
                     }
                 }
+
+                // At the bottom, away from Done, so a quick tap on Done never lands on it (BUGS.md, HUM-026).
+                if !model.history.entries.isEmpty {
+                    Section {
+                        Button("Clear history…", role: .destructive) { confirmClear = true }
+                    }
+                }
             }
             .navigationTitle("History")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
-                ToolbarItem(placement: .destructiveAction) {
-                    Button("Clear", role: .destructive) { confirmClear = true }
-                        .disabled(model.history.entries.isEmpty)
-                }
             }
             .confirmationDialog("Clear all history?", isPresented: $confirmClear, titleVisibility: .visible) {
                 Button("Clear history", role: .destructive) { model.history.clear() }
