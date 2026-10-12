@@ -203,7 +203,7 @@ struct ImportService {
             guard let tile = liveTile(id, in: model.context) else { continue }
             // Saved at once and kept off the undo stack: Undo right after an import must undo the import.
             model.store.withoutUndo { tile.imageData = jpeg }  // nil if it can't be drawn: no picture beats a broken one
-            // A big set (e.g. a whole Snap page set) has hundreds: show them as they come.
+            // A big set (e.g. a whole page set) has hundreds: show them as they come.
             if i % 50 == 49 { model.scheduleSnapshotRefresh() }
             await Task.yield()
         }

@@ -42,7 +42,7 @@ enum Theme {
     }
 
     /// Text and marks on a tile. The built-in colors follow Light/Dark mode together with `ink`, but a
-    /// tile's own color (e.g. from TD Snap) doesn't, so it gets whichever ink reads better on it: a white
+    /// tile's own color (e.g. from an import) doesn't, so it gets whichever ink reads better on it: a white
     /// tile never gets white text in Dark Mode.
     static func tileInk(function: TileFunction?, hex: String?) -> Color {
         guard let hex, let value = UInt32(hex.dropFirst(), radix: 16) else { return ink }

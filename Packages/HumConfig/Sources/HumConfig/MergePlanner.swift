@@ -154,7 +154,7 @@ public enum MergePlanner {
             }
         }
 
-        // A tile on your Home that opens the file's Home (like TD Snap's "import and link"), so the child
+        // A tile on your Home that opens the file's Home (an "import and link"), so the child
         // can reach everything that came in. First empty spot, else the "needs a spot" tray.
         if let importedHome, let homeIndex = result.boards.firstIndex(where: \.isHome) {
             let home = result.boards[homeIndex]
