@@ -17,6 +17,33 @@ struct ProposalCheckerTests {
         return HumDocument(boards: [HumBoard(id: homeID, name: "Home", rows: 2, columns: 2, isHome: true, tiles: tiles)])
     }
 
+    /// HUM-047: a suggestion with its own `boardName` makes a new folder, but no tile opens it, so the
+    /// child can never reach those tiles. The folder should get a folder tile on the board being edited.
+    @Test func suggestedTilesInANewFolderAreReachable() {
+        let food = HumBoard(name: "Food", rows: 2, columns: 2, tiles: [])
+        var setup = existing()
+        setup.boards.append(food)
+        let document = ProposalChecker.document(from: [
+            .init(label: "all aboard", spokenText: "All aboard!", function: .request, boardName: "Trains"),
+        ], targetBoardID: food.id, existing: setup)
+        let trains = document.boards.first { $0.name == "Trains" }
+        #expect(trains != nil, "The suggestion's own folder is made")
+        withKnownIssue("HUM-047: nothing links to the new folder") {
+            let linked = document.boards.flatMap(\.tiles).contains { $0.linkedBoardID == trains?.id }
+            #expect(linked, "A folder tile on the board being edited should open it")
+        }
+    }
+
+    /// HUM-047: with no `boardName`, suggestions go to the board being edited, not Home.
+    @Test func suggestionsGoToTheBoardBeingEdited() {
+        let food = HumBoard(name: "Food", rows: 2, columns: 2, tiles: [])
+        var setup = existing()
+        setup.boards.append(food)
+        let document = ProposalChecker.document(from: [.init(label: "crackers", spokenText: "Let's have crackers")],
+                                                targetBoardID: food.id, existing: setup)
+        #expect(document.boards.map(\.id) == [food.id])
+    }
+
     @Test func praiseAndComplianceAreRemoved() {
         let result = ProposalChecker.check([
             .init(label: "yay", spokenText: "Good job!"),
