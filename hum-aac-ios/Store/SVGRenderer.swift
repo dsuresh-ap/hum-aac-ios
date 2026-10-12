@@ -15,8 +15,8 @@ import WebKit
 /// that blocks every outside load, so an SVG can't run code or reach the network.
 @MainActor
 enum SVGRenderer {
-    /// How long to wait for a page to load. Tests raise it: a CI simulator can take 40 s to start WebKit.
-    static var loadTimeout: Duration = .seconds(30)
+    /// How long to wait for a page to load.
+    static let loadTimeout: Duration = .seconds(30)
 
     /// A square picture of the SVG on white, or nil.
     static func render(_ svg: Data, points: CGFloat = 512) async -> CGImage? {

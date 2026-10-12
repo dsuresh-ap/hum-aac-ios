@@ -68,6 +68,9 @@ jobs:
           echo "Simulator: $UDID"
           xcodebuild -project hum-aac-ios.xcodeproj -scheme Hum -destination "id=$UDID" \
             -only-testing:HumTests -resultBundlePath HumTests.xcresult CODE_SIGNING_ALLOWED=NO test
+        env:
+          # Skips the tests that need WebKit, which doesn't start reliably here (`.needsWebKit`).
+          TEST_RUNNER_HUM_CI: "1"
       - name: Keep the test results when tests fail
         if: failure()
         uses: actions/upload-artifact@v4
