@@ -74,42 +74,11 @@ struct FirstRunView: View {
 
     private var voicePicker: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Pick a voice").font(.system(.largeTitle, design: .serif, weight: .semibold))
-            Text("Tap ▶ to listen. You can change this any time.").foregroundStyle(.secondary)
-            if VoiceCatalog.onlyCompactVoicesInstalled {
-                NaturalVoicesCard()
-                    .fixedSize(horizontal: false, vertical: true)  // all the steps, never "…"
-                    .padding(14)
-                    .background(Theme.editBand, in: .rect(cornerRadius: 14))
-            }
+            // Everything above the buttons scrolls, so Next stays on screen at the largest text sizes.
             ScrollView {
-                VStack(spacing: 10) {
-                    ForEach(voices.prefix(4), id: \.identifier) { voice in
-                        // With no choice yet, the voice Hum would use is the one marked.
-                        let selected = (model.settings.voiceIdentifier ?? SpeechService.defaultVoiceIdentifier()) == voice.identifier
-                        HStack {
-                            Button {
-                                model.settings.voiceIdentifier = voice.identifier
-                                play(voice)
-                            } label: {
-                                HStack {
-                                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                                    Text(voice.name).font(.title3)
-                                    Spacer()
-                                }
-                                .contentShape(.rect)
-                            }
-                            .buttonStyle(.plain)
-                            Button { play(voice) } label: { Image(systemName: "play.circle.fill").font(.title) }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel("Play \(voice.name)")
-                        }
-                        .accessibilityAddTraits(selected ? .isSelected : [])
-                        .padding(14)
-                        .background(Theme.chrome, in: .rect(cornerRadius: 14))
-                    }
-                }
+                VStack(alignment: .leading, spacing: 16) { voiceChoices }
             }
+            .scrollBounceBehavior(.basedOnSize)
             HStack {
                 Button("Skip") {
                     model.settings.voiceIdentifier = nil
@@ -121,37 +90,86 @@ struct FirstRunView: View {
         }
     }
 
-    private var gridPicker: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("How many tiles on a screen?").font(.system(.largeTitle, design: .serif, weight: .semibold))
-            Text("Fewer, bigger tiles are easier to start with. Rows × columns.").foregroundStyle(.secondary)
-            if roomy { Spacer() }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: roomy ? 160 : 130), spacing: roomy ? 20 : 12)], spacing: roomy ? 20 : 12) {
-                ForEach(Self.gridOptions.indices, id: \.self) { index in
-                    let option = Self.gridOptions[index]
-                    let selected = rows == option.0 && columns == option.1
+    @ViewBuilder private var voiceChoices: some View {
+        Text("Pick a voice").font(.system(.largeTitle, design: .serif, weight: .semibold))
+        Text("Tap ▶ to listen. You can change this any time.").foregroundStyle(.secondary)
+        if VoiceCatalog.onlyCompactVoicesInstalled {
+            NaturalVoicesCard()
+                .fixedSize(horizontal: false, vertical: true)  // all the steps, never "…"
+                .padding(14)
+                .background(Theme.editBand, in: .rect(cornerRadius: 14))
+        }
+        VStack(spacing: 10) {
+            ForEach(voices.prefix(4), id: \.identifier) { voice in
+                // With no choice yet, the voice Hum would use is the one marked.
+                let selected = (model.settings.voiceIdentifier ?? SpeechService.defaultVoiceIdentifier()) == voice.identifier
+                HStack {
                     Button {
-                        rows = option.0
-                        columns = option.1
+                        model.settings.voiceIdentifier = voice.identifier
+                        play(voice)
                     } label: {
-                        VStack(spacing: 10) {
-                            GridPreview(rows: option.0, columns: option.1).frame(width: roomy ? 140 : 90, height: roomy ? 140 : 90)
-                            Text("\(option.0) × \(option.1)").font(roomy ? .title3.weight(.semibold) : .headline)
+                        HStack {
+                            Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                            Text(voice.name).font(.title3)
+                            Spacer()
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(14)
-                        .background(Theme.chrome, in: .rect(cornerRadius: 16))
-                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
+                        .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityAddTraits(selected ? .isSelected : [])
+                    Button { play(voice) } label: { Image(systemName: "play.circle.fill").font(.title) }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Play \(voice.name)")
+                }
+                .accessibilityAddTraits(selected ? .isSelected : [])
+                .padding(14)
+                .background(Theme.chrome, in: .rect(cornerRadius: 14))
+            }
+        }
+    }
+
+    private var gridPicker: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // The roomy layout when it fits; at the largest text sizes it scrolls, so Next stays on screen.
+            ViewThatFits(in: .vertical) {
+                VStack(alignment: .leading, spacing: 16) {
+                    gridChoices(spaced: roomy)
+                    Spacer()
+                }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) { gridChoices(spaced: false) }
                 }
             }
-            Spacer()
             HStack {
                 Button("Back") { step = .voice }
                 Spacer()
                 primaryButton("Next") { step = .start }
+            }
+        }
+    }
+
+    @ViewBuilder private func gridChoices(spaced: Bool) -> some View {
+        Text("How many tiles on a screen?").font(.system(.largeTitle, design: .serif, weight: .semibold))
+        Text("Fewer, bigger tiles are easier to start with. Rows × columns.").foregroundStyle(.secondary)
+        if spaced { Spacer() }
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: roomy ? 160 : 130), spacing: roomy ? 20 : 12)], spacing: roomy ? 20 : 12) {
+            ForEach(Self.gridOptions.indices, id: \.self) { index in
+                let option = Self.gridOptions[index]
+                let selected = rows == option.0 && columns == option.1
+                Button {
+                    rows = option.0
+                    columns = option.1
+                } label: {
+                    VStack(spacing: 10) {
+                        GridPreview(rows: option.0, columns: option.1).frame(width: roomy ? 140 : 90, height: roomy ? 140 : 90)
+                        Text("\(option.0) × \(option.1)").font(roomy ? .title3.weight(.semibold) : .headline)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(14)
+                    .background(Theme.chrome, in: .rect(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
     }
