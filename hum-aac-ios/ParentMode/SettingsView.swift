@@ -168,15 +168,14 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             #if os(macOS)
             .navigationSubtitle("Changes save as you make them")
-            #endif
+            #else
             .safeAreaInset(edge: .bottom) {
-                #if os(iOS)
                 Text("Changes save as you make them.")
                     .font(.footnote).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity).padding(.vertical, 6)
                     .background(.bar)
-                #endif
             }
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
