@@ -81,7 +81,7 @@ in Files / iCloud Drive / AirDrop.
 |---|-------|----------|
 | 5.1 | First run → Import a setup → Cancel the file picker, then Cancel the import preview too. | You're back on “How do you want to start?” each time; no blank board was made (HUM-004). |
 | 5.2 | First run → Import a setup → pick `Express2-v2.hum`. | The file's Home becomes the child's Home, with its pictures (HUM-001, HUM-037). |
-| 5.3 | Setup & sharing → Export all boards… → save to Files; Export “Home” only… → AirDrop to another device. | A `.hum` file is saved/sent; a “preparing” state shows if it takes a while (HUM-042). |
+| 5.3 | Setup & sharing → Export all boards… → Save to Files; Export “Home” only… → AirDrop to another device and Messages. | The share sheet opens (HUM-049) with a file named “Hum setup <date>”; AirDrop opens it in Hum on the other device; “Preparing your boards…” shows if it takes a while (HUM-042). |
 | 5.4 | On the other device: tap the `.hum` in Files / AirDrop / Mail → “Open in Hum”. | Hum opens; if the child is using it, the preview waits until grown-up mode. |
 | 5.5 | Import the same file twice with Merge. | Second time: “0 new tiles…” and nothing duplicated. |
 | 5.6 | Import `Express2-v2.hum`; time the “Preparing pictures…” bar, then look at the board right away. | Every picture shows as soon as the import closes (HUM-037). Write down how long the import took on the oldest supported iPad. |

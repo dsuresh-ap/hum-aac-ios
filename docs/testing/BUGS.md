@@ -23,6 +23,7 @@ or misleading) · Medium (works, but confusing or against the spec) · Low (poli
 | [HUM-038](#hum-038) | High | Bug | Import | Undo after “Replace everything” doesn't bring the old boards back | Fixed |
 | [HUM-047](#hum-047) | High | Bug | AI helper | AI tiles with their own folder go to a new folder nothing opens, so they seem to vanish | Fixed |
 | [HUM-048](#hum-048) | High | Bug | Child (sound) | Static or hiss at the end of spoken phrases | Fixed |
+| [HUM-049](#hum-049) | Medium | UX | Setup & sharing (iOS) | Export opens the Files save dialog, not the share sheet (no AirDrop or Messages) | Fixed |
 | [HUM-004](#hum-004) | High | Bug | First run | “Import a setup” makes an empty Home first; cancelling leaves a blank board, importing hits HUM-001 | Fixed |
 | [HUM-015](#hum-015) | High | Bug | Tile editor | Cancelling the camera deletes the tile's existing photo | Fixed (confirm on device) |
 | [HUM-003](#hum-003) | Medium | Bug | First run | The grid size picked in setup is ignored for the starter board | Fixed |
@@ -179,6 +180,12 @@ The starter board doesn't come back. Possibly the background picture conversion 
 that end up on top of the undo stack, or the replace isn't one undo group. Related to HUM-002.
 
 ## Medium
+
+### HUM-049
+**Export goes straight to Files.** Medium · UX · Setup & sharing (iOS) · *Found by:* the owner on an iPhone
+
+“Export all boards…” used SwiftUI's `fileExporter`, which on iOS is the Files save dialog. A parent who
+wants to AirDrop the setup to the iPad, or send it in Messages, can't. The footer even suggested AirDrop.
 
 ### HUM-040
 **A board without protest tiles can become Home with no warning.** Medium · Bug · Home & folders ·
@@ -457,6 +464,7 @@ warning only (HUM-040); developer screens are removed, not hidden (HUM-022, HUM-
 | HUM-046 | Bigger welcome tiles, title and grid choices on iPad and Mac. |
 | HUM-047 | AI tiles stay on the board being edited unless the model names a folder that board opens (or Home, for protest tiles). A new folder gets a folder tile on that board, and the banner says where the tiles went. |
 | HUM-048 | The renderer collects the whole phrase at the synthesizer's rate and resamples it once (`SampleBox`); the last 15 ms fade to silence; the clip cache moved to `v2`, so old clips render again. `SpeechCacheTests.chunkedSpeechResamplesWithoutEdgeGlitches` feeds a tone in 256-frame chunks and checks it comes out smooth. |
+| HUM-049 | On iOS, export writes the file under its real name to a temporary folder and opens the share sheet (AirDrop, Messages, Mail, Save to Files); the copy is deleted when the sheet closes. The Mac keeps the save dialog. `ParentToolsUITests.testExportOpensTheShareSheet`. |
 | HUM-014 | Not fixed: not reproduced by UI tests; check on a device. |
 
 ---

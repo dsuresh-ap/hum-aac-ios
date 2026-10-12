@@ -2,7 +2,7 @@
 
 ## Unreleased: fixes from the end-to-end test pass
 
-All 46 bugs in `docs/testing/BUGS.md` except HUM-014 (not reproduced). The biggest:
+All 47 bugs in `docs/testing/BUGS.md` except HUM-014 (not reproduced). The biggest:
 
 - **Merging a setup with its own Home** makes that Home a folder named after the file, with a tile on
   your Home that opens it (like TD Snap's "import and link"). Before, every imported board was unreachable.
@@ -14,6 +14,8 @@ All 46 bugs in `docs/testing/BUGS.md` except HUM-014 (not reproduced). The bigge
 - **First run:** "Import a setup" no longer makes an empty Home first; the starter card says it is 5 × 4.
 - **No more static at the end of phrases:** speech is resampled once per phrase instead of in 11 ms
   chunks, and clips fade to silence at the end. Cached clips render again once after updating.
+- **Export opens the share sheet on iPhone and iPad** (AirDrop, Messages, Mail, Save to Files) instead
+  of going straight to Files.
 - **The lock opens after 3 seconds on iPad too.**
 - **Plainer wording:** no "88 points", "phone layout", developer screens, CloudKit steps or raw errors.
   The latency screen is removed. Robotic legacy voices are no longer offered.
