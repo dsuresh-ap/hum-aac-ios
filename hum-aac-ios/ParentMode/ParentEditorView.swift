@@ -43,6 +43,12 @@ struct ParentEditorView: View {
                             parentName: model.editPath.last.flatMap { id in boards.first { $0.id == id }?.name },
                             onBack: model.backInEditor,
                             onGridSize: { showGridSize = true })
+                        // Below the band, not over it.
+                        if let report = model.lastImport {
+                            ImportBanner(report: report,
+                                         onOpen: { model.editBoard($0); model.lastImport = nil },
+                                         onClose: { model.lastImport = nil })
+                        }
                         EditGrid(board: board, editor: $editor, errorMessage: $errorMessage, notice: $notice,
                                  openFolder: model.openFolderInEditor)
                             .padding(Theme.gridPadding)
@@ -52,13 +58,6 @@ struct ParentEditorView: View {
                     }
                     .overlay(alignment: .bottom) {
                         if let notice { NoticeBanner(notice: notice, onOpen: { model.openFolderInEditor($0); self.notice = nil }) }
-                    }
-                    .overlay(alignment: .top) {
-                        if let report = model.lastImport {
-                            ImportBanner(report: report,
-                                         onOpen: { model.editBoard($0); model.lastImport = nil },
-                                         onClose: { model.lastImport = nil })
-                        }
                     }
                 } else {
                     ContentUnavailableView {
@@ -279,6 +278,9 @@ private struct EditGrid: View {
     let openFolder: (UUID) -> Void
     @Environment(AppModel.self) private var model
     @Query(sort: \Board.createdAt) private var boards: [Board]
+    /// The smallest an edit tile gets (points). Below this the editor scrolls.
+    static let minimumTile: CGFloat = 72
+
     /// The tile whose "Delete tile" was chosen from the long-press menu, waiting for the parent to confirm.
     @State private var confirmDelete: Tile?
 
@@ -295,19 +297,18 @@ private struct EditGrid: View {
             if phone { pageBar }
             GeometryReader { geo in
                 let spacing = phone ? 8 : Theme.gridSpacing
-                let width = (geo.size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
-                let height = (geo.size.height - spacing * CGFloat(rows - 1)) / CGFloat(rows)
+                // Edit tiles never get smaller than this. When the board doesn't fit, the editor scrolls
+                // instead of squeezing tiles on top of each other (iPhone in landscape, 8 × 8 boards).
+                // Only the editor scrolls; the child's board never does.
+                let fitWidth = (geo.size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
+                let fitHeight = (geo.size.height - spacing * CGFloat(rows - 1)) / CGFloat(rows)
+                let width = max(fitWidth, Self.minimumTile)
+                let height = max(fitHeight, Self.minimumTile)
+                let axes: Axis.Set = [fitWidth < Self.minimumTile ? .horizontal : [], fitHeight < Self.minimumTile ? .vertical : []]
                 let byPosition: [String: Tile] = phone
                     ? Dictionary(uniqueKeysWithValues: PhoneLayout.tiles(on: board, page: page).map { ("\($0.key.row),\($0.key.column)", $0.value) })
                     : Dictionary(board.placedTiles.map { ("\($0.row!),\($0.column!)", $0) }, uniquingKeysWith: { a, _ in a })
-                VStack(spacing: spacing) {
-                    // Only when tiles are really hard to hit (well under the 88 pt the spec aims for).
-                    if !phone && min(width, height) < 64 {
-                        Text("Tiles are small on this screen. Fewer rows or a folder makes them easier to tap.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                let grid = VStack(spacing: spacing) {
                     ForEach(0..<rows, id: \.self) { row in
                         HStack(spacing: spacing) {
                             ForEach(0..<columns, id: \.self) { column in
@@ -319,10 +320,18 @@ private struct EditGrid: View {
                                              roomy: height >= 120 && width >= 120)
                                     }
                                 }
-                                .frame(width: max(width, 0), height: max(height, 0))
+                                .frame(width: width, height: height)
                             }
                         }
                     }
+                }
+                if axes.isEmpty {
+                    grid
+                } else {
+                    // Dragging a tile near an edge scrolls, so far spots can still be reached.
+                    ScrollView(axes) { grid }
+                        .scrollIndicators(.visible)
+                        .accessibilityIdentifier("editGridScroll")
                 }
             }
         }
@@ -559,31 +568,37 @@ struct EditTileCard: View {
             // covers it, and the folder's Open button sits in a corner, so tapping the picture edits the
             // tile (BUGS.md, HUM-006 and HUM-007).
             let compact = geo.size.width < 150 || geo.size.height < 120
-            VStack(spacing: 4) {
-                Group {
-                    if let data = tile.imageData, let image = PlatformImage.thumbnail(data) {
-                        // Fit, like child mode: never wider or taller than the tile.
-                        Image(decorative: image, scale: 1).resizable().scaledToFit()
-                            .clipShape(.rect(cornerRadius: Theme.tileCorner * 0.6, style: .continuous))
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        Text(tile.symbol ?? "")
-                            .font(.system(size: size * (compact ? 0.3 : 0.36)))
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Wide, short tiles (iPhone in landscape): picture beside the label, like the child sees it,
+            // with the badges down the right-hand side.
+            let wide = TileShape.isWide(geo.size)
+            Group {
+                if wide {
+                    let side = max(geo.size.height - 12, 0)
+                    HStack(spacing: 8) {
+                        picture(fontSize: side * 0.7).frame(width: side, height: side)
+                        TileLabel(text: tile.label, fontSize: max(13, geo.size.height * 0.24),
+                                  width: geo.size.width - side - 60)
+                            .foregroundStyle(ink)
+                            .frame(maxWidth: .infinity)
                     }
+                    .padding(.leading, 6).padding(.vertical, 6).padding(.trailing, 36)
+                } else {
+                    VStack(spacing: 4) {
+                        picture(fontSize: size * (compact ? 0.3 : 0.36))
+                        TileLabel(text: tile.label, fontSize: max(13, size * 0.11), width: geo.size.width - (compact ? 12 : 20))
+                            .foregroundStyle(ink)
+                    }
+                    .padding(.horizontal, compact ? 6 : 10)
+                    .padding(.bottom, compact ? 6 : 10)
+                    .padding(.top, compact ? 30 : 10)
                 }
-                TileLabel(text: tile.label, fontSize: max(13, size * 0.11), width: geo.size.width - (compact ? 12 : 20))
-                    .foregroundStyle(ink)
             }
-            .padding(.horizontal, compact ? 6 : 10)
-            .padding(.bottom, compact ? 6 : 10)
-            .padding(.top, compact ? 30 : 10)
             .frame(width: geo.size.width, height: geo.size.height)
             .background(Theme.tileColor(function: tile.function, hex: tile.colorHex), in: .rect(cornerRadius: Theme.tileCorner, style: .continuous))
             .opacity(tile.isHidden ? 0.45 : 1)
-            .overlay(alignment: .topLeading) {
+            .overlay(alignment: wide ? .bottomTrailing : .topLeading) {
                 HStack(spacing: 6) {
-                    if compact, let onOpenFolder { openButton(onOpenFolder, compact: true) }
+                    if compact || wide, let onOpenFolder { openButton(onOpenFolder, compact: true) }
                     if tile.isHidden { Image(systemName: "eye.slash") }
                     // The "no photo yet" reminder only where there's room for it.
                     if tile.imageData == nil && !compact { Image(systemName: "camera").accessibilityLabel("No photo yet") }
@@ -603,11 +618,26 @@ struct EditTileCard: View {
             }
             .overlay(alignment: .top) {
                 // Top edge, between the badges and the pencil, so it never covers the label.
-                if !compact, let onOpenFolder {
+                if !compact && !wide, let onOpenFolder {
                     openButton(onOpenFolder, compact: geo.size.width < 150 && !dropTargeted)
                         .padding(.top, 8)
                 }
             }
+        }
+    }
+
+    /// The tile's photo, or its emoji at `fontSize`. Fit, like child mode: never wider or taller than the tile.
+    @ViewBuilder
+    private func picture(fontSize: CGFloat) -> some View {
+        if let data = tile.imageData, let image = PlatformImage.thumbnail(data) {
+            Image(decorative: image, scale: 1).resizable().scaledToFit()
+                .clipShape(.rect(cornerRadius: Theme.tileCorner * 0.6, style: .continuous))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            Text(tile.symbol ?? "")
+                .font(.system(size: fontSize))
+                .minimumScaleFactor(0.3)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -668,6 +698,16 @@ private struct EditBand: View {
     let onBack: () -> Void
     let onGridSize: () -> Void
     @Environment(\.horizontalSizeClass) private var sizeClass
+    #if os(iOS)
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    #endif
+    /// iPhone (narrow) or an iPhone in landscape (short): one short line of help at most.
+    private var tight: Bool {
+        #if os(iOS)
+        if verticalSizeClass == .compact { return true }
+        #endif
+        return sizeClass == .compact
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -684,7 +724,7 @@ private struct EditBand: View {
                     .font(.system(.title3, design: .serif, weight: .semibold))
                     .lineLimit(1).minimumScaleFactor(0.7)
                 // iPhone: one short line, so the grid keeps the room (BUGS.md, HUM-010).
-                if sizeClass == .compact {
+                if tight {
                     if parentName == nil {
                         Text("Tap a tile to change it. Drag to move.")
                             .font(.footnote).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
