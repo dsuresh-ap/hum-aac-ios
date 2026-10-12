@@ -261,6 +261,7 @@ private struct VoiceRow: View {
             }
             .buttonStyle(.borderless)
             .accessibilityLabel("Play \(voice.name)")
+            .help("Hear \(voice.name)")
         }
     }
 

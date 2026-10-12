@@ -295,7 +295,8 @@ struct TileEditorSheet: View {
                 }
                 .buttonStyle(.borderless)
                 .disabled(!hasWords)
-                .accessibilityLabel("Play")
+                .accessibilityLabel("Hear the phrase")
+                .help("Hear the phrase")
             }
             if let phrase = GLPRules.discouragedPhrase(in: spokenText) {
                 Text("“\(phrase)” sounds like praise or an instruction. Hum tiles are your child's own voice, so we suggest a phrase your child would say.")
@@ -343,8 +344,9 @@ struct TileEditorSheet: View {
                     if let audioData {
                         Button("Play", systemImage: "play.circle") { recorder.play(audioData) }
                         Spacer()
-                        Button("Remove", systemImage: "trash", role: .destructive) { self.audioData = nil }
+                        Button("Remove recording", systemImage: "trash", role: .destructive) { self.audioData = nil }
                             .labelStyle(.iconOnly)
+                            .help("Remove the recording")
                     }
                 }
             }
