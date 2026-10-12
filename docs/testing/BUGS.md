@@ -20,6 +20,7 @@ or misleading) · Medium (works, but confusing or against the spec) · Low (poli
 | [HUM-001](#hum-001) | Critical | Bug | Import | Merging a whole setup strands its Home: all imported boards (and its protest tiles) become unreachable | Fixed |
 | [HUM-002](#hum-002) | Critical | Bug | Editor | Undo after deleting a tile doesn't bring it back; the tile is lost | Fixed |
 | [HUM-052](#hum-052) | Critical | Bug | Editor, AI helper | Before iOS 27, undo after moving a tile into a folder or adding AI tiles loses tiles or crashes | Fixed |
+| [HUM-053](#hum-053) | High | Bug | Settings (Mac) | Clicks in Settings do nothing on the Mac: About Hum, the voice list, pop-up menus | Fixed |
 | [HUM-037](#hum-037) | High | Bug | Import (iOS) | Imported SVG symbols stay blank for minutes after import (1 of ~40 appeared in 90 s) | Fixed |
 | [HUM-038](#hum-038) | High | Bug | Import | Undo after “Replace everything” doesn't bring the old boards back | Fixed |
 | [HUM-047](#hum-047) | High | Bug | AI helper | AI tiles with their own folder go to a new folder nothing opens, so they seem to vanish | Fixed |
@@ -115,6 +116,15 @@ took "hi", "more" and "bye-bye" off Home. On iOS 26 the same undo crashed the ap
 CI app-test job (iOS 26 simulator) failed every test in 0.000 s.
 
 ## High
+
+### HUM-053
+**Settings ignores clicks on the Mac.** High · Bug · Settings (Mac) · *Found by:* the owner (About Hum didn't
+open with the trackpad)
+
+Every control in the Settings form ignored the mouse on the Mac: About Hum, "Show all voices", the
+pop-up menus. Done and Back in the toolbar worked, and Home & folders worked. The cause was the
+"Changes save as you make them" bar: a bottom `safeAreaInset` whose content is iOS-only. On the Mac the
+inset was still there, empty, and it took the clicks. The form could also scroll past its last row.
 
 ### HUM-047
 **AI suggestions in their own folder go to a folder nothing opens.** High · Bug · AI helper · *Found by:*
@@ -447,6 +457,7 @@ warning only (HUM-040); developer screens are removed, not hidden (HUM-022, HUM-
 | Bug | Fix |
 |-----|-----|
 | HUM-001 | `MergePlanner` turns the file's Home into a folder named after the file and adds a folder tile in your Home's first empty spot (or the tray). The preview says so. |
+| HUM-053 | The bottom inset is iOS-only; the Mac shows the same words as the window subtitle. Checked with real clicks on the Mac: "Show all voices" and About Hum open. |
 | HUM-052 | Moving a tile to another board and merge imports (which the AI helper uses) register their own undo (`BoardStore.change(_:restoring:boards:mediaOf:redo:_:)`): it puts the touched tiles and boards back as they were and deletes what the change made. Redo does the change again. Pictures are kept only for tiles whose picture the change replaces. Like deletes, these forget older undo steps. `FolderTests.movingIntoAFolderKeepsTheTileAndMovesNothingElse` and `AIHelperTests.addingSuggestionsNeverMovesTiles` check undo and redo; all unit tests pass on iOS 18.5, 26.5 and 27. |
 | HUM-002 | Deleting a tile or folder registers its own undo (`BoardStore.change(_:undo:_:)`), which rebuilds it with the same ID, spot, picture and recording. SwiftData can't undo deletes. Because Undo makes new objects, older undo steps are forgotten after a delete (they'd point at the deleted ones and crash). |
 | HUM-003 | The starter card says “A 5 × 4 board…” when a smaller size was picked, and every start choice sets the new-folder size to the picked grid. |
