@@ -11,16 +11,24 @@ import HumConfig
 struct ChildBoardView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.horizontalSizeClass) private var sizeClass
+    #if os(iOS)
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    /// An iPhone in landscape.
+    private var shortScreen: Bool { verticalSizeClass == .compact }
+    #else
+    private let shortScreen = false
+    #endif
     /// Tighter margins on iPhone so 4 columns stay close to the 88 pt minimum tile width.
     private var padding: CGFloat { sizeClass == .compact ? 8 : Theme.gridPadding }
 
     var body: some View {
         VStack(spacing: 0) {
             topBar
-            if model.settings.sentenceStrip {
+            // iPhone in landscape is short: the tiles get every row of height there.
+            if model.settings.sentenceStrip && !shortScreen {
                 SentenceStrip()
             }
-            if model.settings.showHistory {
+            if model.settings.showHistory && !shortScreen {
                 HistoryBox()
             }
             if let snapshot = model.snapshot {

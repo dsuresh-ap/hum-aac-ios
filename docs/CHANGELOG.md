@@ -16,6 +16,8 @@ All 47 bugs in `docs/testing/BUGS.md` except HUM-014 (not reproduced). The bigge
   chunks, and clips fade to silence at the end. Cached clips render again once after updating.
 - **Export opens the share sheet on iPhone and iPad** (AirDrop, Messages, Mail, Save to Files) instead
   of going straight to Files.
+- **iPhone sideways:** tiles show their picture beside the label instead of losing it, and the editor
+  scrolls instead of piling tiles on top of each other.
 - **The lock opens after 3 seconds on iPad too.**
 - **Plainer wording:** no "88 points", "phone layout", developer screens, CloudKit steps or raw errors.
   The latency screen is removed. Robotic legacy voices are no longer offered.

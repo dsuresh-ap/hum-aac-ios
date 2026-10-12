@@ -85,16 +85,46 @@ struct TileView: View {
     @ViewBuilder
     private func content(size: CGSize) -> some View {
         let padding: CGFloat = size.width > 120 ? 10 : 6
-        let label = TileLabel(text: cell.label, fontSize: max(14, min(size.width, size.height) * 0.13),
-                              width: size.width - padding * 2)
-            .foregroundStyle(ink)
-        VStack(spacing: 4) {
-            if showLabel && labelOnTop { label }
-            picture(size: size)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            if showLabel && !labelOnTop { label }
+        if TileShape.isWide(size) {
+            wideContent(size: size)
+        } else {
+            let label = TileLabel(text: cell.label, fontSize: max(14, min(size.width, size.height) * 0.13),
+                                  width: size.width - padding * 2)
+                .foregroundStyle(ink)
+            VStack(spacing: 4) {
+                if showLabel && labelOnTop { label }
+                picture(size: size)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if showLabel && !labelOnTop { label }
+            }
+            .padding(padding)
         }
-        .padding(padding)
+    }
+
+    /// A wide, short tile (an iPhone page in landscape): the picture sits beside the label instead of
+    /// above it, so it keeps a usable size. The tile stays in the same spot; only its inside changes.
+    @ViewBuilder
+    private func wideContent(size: CGSize) -> some View {
+        // Thin padding above and below: on an iPhone in landscape a row is only ~32 pt tall, and the
+        // picture should get nearly all of it.
+        let vertical = min(6, size.height * 0.08)
+        let side = max(size.height - vertical * 2, 0)
+        let hasPicture = cell.image != nil || !(cell.symbol ?? "").isEmpty
+        HStack(spacing: 8) {
+            if hasPicture {
+                picture(size: CGSize(width: side * 2.1, height: side * 2.1))  // emoji at ~0.9 of the side
+                    .frame(width: side, height: side)
+            }
+            if showLabel {
+                TileLabel(text: cell.label, fontSize: max(14, min(size.height * 0.4, size.width * 0.09)),
+                          width: size.width - 20 - (hasPicture ? side + 8 : 0))
+                    .foregroundStyle(ink)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, vertical)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var ink: Color { Theme.tileInk(function: cell.function, hex: cell.colorHex) }
@@ -117,6 +147,12 @@ struct TileView: View {
             Color.clear
         }
     }
+}
+
+/// Tile shapes that need their own layout inside.
+enum TileShape {
+    /// Much wider than tall (an iPhone page in landscape, or a wide grid): picture beside the label.
+    static func isWide(_ size: CGSize) -> Bool { size.width >= size.height * 1.8 }
 }
 
 /// A tile's label. It shrinks a long word to fit instead of breaking it ("Clothin/g", BUGS.md HUM-043):

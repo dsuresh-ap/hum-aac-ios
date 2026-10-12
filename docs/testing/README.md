@@ -40,5 +40,6 @@ every change in the test into one step.
 | `BoardsUITests` | Make a folder; rename folder renames its tile (HUM-039); duplicate flagged unreachable; delete folder keeps its tile; make a folder Home warns (HUM-040). |
 | `ParentToolsUITests` | Paste phrases (praise and duplicates left out, one undo step); AI helper starts off; Guided Access tip once (HUM-041); export opens the save sheet; no developer section (HUM-022); Dark appearance. |
 | `ImportUITests` | Big-file preview and Cancel (HUM-011); merged setup reachable through a folder tile, with a banner (HUM-001, HUM-027); Replace everything asks, child sees the file's Home in pages, folders open, Undo (HUM-038); broken file; newer format; tile with no words named; import waits for grown-up mode. |
+| `LandscapeUITests` | iPhone sideways: the editor scrolls and tiles never overlap (HUM-051); the child's tiles keep their spots and the history box steps aside (HUM-050). |
 | `ScreenTourTests` | Walks every screen and attaches screenshots for review by eye. |
 | `HumUITests` | The original smoke tests (first run, speak into history, gate, add + undo, phone layout, new folder, folder back, import preview + undo). |

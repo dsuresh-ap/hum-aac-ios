@@ -24,6 +24,8 @@ or misleading) · Medium (works, but confusing or against the spec) · Low (poli
 | [HUM-047](#hum-047) | High | Bug | AI helper | AI tiles with their own folder go to a new folder nothing opens, so they seem to vanish | Fixed |
 | [HUM-048](#hum-048) | High | Bug | Child (sound) | Static or hiss at the end of spoken phrases | Fixed |
 | [HUM-049](#hum-049) | Medium | UX | Setup & sharing (iOS) | Export opens the Files save dialog, not the share sheet (no AirDrop or Messages) | Fixed |
+| [HUM-050](#hum-050) | High | UI | Child (iPhone landscape) | Big boards lose their pictures when the iPhone is turned sideways | Fixed |
+| [HUM-051](#hum-051) | Medium | UI | Editor | When the board doesn't fit, edit tiles overlap each other instead of scrolling | Fixed |
 | [HUM-004](#hum-004) | High | Bug | First run | “Import a setup” makes an empty Home first; cancelling leaves a blank board, importing hits HUM-001 | Fixed |
 | [HUM-015](#hum-015) | High | Bug | Tile editor | Cancelling the camera deletes the tile's existing photo | Fixed (confirm on device) |
 | [HUM-003](#hum-003) | Medium | Bug | First run | The grid size picked in setup is ignored for the starter board | Fixed |
@@ -179,7 +181,20 @@ undo.”) → Done → Home → back into edit mode → Undo. Still the imported
 The starter board doesn't come back. Possibly the background picture conversion (HUM-037) is saving changes
 that end up on top of the undo stack, or the replace isn't one undo group. Related to HUM-002.
 
+### HUM-050
+**Pictures disappear in iPhone landscape.** High · UI · Child mode · *Found by:* the owner on an iPhone
+
+A phone page is 4 × 8. Sideways, each tile is ~280 pt wide but ~32 pt tall, and the picture sat above the
+label, so it shrank to nothing. The history box took another row of height.
+
 ## Medium
+
+### HUM-051
+**Edit tiles overlap when the board doesn't fit.** Medium · UI · Editor · *Found by:* the owner
+
+In iPhone landscape (and any board too big for the space) each row got ~25 pt, but an edit tile reserves
+~30 pt for its badges, so tiles drew over each other. The long help text and the import banner on top of
+the band took more height.
 
 ### HUM-049
 **Export goes straight to Files.** Medium · UX · Setup & sharing (iOS) · *Found by:* the owner on an iPhone
@@ -465,6 +480,8 @@ warning only (HUM-040); developer screens are removed, not hidden (HUM-022, HUM-
 | HUM-047 | AI tiles stay on the board being edited unless the model names a folder that board opens (or Home, for protest tiles). A new folder gets a folder tile on that board, and the banner says where the tiles went. |
 | HUM-048 | The renderer collects the whole phrase at the synthesizer's rate and resamples it once (`SampleBox`); the last 15 ms fade to silence; the clip cache moved to `v2`, so old clips render again. `SpeechCacheTests.chunkedSpeechResamplesWithoutEdgeGlitches` feeds a tone in 256-frame chunks and checks it comes out smooth. |
 | HUM-049 | On iOS, export writes the file under its real name to a temporary folder and opens the share sheet (AirDrop, Messages, Mail, Save to Files); the copy is deleted when the sheet closes. The Mac keeps the save dialog. `ParentToolsUITests.testExportOpensTheShareSheet`. |
+| HUM-050 | Wide, short tiles put the picture beside the label, with thin padding so it gets nearly the full height (`TileShape.isWide`). Tiles keep their spots. On an iPhone in landscape the history box and sentence strip step aside. `LandscapeUITests.testChildBoardInLandscape`. |
+| HUM-051 | Edit tiles never get smaller than 72 pt; when the board doesn't fit, the editor scrolls (only the editor; the child's board never scrolls). Wide edit tiles use the side-by-side layout too, the band shows one line when the screen is short, and the import banner sits below the band. `LandscapeUITests.testEditorScrollsInsteadOfOverlappingTiles`. |
 | HUM-014 | Not fixed: not reproduced by UI tests; check on a device. |
 
 ---
