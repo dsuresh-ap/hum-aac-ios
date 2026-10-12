@@ -16,6 +16,7 @@ or misleading) · Medium (works, but confusing or against the spec) · Low (poli
 | [HUM-002](#hum-002) | Critical | Bug | Editor | Undo after deleting a tile doesn't bring it back; the tile is lost |
 | [HUM-037](#hum-037) | High | Bug | Import (iOS) | Imported SVG symbols stay blank for minutes after import (1 of ~40 appeared in 90 s) |
 | [HUM-038](#hum-038) | High | Bug | Import | Undo after “Replace everything” doesn't bring the old boards back |
+| [HUM-047](#hum-047) | High | Bug | AI helper | AI tiles with their own folder go to a new folder nothing opens, so they seem to vanish |
 | [HUM-004](#hum-004) | High | Bug | First run | “Import a setup” makes an empty Home first; cancelling leaves a blank board, importing hits HUM-001 |
 | [HUM-015](#hum-015) | High | Bug | Tile editor | Cancelling the camera deletes the tile's existing photo |
 | [HUM-003](#hum-003) | Medium | Bug | First run | The grid size picked in setup is ignored for the starter board |
@@ -95,6 +96,27 @@ child's board after Done. The tile is gone for good. Undo of *adding* a tile wor
 then undoes, and checks `board.placedTiles`.
 
 ## High
+
+### HUM-047
+**AI suggestions in their own folder go to a folder nothing opens.** High · Bug · AI helper · *Found by:*
+the owner while testing on a device; confirmed in code and by
+`ProposalCheckerTests.suggestedTilesInANewFolderAreReachable` (known issue)
+
+The model may give a tile a `boardName` (its instructions say to when “a new sub-board clearly helps”,
+e.g. “Trains”). `ProposalChecker.document(from:targetBoardID:existing:)` then makes a new board with that
+name, but no folder tile on the board being edited (or on Home) opens it. After **Add**, the tiles aren't
+on the board the parent was looking at, and the child can't reach them. They're only findable in
+Home & folders (“No tile opens this folder yet”) or the board menu. The checklist's small “Goes to Trains”
+caption is the only hint. Two related routes:
+- If `boardName` matches an existing board's name (e.g. “Home” while editing Food), tiles go to that board
+  instead of the active one.
+- Protest/regulation suggestions are also copied to Home on purpose (rule 6, with a note).
+
+Tiles *without* a `boardName` correctly go to the board being edited
+(`ProposalCheckerTests.suggestionsGoToTheBoardBeingEdited`). Fix: when a suggestion makes a new folder, add
+a folder tile for it to the board being edited (first empty spot, or the tray), and after Add show a
+banner (“Added 4 tiles to Trains, a new folder on Food. Open it”). Consider defaulting to the active board
+unless the parent ticks “Put these in a new folder”.
 
 ### HUM-004
 **First run “Import a setup” creates an empty Home first.** High · Bug · First run · *Found by:* code
