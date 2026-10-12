@@ -28,7 +28,7 @@ or misleading) · Medium (works, but confusing or against the spec) · Low (poli
 | [HUM-050](#hum-050) | High | UI | Child (iPhone landscape) | Big boards lose their pictures when the iPhone is turned sideways | Fixed |
 | [HUM-051](#hum-051) | Medium | UI | Editor | When the board doesn't fit, edit tiles overlap each other instead of scrolling | Fixed |
 | [HUM-004](#hum-004) | High | Bug | First run | “Import a setup” makes an empty Home first; cancelling leaves a blank board, importing hits HUM-001 | Fixed |
-| [HUM-015](#hum-015) | High | Bug | Tile editor | Cancelling the camera deletes the tile's existing photo | Fixed (confirm on device) |
+| [HUM-015](#hum-015) | High | Bug | Tile editor | Cancelling the camera deletes the tile's existing photo | Fixed (confirmed on device 2026-10-12) |
 | [HUM-003](#hum-003) | Medium | Bug | First run | The grid size picked in setup is ignored for the starter board | Fixed |
 | [HUM-006](#hum-006) | Medium | UI | Editor (iPhone) | Tapping a folder tile opens the folder instead of editing it | Fixed |
 | [HUM-008](#hum-008) | Medium | Bug | Editor | “Delete tile” in the long-press menu deletes without asking | Fixed |
@@ -37,7 +37,7 @@ or misleading) · Medium (works, but confusing or against the spec) · Low (poli
 | [HUM-027](#hum-027) | Medium | UX | Import, Editor | After a big import nothing says where the boards went; the board menu is a flat list of 116 | Fixed |
 | [HUM-022](#hum-022) | Medium | Jargon | Settings | “For developers” section and latency screen are visible to every parent | Fixed |
 | [HUM-023](#hum-023) | Medium | Jargon | Setup & sharing | iCloud rows show CloudKit console steps and raw error text | Fixed |
-| [HUM-031](#hum-031) | Medium | Bug | AI helper | Settings says the AI isn't ready, but the helper shows the “Suggest tiles” form anyway | Fixed (confirm on device) |
+| [HUM-031](#hum-031) | Medium | Bug | AI helper | Settings says the AI isn't ready, but the helper shows the “Suggest tiles” form anyway | Fixed (confirmed on device 2026-10-12) |
 | [HUM-036](#hum-036) | Medium | UX | Editor (iPhone) | “Done” is a bare checkmark; History, Setup & sharing and Settings hide in “⋯” | Fixed |
 | [HUM-040](#hum-040) | Medium | Bug | Home & folders | “Make Home board” on a board without protest tiles gives no warning | Fixed |
 | [HUM-041](#hum-041) | Medium | Bug | Editor | The one-time Guided Access tip sometimes never appears | Fixed |
