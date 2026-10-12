@@ -19,6 +19,17 @@ struct BoardManagerView: View {
     @State private var newColumns = 4
     @State private var boardToDelete: Board?
     @State private var errorMessage: String?
+    @State private var search = ""
+    /// A board waiting for "Make Home anyway", because it lacks Home's protest tiles.
+    @State private var homeCandidate: Board?
+
+    /// Home first, then A→Z, filtered by the search field (a big import can add a hundred folders).
+    private var listed: [Board] {
+        let query = search.trimmingCharacters(in: .whitespaces)
+        return boards
+            .filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
+            .sorted { ($0.isHome ? 0 : 1, $0.name.lowercased()) < ($1.isHome ? 0 : 1, $1.name.lowercased()) }
+    }
 
     /// Boards some tile opens.
     private var reachable: Set<UUID> { Set(tiles.compactMap(\.linkedBoardID)) }
@@ -31,10 +42,11 @@ struct BoardManagerView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Home and folders") {
-                    ForEach(boards) { board in
+                Section {
+                    ForEach(listed) { board in
                         NavigationLink {
-                            BoardDetailView(board: board, errorMessage: $errorMessage, onDelete: { boardToDelete = board })
+                            BoardDetailView(board: board, errorMessage: $errorMessage, onDelete: { boardToDelete = board },
+                                            onMakeHome: { makeHome(board) })
                         } label: {
                             HStack {
                                 Label {
@@ -58,7 +70,7 @@ struct BoardManagerView: View {
                             }
                             Button("Duplicate", systemImage: "plus.square.on.square") { model.store.duplicate(board) }
                             if !board.isHome {
-                                Button("Make Home board", systemImage: "house") { model.store.setHome(board) }
+                                Button("Make Home board", systemImage: "house") { makeHome(board) }
                                 Button("Delete…", systemImage: "trash", role: .destructive) { boardToDelete = board }
                             }
                         }
@@ -79,6 +91,15 @@ struct BoardManagerView: View {
             }
             .formStyle(.grouped)
             .navigationTitle("Home & folders")
+            .modifier(SearchWhenLong(isLong: boards.count > 12, text: $search))
+            .alert("Make \(homeCandidate?.name ?? "this folder") the Home board?",
+                   isPresented: Binding(get: { homeCandidate != nil }, set: { if !$0 { homeCandidate = nil } }),
+                   presenting: homeCandidate) { board in
+                Button("Make Home anyway") { model.store.setHome(board) }
+                Button("Cancel", role: .cancel) {}
+            } message: { board in
+                Text(missingMessage(for: board))
+            }
             .onAppear {
                 newRows = model.settings.newBoardRows
                 newColumns = model.settings.newBoardColumns
@@ -105,6 +126,22 @@ struct BoardManagerView: View {
         #endif
     }
 
+    /// Asks first when the new Home would lack the protest tiles the current Home has (BUGS.md, HUM-040).
+    private func makeHome(_ board: Board) {
+        if model.store.protestTilesMissing(from: board).isEmpty {
+            model.store.setHome(board)
+        } else {
+            homeCandidate = board
+        }
+    }
+
+    private func missingMessage(for board: Board) -> String {
+        let missing = model.store.protestTilesMissing(from: board)
+        let names = missing.prefix(3).map { "“\($0)”" }.joined(separator: ", ")
+        let more = missing.count > 3 ? " and \(missing.count - 3) more" : ""
+        return "\(board.name) doesn't have \(names)\(more). Your child needs a way to say no and ask for help from Home. You can add those tiles to \(board.name) afterwards."
+    }
+
     /// Makes the folder and the tile that opens it, then opens the folder in the editor.
     private func makeFolder() {
         let name = newBoardName.trimmingCharacters(in: .whitespaces)
@@ -121,6 +158,7 @@ private struct BoardDetailView: View {
     let board: Board
     @Binding var errorMessage: String?
     let onDelete: () -> Void
+    let onMakeHome: () -> Void
     @Environment(AppModel.self) private var model
     @State private var name = ""
     @State private var showGridSize = false
@@ -149,7 +187,7 @@ private struct BoardDetailView: View {
                 if board.isHome {
                     Label("This is the Home board. It opens first.", systemImage: "house.fill")
                 } else {
-                    Button("Make this the Home board", systemImage: "house") { model.store.setHome(board) }
+                    Button("Make this the Home board", systemImage: "house", action: onMakeHome)
                 }
                 Button("Duplicate", systemImage: "plus.square.on.square") { model.store.duplicate(board) }
                 if !board.isHome {
@@ -173,12 +211,27 @@ struct GridSizePicker: View {
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading) {
-                Stepper("Rows: \(rows)", value: $rows, in: 1...8)
-                Stepper("Columns: \(columns)", value: $columns, in: 1...8)
+                // At least 2 spots, like the grid size sheet asks (BUGS.md, HUM-013).
+                Stepper("Rows: \(rows)", value: $rows, in: (columns > 1 ? 1 : 2)...8)
+                Stepper("Columns: \(columns)", value: $columns, in: (rows > 1 ? 1 : 2)...8)
             }
             GridPreview(rows: rows, columns: columns)
                 .frame(width: 64, height: 64)
                 .accessibilityHidden(true)
+        }
+    }
+}
+
+/// A search field, only once the list is long enough to need one.
+private struct SearchWhenLong: ViewModifier {
+    let isLong: Bool
+    @Binding var text: String
+
+    func body(content: Content) -> some View {
+        if isLong {
+            content.searchable(text: $text, prompt: "Find a folder")
+        } else {
+            content
         }
     }
 }

@@ -20,6 +20,12 @@ struct GridSizeSheet: View {
 
     static let presets: [(Int, Int)] = [(2, 2), (2, 3), (3, 3), (3, 4), (4, 5), (5, 6), (6, 8)]
 
+    /// The quick sizes, with the board's own size first when it isn't one of them (the starter's 5 × 4),
+    /// so something is always selected when the sheet opens.
+    private var quickSizes: [(Int, Int)] {
+        Self.presets.contains { $0 == (board.rows, board.columns) } ? Self.presets : [(board.rows, board.columns)] + Self.presets
+    }
+
     private var cutOff: [Tile] { model.store.tilesCutOff(board, rows: rows, columns: columns) }
     private var changed: Bool { rows != board.rows || columns != board.columns }
 
@@ -39,8 +45,8 @@ struct GridSizeSheet: View {
                 Section("Quick sizes (rows × columns)") {
                     ScrollView(.horizontal) {
                         HStack(spacing: 10) {
-                            ForEach(Self.presets.indices, id: \.self) { i in
-                                let (r, c) = Self.presets[i]
+                            ForEach(quickSizes.indices, id: \.self) { i in
+                                let (r, c) = quickSizes[i]
                                 let selected = r == rows && c == columns
                                 Button {
                                     rows = r
@@ -63,8 +69,8 @@ struct GridSizeSheet: View {
                 }
 
                 Section {
-                    Stepper("Rows: \(rows)", value: $rows, in: 1...8)
-                    Stepper("Columns: \(columns)", value: $columns, in: 1...8)
+                    Stepper("Rows: \(rows)", value: $rows, in: (columns > 1 ? 1 : 2)...8)
+                    Stepper("Columns: \(columns)", value: $columns, in: (rows > 1 ? 1 : 2)...8)
                 } footer: {
                     Text(footer)
                 }
@@ -120,7 +126,7 @@ struct GridSizeSheet: View {
         let base = "\(total) spots. Tiles keep their places: a bigger grid adds empty spots at the right and bottom."
         // The grid is shared by every device; shrinking it to fit a phone isn't needed any more.
         guard AppModel.isPhone else { return base }
-        return base + " This size is for iPad and Mac too. On iPhone, boards wider than \(PhoneLayout.columns) or taller than \(PhoneLayout.rows) use a phone layout instead, so you don't need to shrink them here."
+        return base + " On iPhone, big boards are split into pages, so you don't need to shrink them here. Tiles keep their places on iPad and Mac."
     }
 
     private var cutTitle: String { "\(cutOff.count) tile\(cutOff.count == 1 ? "" : "s") won't fit" }

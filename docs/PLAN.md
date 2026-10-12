@@ -169,7 +169,7 @@ AVAudioEngine (started once, kept running while foreground)
   plays if present, else TTS.
 - **Latency probe:** the touch handler stamps `mach_absolute_time()`; the render callback stamps the host time
   of the first rendered sample of that clip; latency = render time − touch time + `outputLatency` + IO buffer.
-  Last 200 samples kept in memory only, shown on the hidden developer screen (min/median/p95/max). Nothing stored.
+  Last 200 samples kept in memory only, not shown in the app (the developer screen was removed, BUGS.md HUM-022). Nothing stored.
 - **Touch path:** tiles fire on **touch-down** by default (see open questions) using a zero-distance gesture,
   so a 10+ Hz tapping child gets one sound per touch. No debounce anywhere. Visual press state is a pure
   view-state change after the audio command is queued.

@@ -17,6 +17,9 @@ struct FirstRunView: View {
     @State private var columns = 3
     @State private var voices: [AVSpeechSynthesisVoice] = []
     @State private var preview = AVSpeechSynthesizer()
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// iPad and Mac have room for bigger pictures on the welcome and grid steps.
+    private var roomy: Bool { sizeClass == .regular }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -31,7 +34,7 @@ struct FirstRunView: View {
                 case .start: startChoice
                 }
             }
-            .frame(maxWidth: 640, maxHeight: .infinity)
+            .frame(maxWidth: roomy ? 760 : 640, maxHeight: .infinity)
             .padding(24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -43,18 +46,25 @@ struct FirstRunView: View {
         VStack(spacing: 28) {
             Spacer()
             // The product in one picture: whole phrases on soft keys, "no" as big as "let's go".
-            HStack(spacing: 14) {
-                SampleKey(symbol: "🚀", label: "Let's go!", function: .request)
-                SampleKey(symbol: "🙅", label: "No thank you", function: .protest)
-                SampleKey(symbol: "👀", label: "Look at that!", function: .comment)
+            // The biggest keys that fit: three 140 pt keys are wider than an iPhone (BUGS.md, HUM-009).
+            ViewThatFits(in: .horizontal) {
+                ForEach([200, 140, 100] as [CGFloat], id: \.self) { size in
+                    HStack(spacing: 14) {
+                        SampleKey(symbol: "🚀", label: "Let's go!", function: .request, size: size)
+                        SampleKey(symbol: "🙅", label: "No thank you", function: .protest, size: size)
+                        SampleKey(symbol: "👀", label: "Look at that!", function: .comment, size: size)
+                    }
+                }
             }
             .accessibilityHidden(true)
             VStack(spacing: 12) {
                 Text("Welcome to Hum")
-                    .font(.system(size: 44, weight: .semibold, design: .serif))
+                    .font(.system(size: roomy ? 60 : 44, weight: .semibold, design: .serif))
+                    .minimumScaleFactor(0.7)
                 Text("A voice for your child in whole phrases, the way they learn language.")
-                    .font(.title3).multilineTextAlignment(.center).foregroundStyle(.secondary)
-                    .frame(maxWidth: 440)
+                    .font(roomy ? .title2 : .title3).multilineTextAlignment(.center).foregroundStyle(.secondary)
+                    .frame(maxWidth: roomy ? 560 : 440)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
             primaryButton("Let's set up") { step = .voice }
@@ -68,13 +78,15 @@ struct FirstRunView: View {
             Text("Tap ▶ to listen. You can change this any time.").foregroundStyle(.secondary)
             if VoiceCatalog.onlyCompactVoicesInstalled {
                 NaturalVoicesCard()
+                    .fixedSize(horizontal: false, vertical: true)  // all the steps, never "…"
                     .padding(14)
                     .background(Theme.editBand, in: .rect(cornerRadius: 14))
             }
             ScrollView {
                 VStack(spacing: 10) {
                     ForEach(voices.prefix(4), id: \.identifier) { voice in
-                        let selected = model.settings.voiceIdentifier == voice.identifier
+                        // With no choice yet, the voice Hum would use is the one marked.
+                        let selected = (model.settings.voiceIdentifier ?? SpeechService.defaultVoiceIdentifier()) == voice.identifier
                         HStack {
                             Button {
                                 model.settings.voiceIdentifier = voice.identifier
@@ -92,6 +104,7 @@ struct FirstRunView: View {
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Play \(voice.name)")
                         }
+                        .accessibilityAddTraits(selected ? .isSelected : [])
                         .padding(14)
                         .background(Theme.chrome, in: .rect(cornerRadius: 14))
                     }
@@ -112,7 +125,8 @@ struct FirstRunView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("How many tiles on a screen?").font(.system(.largeTitle, design: .serif, weight: .semibold))
             Text("Fewer, bigger tiles are easier to start with. Rows × columns.").foregroundStyle(.secondary)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 12)], spacing: 12) {
+            if roomy { Spacer() }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: roomy ? 160 : 130), spacing: roomy ? 20 : 12)], spacing: roomy ? 20 : 12) {
                 ForEach(Self.gridOptions.indices, id: \.self) { index in
                     let option = Self.gridOptions[index]
                     let selected = rows == option.0 && columns == option.1
@@ -121,8 +135,8 @@ struct FirstRunView: View {
                         columns = option.1
                     } label: {
                         VStack(spacing: 10) {
-                            GridPreview(rows: option.0, columns: option.1).frame(width: 90, height: 90)
-                            Text("\(option.0) × \(option.1)").font(.headline)
+                            GridPreview(rows: option.0, columns: option.1).frame(width: roomy ? 140 : 90, height: roomy ? 140 : 90)
+                            Text("\(option.0) × \(option.1)").font(roomy ? .title3.weight(.semibold) : .headline)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(14)
@@ -145,22 +159,41 @@ struct FirstRunView: View {
     private var startChoice: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("How do you want to start?").font(.system(.largeTitle, design: .serif, weight: .semibold))
-            choice("Starter board", "18 whole phrases like \"Let's go!\", \"All done\" and \"Too loud\". Replace the pictures with real photos later.", "sparkles") {
+            choice("Starter board", starterDetail, "sparkles") {
+                useChosenSizeForNewFolders()
                 model.finishFirstRun(.starter)
                 growHomeToChosenSize()
             }
             .accessibilityIdentifier("firstRun.starter")
             choice("Empty board", "A blank \(rows) × \(columns) board to fill with your child's own phrases.", "square.dashed") {
+                useChosenSizeForNewFolders()
                 model.finishFirstRun(.empty(rows: rows, columns: columns))
             }
             .accessibilityIdentifier("firstRun.empty")
-            choice("Import a setup", "A .hum file from another device, or one made with a coding agent.", "square.and.arrow.down") {
-                model.finishFirstRun(.empty(rows: rows, columns: columns))
+            // Setup finishes only once the import does: cancelling comes back here, and the file's own
+            // Home becomes Home because nothing was made before it (BUGS.md, HUM-004).
+            choice("Import a setup", "A Hum file from another device, or one made with a coding agent.", "square.and.arrow.down") {
+                useChosenSizeForNewFolders()
                 onImport()
             }
+            .accessibilityIdentifier("firstRun.import")
             Spacer()
             Button("Back") { step = .grid }
         }
+    }
+
+    /// The starter board has its own 5 × 4 size. A smaller choice is used for new folders instead,
+    /// and the card says so, rather than squeezing the starter's tiles away (BUGS.md, HUM-003).
+    private var starterDetail: String {
+        let phrases = "18 whole phrases like \"Let's go!\", \"All done\" and \"Too loud\". Replace the pictures with real photos later."
+        guard rows < 5 || columns < 4, rows * columns < 20 else { return phrases }
+        return "A 5 × 4 board with " + phrases.prefix(1).lowercased() + phrases.dropFirst()
+            + " New folders use your \(rows) × \(columns) size."
+    }
+
+    private func useChosenSizeForNewFolders() {
+        model.settings.newBoardRows = rows
+        model.settings.newBoardColumns = columns
     }
 
     // MARK: Helpers
@@ -224,13 +257,15 @@ private struct SampleKey: View {
     let symbol: String
     let label: String
     let function: TileFunction
+    var size: CGFloat = 140
 
     var body: some View {
         VStack(spacing: 8) {
-            Text(symbol).font(.system(size: 44))
-            Text(label).font(.system(.headline, design: .rounded)).foregroundStyle(Theme.ink)
+            Text(symbol).font(.system(size: size * 0.32))
+            Text(label).font(.system(size: max(13, size * 0.12), weight: .semibold, design: .rounded)).foregroundStyle(Theme.ink)
+                .multilineTextAlignment(.center).minimumScaleFactor(0.7).padding(.horizontal, 6)
         }
-        .frame(width: 140, height: 140)
+        .frame(width: size, height: size)
         .background(Theme.tileColor(function: function, hex: nil), in: .rect(cornerRadius: Theme.tileCorner, style: .continuous))
         .background(alignment: .bottom) {
             RoundedRectangle(cornerRadius: Theme.tileCorner, style: .continuous)

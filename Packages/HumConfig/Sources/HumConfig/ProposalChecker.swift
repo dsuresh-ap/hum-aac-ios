@@ -95,8 +95,10 @@ public enum ProposalChecker {
     }
 
     /// Builds a document holding only the new tiles, placed in free spots, for the normal import preview.
-    /// Tiles for a board that doesn't exist yet go on a new board. Existing tiles are never included,
-    /// so nothing can move or be removed.
+    /// Tiles go on the board being edited. A tile can go elsewhere only when the model named a folder:
+    /// - a folder that a tile on the board being edited already opens, or Home for protest tiles (rule 6);
+    /// - a new folder, which gets a folder tile on the board being edited, so the child can reach it.
+    /// Any other board name is ignored. Existing tiles are never included, so nothing can move or be removed.
     public static func document(from tiles: [ProposedTile], targetBoardID: UUID?, existing: HumDocument) -> HumDocument {
         var boards: [UUID: HumBoard] = [:]
         var order: [UUID] = []
@@ -106,25 +108,33 @@ public enum ProposalChecker {
             occupied[board.id] = Set(board.tiles.map { "\($0.row),\($0.column)" })
         }
         let fallback = existing.boards.first { $0.id == targetBoardID } ?? existing.homeBoard ?? existing.boards.first
+        let reachable = Set(fallback?.tiles.compactMap(\.linkedBoardID) ?? [])
+        /// New folders by name, and the board each folder tile goes on.
+        var newFolders: [String: UUID] = [:]
+
+        func copy(of board: HumBoard) -> HumBoard {
+            boards[board.id] ?? HumBoard(id: board.id, name: board.name, rows: board.rows, columns: board.columns, isHome: board.isHome)
+        }
 
         func boardFor(_ tile: ProposedTile) -> HumBoard {
-            if let name = tile.boardName,
-               let match = existing.boards.first(where: { $0.name.localizedCaseInsensitiveCompare(name) == .orderedSame }) {
-                return boards[match.id] ?? HumBoard(id: match.id, name: match.name, rows: match.rows, columns: match.columns, isHome: match.isHome)
+            let name = tile.boardName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let sameName = { (other: String) in other.localizedCaseInsensitiveCompare(name) == .orderedSame }
+            if !name.isEmpty, let fallback, !sameName(fallback.name) {
+                if let match = existing.boards.first(where: { sameName($0.name) }) {
+                    let protestToHome = match.isHome && tile.function.map(GLPRules.mustStayOnHome.contains) == true
+                    if reachable.contains(match.id) || protestToHome { return copy(of: match) }
+                    return copy(of: fallback)  // a board the child can't reach from here: stay on this one
+                }
+                if let made = newFolders[name.lowercased()], let board = boards[made] { return board }
+                let folder = HumBoard(name: name, rows: 3, columns: 4)
+                newFolders[name.lowercased()] = folder.id
+                return folder
             }
-            if let name = tile.boardName, !name.isEmpty, name != fallback?.name {
-                if let made = boards.values.first(where: { $0.name == name }) { return made }
-                return HumBoard(name: name, rows: 3, columns: 4)
-            }
-            if let fallback {
-                return boards[fallback.id] ?? HumBoard(id: fallback.id, name: fallback.name, rows: fallback.rows, columns: fallback.columns, isHome: fallback.isHome)
-            }
+            if let fallback { return copy(of: fallback) }
             return boards.values.first { $0.isHome } ?? HumBoard(name: "Home", rows: 3, columns: 4, isHome: true)
         }
 
-        for proposed in tiles {
-            var board = boardFor(proposed)
-            if boards[board.id] == nil { order.append(board.id) }
+        func place(_ tile: HumTile, on board: inout HumBoard) {
             var taken = occupied[board.id] ?? []
             var spot: (Int, Int)?
             search: for r in 0..<board.rows {
@@ -139,9 +149,25 @@ public enum ProposalChecker {
             let (row, column) = spot ?? ((overflowIndex / board.columns) % board.rows, overflowIndex % board.columns)
             if spot != nil { taken.insert("\(row),\(column)") } else { overflow[board.id] = overflowIndex + 1 }
             occupied[board.id] = taken
-            board.tiles.append(HumTile(label: proposed.label, spokenText: proposed.spokenText, row: row, column: column,
-                                       function: proposed.function, symbol: proposed.symbol))
+            var placed = tile
+            placed.row = row
+            placed.column = column
+            board.tiles.append(placed)
+            if boards[board.id] == nil { order.append(board.id) }
             boards[board.id] = board
+        }
+
+        for proposed in tiles {
+            var board = boardFor(proposed)
+            let isNewFolder = newFolders.values.contains(board.id) && boards[board.id] == nil
+            if isNewFolder, var host = fallback.map(copy(of:)) {
+                // The tile that opens the new folder goes on the board being edited, before the folder's tiles.
+                let folderTile = HumTile(label: board.name, spokenText: "", row: 0, column: 0, linkedBoardID: board.id,
+                                         symbol: EmojiSuggester.suggestion(label: board.name, spokenText: "") ?? "📁")
+                place(folderTile, on: &host)
+            }
+            place(HumTile(label: proposed.label, spokenText: proposed.spokenText, row: 0, column: 0,
+                          function: proposed.function, symbol: proposed.symbol), on: &board)
         }
         return HumDocument(boards: order.compactMap { boards[$0] })
     }
@@ -154,9 +180,22 @@ public enum ProposalChecker {
             .map { ProposedTile(label: shortLabel(for: $0), spokenText: $0) }
     }
 
-    /// First few words, without trailing punctuation.
+    /// Small words a label shouldn't end on ("Let's go to the" reads like a mistake).
+    static let trailingWords: Set<String> = [
+        "a", "an", "the", "to", "of", "and", "or", "in", "on", "at", "for", "with", "from", "my", "your", "our",
+        "is", "are", "some", "this", "that",
+    ]
+
+    /// First few words, without trailing punctuation or a dangling small word:
+    /// "Let's go to the park!" → "Let's go to the" → "Let's go".
     public static func shortLabel(for phrase: String) -> String {
-        let words = phrase.split(separator: " ").prefix(maxLabelWords).joined(separator: " ")
-        return words.trimmingCharacters(in: CharacterSet(charactersIn: "!?.,;: "))
+        let punctuation = CharacterSet(charactersIn: "!?.,;:\u{201C}\u{201D}\" ")
+        var words = phrase.split(separator: " ").prefix(maxLabelWords).map(String.init)
+        let cut = phrase.split(separator: " ").count > words.count
+        while cut, words.count > 1,
+              trailingWords.contains(words.last!.lowercased().trimmingCharacters(in: punctuation)) {
+            words.removeLast()
+        }
+        return words.joined(separator: " ").trimmingCharacters(in: punctuation)
     }
 }

@@ -33,6 +33,10 @@ struct ChildBoardView: View {
         }
         .background(Theme.background)
         #if os(iOS)
+        // The lock sits near the top edge, where iPadOS holds touches back for its own swipes, so the
+        // 3-second hold started late and parents let go too early (BUGS.md, HUM-044). Hum's touches go
+        // first; a second swipe still opens the system's.
+        .defersSystemGestures(on: .top)
         .overlay {
             if model.settings.editGate == .twoFingerTripleTap {
                 TwoFingerTripleTap { model.mode = .parent }
@@ -200,6 +204,15 @@ private struct SentenceStrip: View {
 }
 
 /// What was said recently, newest first. Tapping an entry says it again. Off by default.
+/// A phrase as a sentence for VoiceOver: "Hi!" stays "Hi!", "All done" becomes "All done." (no "Hi!.").
+enum HistoryBoxSentence {
+    static func make(_ phrase: String) -> String {
+        let trimmed = phrase.trimmingCharacters(in: .whitespaces)
+        guard let last = trimmed.last else { return "" }
+        return ".!?…".contains(last) ? trimmed : trimmed + "."
+    }
+}
+
 private struct HistoryBox: View {
     @Environment(AppModel.self) private var model
 
@@ -230,7 +243,7 @@ private struct HistoryBox: View {
                                     .background(Theme.tileColor(function: entry.function, hex: entry.colorHex).opacity(index == 0 ? 1 : 0.6), in: .capsule)
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("Said: \(entry.spokenText). Say it again.")
+                            .accessibilityLabel("Said: \(HistoryBoxSentence.make(entry.spokenText)) Say it again.")
                         }
                     }
                 }

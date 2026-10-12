@@ -24,7 +24,7 @@ final class HumUITests: XCTestCase {
 
     @MainActor
     private func openParentMode(_ app: XCUIApplication) {
-        element(app, "editGate").press(forDuration: 5)  // iPad needs longer than 3.5 s (BUGS.md, HUM-044)
+        element(app, "editGate").press(forDuration: 5)  // room for a slow simulator; the 3 s timing has its own test
         XCTAssertTrue(element(app, "exitParentMode").waitForExistence(timeout: 5), "Holding the lock should open grown-up settings")
     }
 

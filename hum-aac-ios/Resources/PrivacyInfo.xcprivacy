@@ -27,7 +27,7 @@
 			</array>
 		</dict>
 		<dict>
-			<!-- mach_absolute_time(): measures tap-to-sound latency inside the app (developer screen). -->
+			<!-- mach_absolute_time(): measures tap-to-sound latency inside the app (kept in memory only). -->
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>

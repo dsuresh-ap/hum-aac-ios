@@ -53,6 +53,13 @@ struct ParentEditorView: View {
                     .overlay(alignment: .bottom) {
                         if let notice { NoticeBanner(notice: notice, onOpen: { model.openFolderInEditor($0); self.notice = nil }) }
                     }
+                    .overlay(alignment: .top) {
+                        if let report = model.lastImport {
+                            ImportBanner(report: report,
+                                         onOpen: { model.editBoard($0); model.lastImport = nil },
+                                         onClose: { model.lastImport = nil })
+                        }
+                    }
                 } else {
                     ContentUnavailableView {
                         Label("No boards yet", systemImage: "square.grid.3x3")
@@ -67,12 +74,14 @@ struct ParentEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar { toolbar }
+            // Page-sized on a big iPad, so the tile editor and the long forms aren't a small card in the
+            // middle of the screen (BUGS.md, HUM-045). Same as before on iPhone and Mac.
             .sheet(item: $editor) { request in
-                TileEditorSheet(request: request)
+                TileEditorSheet(request: request).modifier(PageSizedSheet())
             }
-            .sheet(isPresented: $showBoards) { BoardManagerView() }
-            .sheet(isPresented: $showSettings) { SettingsView() }
-            .sheet(isPresented: $showSharing) { SetupSharingView() }
+            .sheet(isPresented: $showBoards) { BoardManagerView().modifier(PageSizedSheet()) }
+            .sheet(isPresented: $showSettings) { SettingsView().modifier(PageSizedSheet()) }
+            .sheet(isPresented: $showSharing) { SetupSharingView().modifier(PageSizedSheet()) }
             .sheet(isPresented: $showGridSize) { if let board { GridSizeSheet(board: board) } }
             .sheet(isPresented: $showHistory) { HistoryView() }
             .sheet(isPresented: $showAI) { AIHelperView() }
@@ -87,8 +96,11 @@ struct ParentEditorView: View {
             } message: {
                 Text("To keep your child inside Hum, turn on Guided Access in Settings → Accessibility → Guided Access. Then triple-click the side (or Home) button while Hum is open.")
             }
-            .onAppear {
+            .task {
                 #if os(iOS)
+                // After the switch from the child's grid has settled: an alert asked for during the
+                // transition can be dropped, and then the one-time tip never shows (BUGS.md, HUM-041).
+                try? await Task.sleep(for: .milliseconds(700))
                 if !model.settings.hasSeenGuidedAccessTip { showGuidedAccessTip = true }
                 #endif
             }
@@ -133,14 +145,21 @@ struct ParentEditorView: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            Button {
-                model.mode = .child
-            } label: {
-                Label("Done", systemImage: "checkmark")
-                    .labelStyle(.titleAndIcon)
-            }
-            .accessibilityIdentifier("exitParentMode")
+            // The word, not a bare checkmark: it's how a parent gets back to their child's board.
+            Button("Done") { model.mode = .child }
+                .accessibilityIdentifier("exitParentMode")
         }
+        #if os(iOS)
+        // Next to Done, so it never hides in the toolbar's "⋯" menu on iPhone.
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                showSettings = true
+            } label: {
+                Label("Settings", systemImage: "gearshape")
+            }
+            .accessibilityIdentifier("settings")
+        }
+        #endif
         ToolbarItemGroup(placement: .primaryAction) {
             Menu {
                 Button("New tile", systemImage: "plus.square") { addNew(folder: false) }
@@ -154,7 +173,8 @@ struct ParentEditorView: View {
 
             Menu {
                 Picker("Board", selection: Binding(get: { board?.id }, set: { model.editBoard($0) })) {
-                    ForEach(boards) { b in
+                    // Home first, then A→Z: a big import can add a hundred folders.
+                    ForEach(boards.sorted { ($0.isHome ? 0 : 1, $0.name.lowercased()) < ($1.isHome ? 0 : 1, $1.name.lowercased()) }) { b in
                         Label(b.name, systemImage: b.isHome ? "house" : "folder").tag(Optional(b.id))
                     }
                 }
@@ -198,12 +218,14 @@ struct ParentEditorView: View {
             }
             .accessibilityIdentifier("setupSharing")
 
+            #if os(macOS)
             Button {
                 showSettings = true
             } label: {
                 Label("Settings", systemImage: "gearshape")
             }
             .accessibilityIdentifier("settings")
+            #endif
         }
     }
 }
@@ -257,6 +279,8 @@ private struct EditGrid: View {
     let openFolder: (UUID) -> Void
     @Environment(AppModel.self) private var model
     @Query(sort: \Board.createdAt) private var boards: [Board]
+    /// The tile whose "Delete tile" was chosen from the long-press menu, waiting for the parent to confirm.
+    @State private var confirmDelete: Tile?
 
     /// True on iPhone for boards too big for its screen: the editor shows and edits the phone layout.
     private var phone: Bool { model.showsPhoneLayout(board) }
@@ -277,10 +301,12 @@ private struct EditGrid: View {
                     ? Dictionary(uniqueKeysWithValues: PhoneLayout.tiles(on: board, page: page).map { ("\($0.key.row),\($0.key.column)", $0.value) })
                     : Dictionary(board.placedTiles.map { ("\($0.row!),\($0.column!)", $0) }, uniquingKeysWith: { a, _ in a })
                 VStack(spacing: spacing) {
-                    if !phone && min(width, height) < 88 {
-                        Text("Tiles are smaller than 88 points on this screen. Consider fewer rows or columns, or a folder.")
+                    // Only when tiles are really hard to hit (well under the 88 pt the spec aims for).
+                    if !phone && min(width, height) < 64 {
+                        Text("Tiles are small on this screen. Fewer rows or a folder makes them easier to tap.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     ForEach(0..<rows, id: \.self) { row in
                         HStack(spacing: spacing) {
@@ -302,6 +328,13 @@ private struct EditGrid: View {
         }
         // New tiles (added on a Mac, or from an import) get a phone spot before they're shown here.
         .task(id: "\(board.id)-\(board.placedTiles.count)") { model.arrangePhoneLayout(board) }
+        // Every delete asks first, like the tile editor's.
+        .confirmationDialog("Delete this tile?", isPresented: Binding(get: { confirmDelete != nil }, set: { if !$0 { confirmDelete = nil } }),
+                            titleVisibility: .visible, presenting: confirmDelete) { tile in
+            Button("Delete tile", role: .destructive) { model.store.delete(tile) }
+        } message: { _ in
+            Text("Its spot will be empty. Other tiles stay where they are. You can undo this.")
+        }
     }
 
     /// "Page 1 of 2" with arrows, for boards shown in their phone layout.
@@ -311,7 +344,7 @@ private struct EditGrid: View {
                 .disabled(page == 0)
                 .accessibilityLabel("Previous page")
             Spacer()
-            Text("Phone page \(page + 1) of \(pageCount)")
+            Text("Page \(page + 1) of \(pageCount)")
                 .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                 .accessibilityIdentifier("phonePage")
             Spacer()
@@ -390,7 +423,7 @@ private struct EditGrid: View {
                             model.store.setHidden(tile, !tile.isHidden)
                         }
                         Divider()
-                        Button("Delete tile", systemImage: "trash", role: .destructive) { model.store.delete(tile) }
+                        Button("Delete tile", systemImage: "trash", role: .destructive) { confirmDelete = tile }
                     }
                     .accessibilityHint("Double-tap to edit. Drag to move.")
             } else {
@@ -501,7 +534,31 @@ struct EditTileCard: View {
 
     private var card: some View {
         GeometryReader { geo in
+            // Checked again here: this runs later than `body`, and Undo of a big import can delete the
+            // tile in between (BUGS.md, HUM-038).
+            if tile.modelContext == nil || tile.isDeleted {
+                Color.clear
+            } else {
+                cardFace(geo)
+            }
+        }
+        .contentShape(.rect(cornerRadius: Theme.tileCorner, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tile.modelContext == nil || tile.isDeleted ? "" : "\(tile.label). Says: \(tile.spokenText)\(tile.isHidden ? ". Hidden" : "")")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier(tile.modelContext == nil || tile.isDeleted ? "" : "editTile.\(tile.label)")
+        .accessibilityActions {
+            if let onOpenFolder { Button("Open folder", action: onOpenFolder) }
+        }
+    }
+
+    private func cardFace(_ geo: GeometryProxy) -> some View {
+        Group {
             let size = min(geo.size.width, geo.size.height)
+            // Narrow tiles (iPhone, big boards) keep their badges in a strip above the picture, so nothing
+            // covers it, and the folder's Open button sits in a corner, so tapping the picture edits the
+            // tile (BUGS.md, HUM-006 and HUM-007).
+            let compact = geo.size.width < 150 || geo.size.height < 120
             VStack(spacing: 4) {
                 Group {
                     if let data = tile.imageData, let image = PlatformImage.thumbnail(data) {
@@ -511,67 +568,95 @@ struct EditTileCard: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         Text(tile.symbol ?? "")
-                            .font(.system(size: size * 0.36))
+                            .font(.system(size: size * (compact ? 0.3 : 0.36)))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
-                Text(tile.label)
-                    .font(.system(size: max(13, size * 0.11), weight: .semibold, design: .rounded))
+                TileLabel(text: tile.label, fontSize: max(13, size * 0.11), width: geo.size.width - (compact ? 12 : 20))
                     .foregroundStyle(ink)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.6)
             }
-            .padding(10)
+            .padding(.horizontal, compact ? 6 : 10)
+            .padding(.bottom, compact ? 6 : 10)
+            .padding(.top, compact ? 30 : 10)
             .frame(width: geo.size.width, height: geo.size.height)
             .background(Theme.tileColor(function: tile.function, hex: tile.colorHex), in: .rect(cornerRadius: Theme.tileCorner, style: .continuous))
             .opacity(tile.isHidden ? 0.45 : 1)
             .overlay(alignment: .topLeading) {
                 HStack(spacing: 6) {
+                    if compact, let onOpenFolder { openButton(onOpenFolder, compact: true) }
                     if tile.isHidden { Image(systemName: "eye.slash") }
-                    if tile.imageData == nil { Image(systemName: "camera").accessibilityLabel("No photo yet") }
+                    // The "no photo yet" reminder only where there's room for it.
+                    if tile.imageData == nil && !compact { Image(systemName: "camera").accessibilityLabel("No photo yet") }
                     if tile.audioData != nil { Image(systemName: "waveform").accessibilityLabel("Has a recording") }
                 }
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(ink.opacity(0.45))
-                .padding(10)
+                .padding(compact ? 4 : 10)
             }
             .overlay(alignment: .topTrailing) {
                 Image(systemName: "pencil")
-                    .font(.footnote.weight(.bold))
+                    .font((compact ? Font.caption2 : .footnote).weight(.bold))
                     .foregroundStyle(Theme.ink.opacity(0.55))
-                    .frame(width: 28, height: 28)
+                    .frame(width: compact ? 22 : 28, height: compact ? 22 : 28)
                     .background(.background.opacity(0.6), in: .circle)
-                    .padding(8)
+                    .padding(compact ? 4 : 8)
             }
             .overlay(alignment: .top) {
                 // Top edge, between the badges and the pencil, so it never covers the label.
-                if let onOpenFolder {
-                    Button(action: onOpenFolder) {
-                        Label(dropTargeted ? "Put inside" : "Open", systemImage: "folder.fill")
-                            .labelStyle(OpenFolderLabelStyle(compact: geo.size.width < 150 && !dropTargeted))
-                            .font(.caption.weight(.semibold))
-                            .padding(.horizontal, 10).padding(.vertical, 6)
-                            .background(dropTargeted ? AnyShapeStyle(Color.accentColor.opacity(0.35)) : AnyShapeStyle(.background.opacity(0.75)), in: .capsule)
-                    }
-                    .buttonStyle(.plain)
-                    .dropDestination(for: String.self) { items, _ in
-                        guard let id = items.first.flatMap(UUID.init(uuidString:)), let onDropIntoFolder else { return false }
-                        return onDropIntoFolder(id)
-                    } isTargeted: { dropTargeted = $0 && onDropIntoFolder != nil }
-                    .help("Open the folder. Drop a tile here to put it inside.")
-                    .padding(.top, 8)
-                    .accessibilityLabel("Open folder")
+                if !compact, let onOpenFolder {
+                    openButton(onOpenFolder, compact: geo.size.width < 150 && !dropTargeted)
+                        .padding(.top, 8)
                 }
             }
         }
-        .contentShape(.rect(cornerRadius: Theme.tileCorner, style: .continuous))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(tile.label). Says: \(tile.spokenText)\(tile.isHidden ? ". Hidden" : "")")
-        .accessibilityAddTraits(.isButton)
-        .accessibilityIdentifier("editTile.\(tile.label)")
-        .accessibilityActions {
-            if let onOpenFolder { Button("Open folder", action: onOpenFolder) }
+    }
+
+    /// "Open" on a folder tile. A tile dropped on it moves inside the folder.
+    private func openButton(_ action: @escaping () -> Void, compact: Bool) -> some View {
+        Button(action: action) {
+            Label(dropTargeted ? "Put inside" : "Open", systemImage: "folder.fill")
+                .labelStyle(OpenFolderLabelStyle(compact: compact && !dropTargeted))
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, compact ? 7 : 10).padding(.vertical, compact ? 4 : 6)
+                .background(dropTargeted ? AnyShapeStyle(Color.accentColor.opacity(0.35)) : AnyShapeStyle(.background.opacity(0.75)), in: .capsule)
         }
+        .buttonStyle(.plain)
+        .dropDestination(for: String.self) { items, _ in
+            guard let id = items.first.flatMap(UUID.init(uuidString:)), let onDropIntoFolder else { return false }
+            return onDropIntoFolder(id)
+        } isTargeted: { dropTargeted = $0 && onDropIntoFolder != nil }
+        .help("Open the folder. Drop a tile here to put it inside.")
+        .accessibilityLabel("Open folder")
+    }
+}
+
+/// What a finished import did, at the top of the editor until the parent closes it: where the new
+/// boards went, with a button to open them (BUGS.md, HUM-027 and HUM-047).
+private struct ImportBanner: View {
+    let report: ImportReport
+    let onOpen: (UUID) -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+            Text(report.message).font(.callout.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            if let id = report.folderID {
+                Button("Open") { onOpen(id) }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .accessibilityIdentifier("openImported")
+            }
+            Button(action: onClose) { Image(systemName: "xmark") }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Close")
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .background(.regularMaterial, in: .rect(cornerRadius: 16))
+        .padding(.horizontal, 12).padding(.top, 8)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("importBanner")
     }
 }
 
@@ -582,6 +667,7 @@ private struct EditBand: View {
     let parentName: String?
     let onBack: () -> Void
     let onGridSize: () -> Void
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -596,9 +682,18 @@ private struct EditBand: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Editing \(board.name)")
                     .font(.system(.title3, design: .serif, weight: .semibold))
-                Text("Tap a tile to change it, or an empty spot to add one. Drag to move; drop a tile on a folder's Open button to put it inside. Your child sees changes when you tap Done.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                // iPhone: one short line, so the grid keeps the room (BUGS.md, HUM-010).
+                if sizeClass == .compact {
+                    if parentName == nil {
+                        Text("Tap a tile to change it. Drag to move.")
+                            .font(.footnote).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
+                    }
+                } else {
+                    Text("Tap a tile to change it, or an empty spot to add one. Drag to move; drop a tile on a folder's Open button to put it inside. Your child sees changes when you tap Done.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
             }
             Spacer(minLength: 0)
             Button(action: onGridSize) {
@@ -626,7 +721,9 @@ private struct UnplacedTray: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("\(board.unplacedTiles.count) new tile\(board.unplacedTiles.count == 1 ? "" : "s") need a spot. Drag \(board.unplacedTiles.count == 1 ? "it" : "each one") onto the board.")
+            Text(board.unplacedTiles.count == 1
+                 ? "1 tile needs a spot. Drag it onto the board."
+                 : "\(board.unplacedTiles.count) tiles need a spot. Drag each one onto the board.")
                 .font(.callout.weight(.semibold))
             ScrollView(.horizontal) {
                 HStack(spacing: Theme.gridSpacing) {
@@ -695,3 +792,14 @@ private struct OpenFolderLabelStyle: LabelStyle {
     .background(Theme.background)
 }
 #endif
+
+/// A page-sized sheet where the system supports it (a big iPad); the default size elsewhere.
+struct PageSizedSheet: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, macOS 15.0, *) {
+            content.presentationSizing(.page)
+        } else {
+            content
+        }
+    }
+}

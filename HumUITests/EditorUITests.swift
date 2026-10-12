@@ -19,9 +19,8 @@ final class EditorUITests: XCTestCase {
         XCTAssertFalse(el(app, "saveTile").isEnabled, "Nothing to say yet, so nothing to save")
         field.typeText("Let's go to the park!")
         XCTAssertTrue(el(app, "saveTile").isEnabled)
-        XCTExpectFailure("HUM-018: the suggested label cuts a phrase after four words (“Let's go to the”)") {
-            XCTAssertNotEqual(el(app, "labelField").value as? String, "Let's go to the")
-        }
+        // HUM-018: the label doesn't end on a dangling "the".
+        XCTAssertEqual(el(app, "labelField").value as? String, "Let's go")
         // Once the parent types their own label, the phrase no longer overwrites it.
         let label = el(app, "labelField")
         label.tap()
@@ -111,9 +110,7 @@ final class EditorUITests: XCTestCase {
         let undo = app.buttons["Undo"].firstMatch
         XCTAssertTrue(undo.isEnabled, "Undo should be available after a delete")
         undo.tap()
-        XCTExpectFailure("HUM-002: Undo after deleting a tile uses up the undo step but the tile never comes back") {
-            XCTAssertTrue(el(app, "editTile.up").waitForExistence(timeout: 3), "Undo brings the tile back")
-        }
+        XCTAssertTrue(el(app, "editTile.up").waitForExistence(timeout: 3), "Undo brings the tile back (HUM-002)")
     }
 
     /// Scenario: delete from the long-press menu, then Undo.
@@ -121,16 +118,13 @@ final class EditorUITests: XCTestCase {
     func testUndoAfterMenuDelete() {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
         contextMenu(app, "editTile.up", "Delete tile")
+        dialogButton(app, "Delete tile").tap()
         XCTAssertTrue(el(app, "emptySlot.1.3").waitForExistence(timeout: 3))
         app.buttons["Undo"].firstMatch.tap()
-        let back = el(app, "editTile.up").waitForExistence(timeout: 3)
-        // Is the tile really gone, or just not redrawn? The child's board is rebuilt from the store.
+        XCTAssertTrue(el(app, "editTile.up").waitForExistence(timeout: 3), "Undo brings the tile back in the editor (HUM-002)")
+        // Is the tile really back, or just redrawn? The child's board is rebuilt from the store.
         finishEditing(app)
-        let inStore = el(app, "tile.up").waitForExistence(timeout: 3)
-        XCTExpectFailure("HUM-002: Undo after deleting a tile uses up the undo step but the tile never comes back") {
-            XCTAssertTrue(back, "Undo brings the tile back in the editor")
-            XCTAssertTrue(inStore, "Undo brings the tile back for the child")
-        }
+        XCTAssertTrue(el(app, "tile.up").waitForExistence(timeout: 3), "Undo brings the tile back for the child")
     }
 
     /// Scenario: delete from the long-press menu. The spec says every delete asks to confirm.
@@ -138,9 +132,8 @@ final class EditorUITests: XCTestCase {
     func testDeleteFromMenuAsksFirst() {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
         contextMenu(app, "editTile.up", "Delete tile")
-        XCTExpectFailure("HUM-008: “Delete tile” in the long-press menu deletes at once, without asking") {
-            XCTAssertTrue(app.staticTexts["Delete this tile?"].waitForExistence(timeout: 2))
-        }
+        XCTAssertTrue(app.staticTexts["Delete this tile?"].waitForExistence(timeout: 2), "Delete asks first (HUM-008)")
+        XCTAssertTrue(el(app, "editTile.up").exists, "Nothing is deleted until the parent confirms")
     }
 
     /// Scenario: Duplicate puts a copy in the first empty spot and moves nothing.
@@ -175,9 +168,8 @@ final class EditorUITests: XCTestCase {
     func testTappingAFolderTileEditsIt() {
         let app = launchHum(["-skipFirstRun", "-demoFolder", "-startInParent"])
         el(app, "editTile.snack").tap()
-        XCTExpectFailure("HUM-006: on smaller iPhones the folder's Open button covers the middle of the tile, so a tap opens the folder", options: .nonStrict()) {
-            XCTAssertTrue(app.navigationBars["Edit folder"].waitForExistence(timeout: 3), "Tapping a tile edits it")
-        }
+        // HUM-006: on narrow tiles the Open button sits in a corner, so the picture edits the tile.
+        XCTAssertTrue(app.navigationBars["Edit folder"].waitForExistence(timeout: 3), "Tapping a tile edits it")
     }
 
     /// Scenario: inside a folder, the band's Back button returns to Home.
@@ -217,19 +209,15 @@ final class EditorUITests: XCTestCase {
         el(app, "applyGridSize").tap()
         XCTAssertTrue(app.staticTexts["3 tiles won't fit"].waitForExistence(timeout: 3))
         dialogButton(app, "Move them to “needs a spot”").tap()
-        XCTAssertTrue(app.staticTexts["3 new tiles need a spot. Drag each one onto the board."].waitForExistence(timeout: 3))
-        XCTExpectFailure("HUM-024: the tray calls tiles that were already on the board “new”") {
-            XCTAssertFalse(app.staticTexts["3 new tiles need a spot. Drag each one onto the board."].exists)
-        }
+        // HUM-024: they aren't "new" tiles.
+        XCTAssertTrue(app.staticTexts["3 tiles need a spot. Drag each one onto the board."].waitForExistence(timeout: 3))
     }
 
-    /// Scenario: the "smaller than 88 points" warning is parent-facing jargon.
+    /// Scenario: no "smaller than 88 points" jargon (HUM-005).
     @MainActor
     func testNoTechnicalSizeWarning() {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
         XCTAssertTrue(el(app, "editTile.hi").waitForExistence(timeout: 5))
-        XCTExpectFailure("HUM-005: “Tiles are smaller than 88 points…” is developer jargon, and cut off on iPhone", options: .nonStrict()) {
-            XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '88 points'")).firstMatch.exists)
-        }
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'points'")).firstMatch.exists)
     }
 }

@@ -53,11 +53,17 @@ struct TileView: View {
             .gesture(touchGesture(size: geo.size))
         }
         .accessibilityElement()
-        .accessibilityLabel(cell.spokenText.isEmpty ? "\(cell.label), folder" : cell.spokenText)
+        .accessibilityLabel(accessibilityText)
         .accessibilityAddTraits(.isButton)
         .accessibilityHint(cell.linkedBoardID != nil ? Text("Opens a board") : Text(""))
         .accessibilityAction { onTap(mach_absolute_time()) }
         .accessibilityIdentifier("tile.\(cell.label)")
+    }
+
+    /// What VoiceOver reads: the phrase, or for a silent tile its label (and "folder" only if it opens one).
+    private var accessibilityText: String {
+        if !cell.spokenText.isEmpty { return cell.spokenText }
+        return cell.linkedBoardID != nil ? "\(cell.label), folder" : cell.label
     }
 
     private func touchGesture(size: CGSize) -> some Gesture {
@@ -78,26 +84,20 @@ struct TileView: View {
 
     @ViewBuilder
     private func content(size: CGSize) -> some View {
-        let labelFont = Font.system(size: max(14, min(size.width, size.height) * 0.13), weight: .semibold, design: .rounded)
+        let padding: CGFloat = size.width > 120 ? 10 : 6
+        let label = TileLabel(text: cell.label, fontSize: max(14, min(size.width, size.height) * 0.13),
+                              width: size.width - padding * 2)
+            .foregroundStyle(ink)
         VStack(spacing: 4) {
-            if showLabel && labelOnTop { label(labelFont) }
+            if showLabel && labelOnTop { label }
             picture(size: size)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            if showLabel && !labelOnTop { label(labelFont) }
+            if showLabel && !labelOnTop { label }
         }
-        .padding(size.width > 120 ? 10 : 6)
+        .padding(padding)
     }
 
     private var ink: Color { Theme.tileInk(function: cell.function, hex: cell.colorHex) }
-
-    private func label(_ font: Font) -> some View {
-        Text(cell.label)
-            .font(font)
-            .foregroundStyle(ink)
-            .multilineTextAlignment(.center)
-            .lineLimit(2)
-            .minimumScaleFactor(0.6)
-    }
 
     @ViewBuilder
     private func picture(size: CGSize) -> some View {
@@ -116,6 +116,28 @@ struct TileView: View {
         } else {
             Color.clear
         }
+    }
+}
+
+/// A tile's label. It shrinks a long word to fit instead of breaking it ("Clothin/g", BUGS.md HUM-043):
+/// the font gets small enough for the longest word to fit on one line, and a one-word label stays on one line.
+struct TileLabel: View {
+    let text: String
+    let fontSize: CGFloat
+    /// The width the label can use.
+    let width: CGFloat
+
+    var body: some View {
+        let words = text.split(whereSeparator: \.isWhitespace)
+        let longest = words.map(\.count).max() ?? 0
+        // Rounded semibold letters are about 0.6 of the font size wide.
+        let fitting = longest > 0 ? max(1, width) / (CGFloat(longest) * 0.62) : fontSize
+        Text(text)
+            .font(.system(size: max(9, min(fontSize, fitting)), weight: .semibold, design: .rounded))
+            .multilineTextAlignment(.center)
+            .lineLimit(words.count <= 1 ? 1 : 2)
+            .minimumScaleFactor(0.6)
+            .allowsTightening(true)
     }
 }
 

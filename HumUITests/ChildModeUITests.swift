@@ -168,16 +168,24 @@ final class ChildModeUITests: XCTestCase {
         XCTAssertFalse(el(app, "editGate").exists, "No lock with the two-finger gate")
     }
 
+    /// Scenario: a parent holds the lock for a little over the 3 seconds it asks for. On iPad the top
+    /// edge used to hold touches back, so 3.5 s wasn't enough (HUM-044).
+    @MainActor
+    func testThreeAndAHalfSecondHoldOpensGrownUpMode() {
+        let app = launchHum(["-skipFirstRun"])
+        XCTAssertTrue(el(app, "editGate").waitForExistence(timeout: 5))
+        el(app, "editGate").press(forDuration: 3.5)
+        XCTAssertTrue(el(app, "exitParentMode").waitForExistence(timeout: 3), "A 3.5 s hold opens grown-up mode")
+    }
+
     /// Scenario: the child's history box shows what was said, newest first, and replays on tap.
     @MainActor
     func testHistoryBox() {
         let app = launchHum(["-skipFirstRun", "-demoHistory"])
-        let newest = app.buttons["Said: Let's have crackers!. Say it again."]
+        let newest = app.buttons["Said: Let's have crackers! Say it again."]
         XCTAssertTrue(newest.waitForExistence(timeout: 5))
         el(app, "tile.hi").tap()
-        XCTAssertTrue(app.buttons["Said: Hi!. Say it again."].waitForExistence(timeout: 3))
-        XCTExpectFailure("HUM-021: the history box's VoiceOver label reads “Said: Hi!. Say it again.” (doubled punctuation)") {
-            XCTAssertTrue(app.buttons["Said: Hi! Say it again."].exists)
-        }
+        // HUM-021: no doubled punctuation ("Hi!.").
+        XCTAssertTrue(app.buttons["Said: Hi! Say it again."].waitForExistence(timeout: 3))
     }
 }

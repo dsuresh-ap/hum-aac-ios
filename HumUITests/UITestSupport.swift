@@ -17,8 +17,8 @@ extension XCTestCase {
         app.descendants(matching: .any)[id].firstMatch
     }
 
-    /// Holds the lock, the parent's way into edit mode. The gate needs 3 s, but on iPad touches near the
-    /// top edge start late, so 3.5 s isn't enough there (BUGS.md, HUM-044). Hold for 5 s.
+    /// Holds the lock, the parent's way into edit mode. The gate needs 3 s; 5 s leaves room for a slow
+    /// simulator. `ChildModeUITests.testThreeAndAHalfSecondHoldOpensGrownUpMode` checks the real timing.
     func openParentMode(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         el(app, "editGate").press(forDuration: 5)
         XCTAssertTrue(el(app, "exitParentMode").waitForExistence(timeout: 5), "Holding the lock should open grown-up settings", file: file, line: line)
@@ -53,7 +53,7 @@ extension XCTestCase {
         return buttons.element(boundBy: max(buttons.count - 1, 0))
     }
 
-    /// Swipes up (at most 8 times, never forever) until `element` is on screen.
+    /// Swipes up (at most 15 times, never forever) until `element` is on screen.
     func scrollTo(_ app: XCUIApplication, _ element: XCUIElement) {
         for _ in 0..<15 where !(element.exists && element.isHittable) {
             app.swipeUp()
@@ -66,8 +66,8 @@ extension XCTestCase {
         scrollTo(app, toggle)
         XCTAssertTrue(toggle.exists, "No switch “\(label)”", file: file, line: line)
         if (toggle.value as? String == "1") != on {
-            // The switch itself sits at the trailing edge of the row.
-            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+            // The switch itself sits at the trailing edge of the row, about 30 pt in (rows are wider on iPad).
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5)).withOffset(CGVector(dx: -32, dy: 0)).tap()
         }
         XCTAssertEqual(toggle.value as? String, on ? "1" : "0", "“\(label)” didn't change", file: file, line: line)
     }

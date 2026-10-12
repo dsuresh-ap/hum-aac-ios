@@ -242,7 +242,7 @@ public enum EmojiSuggester {
             e("🛏️", "bed, bedroom"),
             e("🛒", "shop, store, shopping, grocery"),
             e("🏥", "doctor, hospital"),
-            e("🚪", "door, out, leave, get out, let's go, go"),
+            e("🚪", "door, out, leave, get out"),
             e("🚶", "walk, walking"),
             e("🏃", "run, running, chase, fast"),
             e("☀️", "sun, sunny, hot, day"),

@@ -17,6 +17,8 @@ struct SetupSharingView: View {
     @State private var showImporter = false
     @State private var errorMessage: String?
     @State private var showAI = false
+    /// True while the export file is being made (a big setup takes a few seconds).
+    @State private var preparingExport = false
 
     var body: some View {
         NavigationStack {
@@ -24,8 +26,17 @@ struct SetupSharingView: View {
                 Section {
                     Button("Export all boards…", systemImage: "square.and.arrow.up") { export(boardID: nil) }
                         .accessibilityIdentifier("exportAll")
+                        .disabled(preparingExport)
                     if let id = model.editingBoardID, let board = model.fetchBoard(id) {
                         Button("Export “\(board.name)” only…", systemImage: "square.and.arrow.up.on.square") { export(boardID: id, name: board.name) }
+                            .disabled(preparingExport)
+                    }
+                    if preparingExport {
+                        HStack(spacing: 8) {
+                            ProgressView().controlSize(.small)
+                            Text("Preparing your boards…").foregroundStyle(.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
                     }
                 } header: {
                     Text("Move boards to another device")
@@ -103,13 +114,21 @@ struct SetupSharingView: View {
         .onDisappear { model.importHostedBySheet = false }
     }
 
+    /// Reads the boards here, then zips them in the background with "Preparing your boards…" showing.
     private func export(boardID: UUID?, name: String? = nil) {
-        do {
-            exportDocument = HumFileDocument(data: try ImportService(model: model).exportData(boardID: boardID))
-            exportName = ImportService.exportFileName(boardName: name)
-            showExporter = true
-        } catch {
-            errorMessage = error.localizedDescription
+        guard !preparingExport else { return }
+        preparingExport = true
+        let (document, media) = ImportService(model: model).exportContents(boardID: boardID)
+        Task {
+            defer { preparingExport = false }
+            do {
+                let data = try await Task.detached(priority: .userInitiated) { try HumPackage.write(document, media: media) }.value
+                exportDocument = HumFileDocument(data: data)
+                exportName = ImportService.exportFileName(boardName: name)
+                showExporter = true
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }
@@ -130,7 +149,8 @@ nonisolated struct HumFileDocument: FileDocument {
     }
 }
 
-/// What iCloud sync is doing on this device, in plain words, plus how a developer can check the records.
+/// What iCloud sync is doing on this device, in plain words. (How a developer checks the records is in
+/// docs/testing/ICLOUD.md, not in the app.)
 private struct SyncStatusRows: View {
     @Environment(AppModel.self) private var model
 
@@ -142,7 +162,7 @@ private struct SyncStatusRows: View {
                     Text("Sync is on, but iCloud isn't available, so boards are only on this device for now.")
                     Text(FileManager.default.ubiquityIdentityToken == nil
                          ? "This device isn't signed in to iCloud (or iCloud Drive is off)."
-                         : (Persistence.iCloudError.map { "Reason: \($0)" } ?? "Try turning sync off and on again."))
+                         : "Try turning sync off and on again.")
                         .foregroundStyle(.secondary)
                 }
             } icon: { Image(systemName: "exclamationmark.icloud") }
@@ -151,21 +171,11 @@ private struct SyncStatusRows: View {
             LabeledContent("iCloud account", value: sync.account.description)
             LabeledContent("Sent to iCloud", value: describe(sync.lastExport, busy: sync.busy))
             LabeledContent("Received from iCloud", value: describe(sync.lastImport, busy: sync.busy))
-            ForEach([sync.lastSetup, sync.lastExport, sync.lastImport].compactMap { $0?.error }, id: \.self) { error in
-                Label(error, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(.orange)
+            if [sync.lastSetup, sync.lastExport, sync.lastImport].contains(where: { $0?.error != nil }) {
+                Label("iCloud isn't reachable right now. Your boards are safe on this device, and Hum tries again by itself.",
+                      systemImage: "exclamationmark.icloud")
+                    .font(.footnote).foregroundStyle(.orange)
             }
-            DisclosureGroup("How to see the records (for developers)") {
-                Text("""
-                    1. Open the CloudKit Console (icloud.developer.apple.com) → \(Persistence.cloudKitContainerID).
-                    2. Pick the Development environment (Xcode builds) — App Store/TestFlight builds use Production.
-                    3. Choose Private Database, zone com.apple.coredata.cloudkit.zone. Sign in with the same Apple Account as this device ("Act as iCloud Account").
-                    4. Record types are CD_Board and CD_Tile. To list them, add a QUERYABLE index on recordName under Schema → Indexes, then query.
-                    The Public database is always empty: Hum never uses it.
-                    """)
-                    .font(.footnote)
-                    .textSelection(.enabled)
-            }
-            .font(.footnote)
         }
     }
 

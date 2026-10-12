@@ -19,8 +19,8 @@ in Files / iCloud Drive / AirDrop.
 | # | Steps | Expected |
 |---|-------|----------|
 | 1.1 | Starter board, tap “hi” once. | Speech starts the moment your finger touches (no lag you can feel). |
-| 1.2 | Tap the same tile 10+ times a second for 30 s (or use Settings → Tap-to-sound latency → Start stress test). | Every tap restarts the phrase. No pops, clicks, crackle, or a moment of silence. The app never stutters. |
-| 1.3 | Settings → Tap-to-sound latency → tap the pad 20 times. | Median under 30 ms; slowest under 150 ms. Write down the numbers per device. |
+| 1.2 | Tap the same tile 10+ times a second for 30 s, with two fingers if you can. | Every tap restarts the phrase. No pops, clicks, crackle, or a moment of silence. The app never stutters. |
+| 1.3 | Film 20 taps with another phone in slow motion (240 fps) next to the device, sound on. Count frames from the finger touching to the sound starting (1 frame ≈ 4 ms). The in-app latency screen was removed (HUM-022). | Median under 30 ms; slowest under 150 ms. Write down the numbers per device. |
 | 1.4 | Settings → Tapping → “Let speech finish first”, then tap two tiles quickly. | The first phrase finishes, then the second plays. Nothing is dropped. |
 | 1.5 | “Play both together”, tap three tiles quickly. | All three play over each other. |
 | 1.6 | “Lifts off the tile”: press a tile, slide off, lift. | Nothing is said. Press and lift on the tile: it speaks on lift. |
@@ -52,7 +52,7 @@ in Files / iCloud Drive / AirDrop.
 
 | # | Steps | Expected |
 |---|-------|----------|
-| 3.1 | Hold the lock for exactly 3 s (count) on iPhone **and iPad**. | The ring fills and grown-up mode opens at ~3 s. On iPad it may take much longer (HUM-044). |
+| 3.1 | Hold the lock for exactly 3 s (count) on iPhone **and iPad**. | The ring fills and grown-up mode opens at ~3 s on both (HUM-044 fix: the hold counts from the touch itself). A 1–2 s hold never opens it. |
 | 3.2 | A child-like test: tap and mash the corners, swipe from edges, hold random tiles, two-finger taps. | Never reaches grown-up mode, settings, AI, import or sync. |
 | 3.3 | Settings → Grown-up lock → Two-finger triple-tap. Then do a two-finger triple-tap anywhere. | Grown-up mode opens. One-finger triple taps and two-finger double taps don't open it. |
 | 3.4 | Guided Access: turn it on (Settings → Accessibility), triple-click the side button in Hum. | Works with Hum; the one-time tip appeared the first time you entered grown-up mode (HUM-041). |
@@ -71,7 +71,7 @@ in Files / iCloud Drive / AirDrop.
 | 4.2 | Drag a tile onto a folder tile's “Open” chip. | Chip says “Put inside”; the tile moves into the folder; banner offers Open folder. |
 | 4.3 | Shrink a grid so tiles go to “needs a spot”, then drag them back from the tray. | Each lands where dropped; the tray empties. |
 | 4.4 | iPhone phone layout: drag tiles between phone pages. | Only the phone layout changes; the iPad/Mac layout (check on another device or after sync) doesn't. |
-| 4.5 | Undo after: add, edit, delete, hide, move, move to folder, duplicate, grid size, paste phrases, AI add, merge import, replace import. | Each undoes exactly one step. Known broken: delete (HUM-002), replace (HUM-038). |
+| 4.5 | Undo after: add, edit, delete, hide, move, move to folder, duplicate, grid size, paste phrases, AI add, merge import, replace import. | Each undoes exactly one step. Delete and Replace everything (HUM-002, HUM-038) bring back exactly what was there; after one of those, older steps can't be undone any more (by design, see BUGS.md). |
 | 4.6 | iPhone 17e / SE: open the editor on the starter board. | Pencil/camera badges don't hide pictures (HUM-007); folder tiles can be tapped to edit (HUM-006). |
 | 4.7 | Type a very long phrase (200 characters) and a label with one long word (“Entertainment”). | The child's tile shows the label without breaking mid-word (HUM-043); VoiceOver reads the whole phrase. |
 
@@ -79,12 +79,13 @@ in Files / iCloud Drive / AirDrop.
 
 | # | Steps | Expected |
 |---|-------|----------|
-| 5.1 | First run → Import a setup → Cancel the file picker. | You can go back and choose again; you aren't left on a blank board (HUM-004). |
+| 5.1 | First run → Import a setup → Cancel the file picker, then Cancel the import preview too. | You're back on “How do you want to start?” each time; no blank board was made (HUM-004). |
 | 5.2 | First run → Import a setup → pick `Express2-v2.hum`. | The file's Home becomes the child's Home, with its pictures (HUM-001, HUM-037). |
 | 5.3 | Setup & sharing → Export all boards… → save to Files; Export “Home” only… → AirDrop to another device. | A `.hum` file is saved/sent; a “preparing” state shows if it takes a while (HUM-042). |
 | 5.4 | On the other device: tap the `.hum` in Files / AirDrop / Mail → “Open in Hum”. | Hum opens; if the child is using it, the preview waits until grown-up mode. |
 | 5.5 | Import the same file twice with Merge. | Second time: “0 new tiles…” and nothing duplicated. |
-| 5.6 | Import, then look at the board right away and after 1, 5 and 10 min. | Write down when all pictures appear (HUM-037). |
+| 5.6 | Import `Express2-v2.hum`; time the “Preparing pictures…” bar, then look at the board right away. | Every picture shows as soon as the import closes (HUM-037). Write down how long the import took on the oldest supported iPad. |
+| 5.7 | Merge `Express2-v2.hum` into the starter board. | A banner says it's in a folder called “Express2-v2” on Home, with Open; a folder tile is in Home's first empty spot; only one board is called Home (HUM-001, HUM-027). |
 | 5.7 | Mac: drag a `.hum` onto the window in grown-up mode; in child mode. | Preview opens in grown-up mode only. |
 | 5.8 | Import a `.obz` from CoughDrop (if supported in this build). | Boards, links and pictures come through, or a friendly “not supported yet”. |
 | 5.9 | Background Hum in the middle of a big import; kill it mid-import and relaunch. | No crash, no half-imported mess, or a clear way to retry. |
@@ -109,7 +110,8 @@ in Files / iCloud Drive / AirDrop.
 |---|-------|----------|
 | 7.1 | Help me set up → Turn on the helper → Describe: “My child loves trains and says ‘all aboard!’ when she wants to go.” | Suggestions keep “all aboard!” whole; no praise or compliance phrases; Add puts them in empty spots; one Undo removes them. |
 | 7.2 | Paste their phrases: 5 scripts from a show. | One tile per line, never split into words. |
-| 7.3 | Apple Intelligence off / model still downloading. | The helper and Settings agree on the reason (HUM-031). |
+| 7.3 | Apple Intelligence off / model still downloading. | The helper explains why it can't run, in plain words; the toolbar button only shows when it can (HUM-031). |
+| 7.4 | Ask the helper about a topic that deserves its own folder (“he loves trains, Thomas, all aboard…”) while editing Food; Add. | Tiles with no folder land on Food. A suggested new folder gets a folder tile on Food, and a banner says where the tiles went with Open (HUM-047). |
 | 7.4 | Private Cloud Compute (if the entitlement is granted): run until the quota warning. | The one-line privacy note shows; quota text is clear; falls back to on-device. |
 | 7.5 | A device without Apple Intelligence. | No AI button anywhere; everything else works. |
 
@@ -151,11 +153,14 @@ in Files / iCloud Drive / AirDrop.
 
 ## 12. Re-check bugs that need a device
 
+These were fixed in code (2026-10-12) but can only be confirmed on hardware.
+
 | Bug | What to check |
 |-----|---------------|
-| HUM-014 | Is the first tap after closing a sheet / launching ever ignored on a real device? |
-| HUM-015 | Camera cancel keeps the old photo. |
-| HUM-031 | AI availability text matches the helper's behavior. |
-| HUM-037 | How long until imported symbols appear; do some never appear? |
+| HUM-014 | Is the first tap after closing a sheet / launching ever ignored on a real device? (Not reproduced by UI tests.) |
+| HUM-015 | Camera → Cancel keeps the old photo. |
+| HUM-031 | AI availability on a device whose model is still downloading: no form that can't work. |
+| HUM-037 | Big imports: all pictures show right away; how long “Preparing pictures…” takes on an older iPad. |
 | HUM-041 | The Guided Access tip appears the first time, every time (try 5 fresh installs). |
-| HUM-044 | How long the lock must be held on a real iPad vs iPhone. |
+| HUM-044 | A 3-second hold opens grown-up mode on a real iPad and iPhone; a quick hold never does. |
+| HUM-045 | On a 13" iPad, Settings, the tile editor, Home & folders and Setup & sharing open page-sized. |

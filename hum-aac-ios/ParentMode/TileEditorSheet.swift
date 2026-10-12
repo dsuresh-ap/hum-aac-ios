@@ -150,7 +150,12 @@ struct TileEditorSheet: View {
                 if let data = try? Data(contentsOf: url) { imageData = ImageProcessing.tileImageData(from: data) }
             }
             .sheet(isPresented: $showEmojiPicker) {
-                EmojiPickerView(selection: Binding(get: { shownSymbol }, set: { symbol = $0; symbolTouched = true }),
+                EmojiPickerView(selection: Binding(get: { shownSymbol }, set: {
+                    symbol = $0
+                    symbolTouched = true
+                    // A photo always wins over an emoji, so choosing an emoji means "use this instead".
+                    if pickerSource == .emoji { imageData = nil }
+                }),
                                 label: label, spokenText: spokenText,
                                 onSymbol: { imageData = $0 },
                                 source: pickerSource)
@@ -160,7 +165,10 @@ struct TileEditorSheet: View {
             })
             #if os(iOS)
             .fullScreenCover(isPresented: $showCamera) {
-                CameraPicker { data in imageData = data.flatMap(ImageProcessing.tileImageData(from:)) }
+                // Cancel (nil) keeps the photo the tile already has.
+                CameraPicker { data in
+                    if let photo = data.flatMap(ImageProcessing.tileImageData(from:)) { imageData = photo }
+                }
                     .ignoresSafeArea()
             }
             #endif
@@ -224,7 +232,7 @@ struct TileEditorSheet: View {
                         pickerSource = .symbols
                         showEmojiPicker = true
                     }
-                    Button(imageData == nil ? "Choose emoji…" : "Emoji…", systemImage: "face.smiling") {
+                    Button(imageData == nil ? "Choose emoji…" : "Use an emoji instead…", systemImage: "face.smiling") {
                         pickerSource = .emoji
                         showEmojiPicker = true
                     }
@@ -408,9 +416,7 @@ struct TileEditorSheet: View {
 
     /// A short label from a long phrase: the first few words, without trailing punctuation.
     static func suggestLabel(_ phrase: String) -> String {
-        let words = phrase.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: " ")
-        let short = words.prefix(4).joined(separator: " ")
-        return short.trimmingCharacters(in: CharacterSet(charactersIn: "!?.,;:"))
+        ProposalChecker.shortLabel(for: phrase.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     private func load() {

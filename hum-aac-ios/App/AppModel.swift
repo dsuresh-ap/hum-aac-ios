@@ -126,8 +126,8 @@ final class AppModel {
 
     /// Gives new tiles a phone spot before the phone shows `board`. Not an undo step.
     func arrangePhoneLayout(_ board: Board) {
-        guard showsPhoneLayout(board), PhoneLayout.arrange(board) else { return }
-        try? context.save()
+        guard showsPhoneLayout(board) else { return }
+        store.withoutUndo { _ = PhoneLayout.arrange(board) }
     }
     /// True until a parent finishes first-run setup.
     var needsFirstRun: Bool
@@ -197,6 +197,8 @@ final class AppModel {
         }
     }
     var importError: String?
+    /// The import that just finished, for the editor's banner (cleared when the parent closes it).
+    var lastImport: ImportReport?
     /// True while a sheet (Setup & sharing) shows the import preview itself; the root view waits.
     var importHostedBySheet = false
     /// True while stored SVG pictures are being turned into JPEGs.
@@ -261,6 +263,16 @@ final class AppModel {
         settings.hasCompletedSetup = true
         needsFirstRun = false
         store.clearUndo()
+        goHome()
+    }
+
+    /// Setup started with "Import a setup" and the import finished: setup is done. The file's own Home
+    /// is Home, because nothing was made before it.
+    func finishFirstRunAfterImport() {
+        settings.hasCompletedSetup = true
+        needsFirstRun = false
+        store.clearUndo()
+        lastImport = nil
         goHome()
     }
 

@@ -76,6 +76,37 @@ struct MergePlannerTests {
         #expect(plan.summary.newBoards == 1)
     }
 
+    /// HUM-001: the file's own Home becomes a folder named after the file, opened by a tile on your Home,
+    /// so everything that came in can be reached. Nothing already on Home moves.
+    @Test func mergedHomeBecomesAFolderOnHome() throws {
+        let theirHome = HumBoard(name: "Home", rows: 1, columns: 2, isHome: true, tiles: [
+            HumTile(label: "hi", spokenText: "Hi!", row: 0, column: 0),
+        ])
+        let plan = MergePlanner.plan(existing: existing(), incoming: HumDocument(boards: [theirHome]), mode: .merge, name: "Express2")
+        let folder = try #require(plan.result.boards.first { $0.id == theirHome.id })
+        #expect(folder.name == "Express2" && !folder.isHome)
+        #expect(plan.result.boards.filter { $0.name == "Home" }.count == 1)
+        let home = try #require(plan.result.boards.first { $0.id == homeID })
+        let opener = try #require(home.tiles.first { $0.linkedBoardID == theirHome.id })
+        #expect(opener.label == "Express2" && opener.row == 1 && opener.column == 0)
+        #expect(home.tiles.filter { $0.linkedBoardID == nil } == existing().boards[0].tiles)
+        #expect(plan.summary.sentence.contains("“Express2”"))
+        // Merging the same file again adds no second folder tile.
+        let again = MergePlanner.plan(existing: plan.result, incoming: HumDocument(boards: [theirHome]), mode: .merge, name: "Express2")
+        #expect(again.summary.newTiles == 0 && again.summary.homeFolderName == nil)
+    }
+
+    /// HUM-001: with a full Home, the folder tile waits in the "needs a spot" tray.
+    @Test func mergedHomeFolderTileGoesToTheTrayWhenHomeIsFull() {
+        var full = existing()
+        full.boards[0].tiles.append(HumTile(label: "x", spokenText: "x", row: 1, column: 0))
+        full.boards[0].tiles.append(HumTile(label: "y", spokenText: "y", row: 1, column: 1))
+        let theirHome = HumBoard(name: "Home", rows: 1, columns: 2, isHome: true)
+        let plan = MergePlanner.plan(existing: full, incoming: HumDocument(boards: [theirHome]), mode: .merge, name: "Hum setup 2026-10-12")
+        #expect(plan.unplaced.map(\.tile.linkedBoardID) == [theirHome.id])
+        #expect(plan.result.boards[0].tiles == full.boards[0].tiles)
+    }
+
     @Test func mergeIsIdempotent() {
         let plan = MergePlanner.plan(existing: existing(), incoming: existing(), mode: .merge)
         #expect(plan.result == existing())

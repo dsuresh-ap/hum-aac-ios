@@ -11,6 +11,38 @@ extension UTType {
     nonisolated static let humPackage = UTType(exportedAs: "com.dhananjaysuresh.hum-aac.hum", conformingTo: .zip)
 }
 
+/// What the last import did, for the editor's "where did it go" banner.
+struct ImportReport: Equatable {
+    var fileName: String
+    var summary: MergePlanner.Summary
+    var mode: MergePlanner.Mode
+    /// The folder to open from the banner: the file's Home made into a folder, or a new folder.
+    var folderID: UUID?
+    var folderName: String?
+
+    var message: String {
+        let s = summary
+        var text: String
+        if mode == .replace {
+            text = "Your boards are now the ones from “\(fileName)”. Undo brings back the old ones."
+        } else if let home = s.homeFolderName {
+            text = "Added “\(fileName)” as a folder called “\(home)” on Home"
+            if s.newBoards > 1 { text += ", with \(s.newBoards - 1) more folder\(s.newBoards == 2 ? "" : "s") inside" }
+            text += "."
+        } else if s.newBoards > 0, let folderName {
+            text = "Added \(plural(s.newTiles, "tile")) and a new folder, “\(folderName)”."
+        } else {
+            text = s.newTiles > 0 ? "Added \(plural(s.newTiles, "tile"))." : "Updated \(plural(s.changedTiles, "tile"))."
+        }
+        if s.unplacedTiles > 0 {
+            text += " \(plural(s.unplacedTiles, "tile")) \(s.unplacedTiles == 1 ? "waits" : "wait") below the board for a spot."
+        }
+        return text
+    }
+
+    private func plural(_ n: Int, _ word: String) -> String { "\(n) \(word)\(n == 1 ? "" : "s")" }
+}
+
 /// A file that has been read and checked, waiting for the parent to choose Merge or Replace.
 struct PendingImport: Identifiable {
     let id = UUID()
@@ -49,9 +81,11 @@ struct ImportService {
     /// Also used by the AI helper and App Intents with documents they built.
     func prepare(loaded: LoadedConfig, fileName: String) -> PendingImport {
         let existing = ConfigBridge.export(boards: model.store.boards()).document
+        // A merged file's own Home becomes a folder named after the file ("Express2-v2.hum" → "Express2-v2").
+        let name = (fileName as NSString).deletingPathExtension
         return PendingImport(
             fileName: fileName, loaded: loaded,
-            merge: MergePlanner.plan(existing: existing, incoming: loaded.document, mode: .merge),
+            merge: MergePlanner.plan(existing: existing, incoming: loaded.document, mode: .merge, name: name),
             replace: MergePlanner.plan(existing: existing, incoming: loaded.document, mode: .replace))
     }
 
@@ -98,20 +132,51 @@ struct ImportService {
                backupWritten: Bool = false) throws {
         let plan = mode == .merge ? pending.merge : pending.replace
         if mode == .replace && !backupWritten { try writeBackup() }
-        try model.store.change(mode == .merge ? "Import" : "Replace Everything") {
-            try ConfigBridge.apply(plan, media: pending.loaded.media, prepared: prepared, in: model.context)
+        let before = Set(model.store.boards().map(\.id))
+        if mode == .replace {
+            try replaceEverything(with: plan.result, media: pending.loaded.media, prepared: prepared,
+                                  settings: pending.loaded.document.settings)
+        } else {
+            try model.store.change("Import") {
+                try ConfigBridge.apply(plan, media: pending.loaded.media, prepared: prepared, in: model.context)
+            }
+            if model.fetchBoard(model.currentBoardID ?? UUID()) == nil { model.goHome() } else { model.scheduleSnapshotRefresh() }
+        }
+        // The folder the banner opens: one that a new tile on an existing board opens.
+        let linked = Set(plan.result.boards.filter { before.contains($0.id) }.flatMap(\.tiles)
+            .filter { plan.newTileIDs.contains($0.id) }.compactMap(\.linkedBoardID)
+            + plan.unplaced.compactMap(\.tile.linkedBoardID))
+        let folder = mode == .merge ? plan.result.boards.first { !before.contains($0.id) && linked.contains($0.id) } : nil
+        model.lastImport = ImportReport(fileName: pending.fileName, summary: plan.summary, mode: mode,
+                                        folderID: folder?.id, folderName: folder?.name)
+        // Importing from first-run setup: setup is done once the import is (cancelling keeps setup open).
+        if model.needsFirstRun { model.finishFirstRunAfterImport() }
+        Task { await Self.renderImportedSVGs(model) }
+    }
+
+    /// "Replace everything" as one undo step. SwiftData can't undo deleting a whole setup (the tiles come
+    /// back without their boards, BUGS.md HUM-038), so Undo puts the setup from just before back the same
+    /// way, and Redo replaces it again.
+    private func replaceEverything(with document: HumDocument, media: [String: Data], prepared: [String: Data?],
+                                   settings: HumSettings?) throws {
+        let (before, beforeMedia) = ConfigBridge.export(boards: model.store.boards())
+        let beforeSettings = currentSettings()
+        let model = self.model
+        let plan = MergePlanner.plan(existing: before, incoming: document, mode: .replace)
+        try model.store.change("Replace Everything", undo: { _ in
+            // The saved pictures are ready to store as they are.
+            try? ImportService(model: model).replaceEverything(with: before, media: beforeMedia,
+                                                               prepared: beforeMedia.mapValues { Optional($0) },
+                                                               settings: beforeSettings)
+        }) {
+            try ConfigBridge.apply(plan, media: media, prepared: prepared, in: model.context)
         }
         // Display and voice settings only come along with "Replace everything".
-        if mode == .replace, let settings = pending.loaded.document.settings {
+        if let settings {
             model.settings.apply(settings)
             model.applySpeechSettings()
         }
-        if mode == .replace || model.fetchBoard(model.currentBoardID ?? UUID()) == nil {
-            model.goHome()
-        } else {
-            model.scheduleSnapshotRefresh()
-        }
-        Task { await Self.renderImportedSVGs(model) }
+        model.goHome()
     }
 
     /// iOS can only draw SVG pictures (e.g. Mulberry symbols in a hand-made file) asynchronously, with
@@ -136,18 +201,13 @@ struct ImportService {
             guard let svg = liveTile(id, in: model.context)?.imageData, ImageProcessing.isSVG(svg) else { continue }
             let jpeg = await ImageProcessing.tileImageDataAllowingSVG(from: svg)
             guard let tile = liveTile(id, in: model.context) else { continue }
-            model.context.undoManager?.disableUndoRegistration()
-            tile.imageData = jpeg  // nil if it can't be drawn: no picture beats a broken one
-            model.context.undoManager?.enableUndoRegistration()
-            // A big import (e.g. a whole Snap page set) has hundreds: save and show them as they come.
-            if i % 50 == 49 {
-                try? model.context.save()
-                model.scheduleSnapshotRefresh()
-            }
+            // Saved at once and kept off the undo stack: Undo right after an import must undo the import.
+            model.store.withoutUndo { tile.imageData = jpeg }  // nil if it can't be drawn: no picture beats a broken one
+            // A big set (e.g. a whole Snap page set) has hundreds: show them as they come.
+            if i % 50 == 49 { model.scheduleSnapshotRefresh() }
             await Task.yield()
         }
-        try? model.context.save()
-        model.scheduleSnapshotRefresh()
+        if !ids.isEmpty { model.scheduleSnapshotRefresh() }
     }
 
     // MARK: Suggested tiles
@@ -170,6 +230,12 @@ struct ImportService {
 
     /// The whole setup (or one board) as `.hum` bytes.
     func exportData(boardID: UUID? = nil) throws -> Data {
+        let (document, media) = exportContents(boardID: boardID)
+        return try HumPackage.write(document, media: media)
+    }
+
+    /// What an export contains, before it's zipped (zipping can run in the background).
+    func exportContents(boardID: UUID? = nil) -> (document: HumDocument, media: [String: Data]) {
         var boards = model.store.boards()
         if let boardID { boards = boards.filter { $0.id == boardID } }
         var (document, media) = ConfigBridge.export(boards: boards)
@@ -177,7 +243,7 @@ struct ImportService {
             document.settings = currentSettings()
             document.name = "Hum setup"
         }
-        return try HumPackage.write(document, media: media)
+        return (document, media)
     }
 
     func currentSettings() -> HumSettings {
