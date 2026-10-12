@@ -66,7 +66,13 @@ nonisolated final class PCMClip: @unchecked Sendable {
         let tail = Int(AudioConstants.sampleRate * 0.040)  // keep a little release so endings aren't clipped
         let start = max(0, first - pad)
         let end = min(samples.count, last + tail)
-        return Array(samples[start..<end])
+        var trimmed = Array(samples[start..<end])
+        // Fade the very end to silence, so cutting off the quiet tail never clicks.
+        let fade = min(Int(AudioConstants.sampleRate * 0.015), trimmed.count)
+        for i in 0..<fade {
+            trimmed[trimmed.count - fade + i] *= Float(fade - 1 - i) / Float(fade)
+        }
+        return trimmed
     }
 
     /// Decodes an audio file (a parent's recording) into a clip.

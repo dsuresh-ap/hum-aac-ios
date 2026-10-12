@@ -163,4 +163,5 @@ These were fixed in code (2026-10-12) but can only be confirmed on hardware.
 | HUM-037 | Big imports: all pictures show right away; how long “Preparing pictures…” takes on an older iPad. |
 | HUM-041 | The Guided Access tip appears the first time, every time (try 5 fresh installs). |
 | HUM-044 | A 3-second hold opens grown-up mode on a real iPad and iPhone; a quick hold never does. |
+| HUM-048 | With headphones, play long and short phrases (“I need a break.”, “All done”) with a natural voice and the basic one: no static or hiss at the end. |
 | HUM-045 | On a 13" iPad, Settings, the tile editor, Home & folders and Setup & sharing open page-sized. |
