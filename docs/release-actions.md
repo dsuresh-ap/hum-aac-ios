@@ -8,6 +8,14 @@ Already done in the same change (no Xcode needed): the TD Snap importer was remo
 a disclaimer and licence note, `ITSAppUsesNonExemptEncryption = NO` went into `Hum-Info.plist`, and
 `CONTRIBUTING.md`, `Hum-agent-prompt.md` and `docs/PLAN.md` §9 were brought up to date.
 
+**Status (2026-10-12, second pass):** Tasks 1–5 are written and committed, with tests, but were made
+in a Linux container without Xcode or Swift. **Nobody has built or run them yet.** Before release:
+build, run `swift test --package-path Packages/HumConfig` and the app tests on an iOS 27 simulator, and
+fix any compile errors. Task 6 has a starting table in [`accessibility.md`](accessibility.md) (all
+"Not tested") and one small fix (no animation on tile release with Reduce Motion). Task 7 is not done.
+Task 4 adds a CloudKit field (`Tile.imageCredit`): deploy it to the **production** CloudKit schema
+before release.
+
 ---
 
 ## Part 1: tasks for a coding agent with Xcode
