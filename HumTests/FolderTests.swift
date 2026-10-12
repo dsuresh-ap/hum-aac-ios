@@ -44,6 +44,7 @@ struct FolderTests {
         let (id, image) = (tile.id, Data([1, 2, 3]))
         tile.imageData = image
         let homeBefore = model.layout(model.home).filter { $0.value != "snack" }
+        let snackSpot = try #require(model.layout(model.home).first { $0.value == "snack" }?.key)
 
         #expect(model.store.moveToBoard(tile, folder))
         #expect(tile.id == id && tile.imageData == image)
@@ -52,6 +53,17 @@ struct FolderTests {
         #expect(blocker.row == 0 && blocker.column == 0)    // untouched
         #expect(model.layout(model.home) == homeBefore)     // its old spot is just empty
 
+        model.store.undo()
+        #expect(tile.board?.id == model.home.id)
+        #expect(model.layout(model.home)[snackSpot] == "snack")  // back in its own spot
+
+        // Redo moves it again, and undo after redo still works (BUGS.md, HUM-052).
+        model.store.undoManager?.redo()
+        #expect(tile.board?.id == folder.id)
+        #expect(tile.row == 0)
+        #expect(tile.column == 1)
+        #expect(blocker.board?.id == folder.id && blocker.column == 0)
+        #expect(model.store.undoManager?.undoActionName == "Move to Folder")
         model.store.undo()
         #expect(tile.board?.id == model.home.id)
     }

@@ -137,9 +137,7 @@ struct ImportService {
             try replaceEverything(with: plan.result, media: pending.loaded.media, prepared: prepared,
                                   settings: pending.loaded.document.settings)
         } else {
-            try model.store.change("Import") {
-                try ConfigBridge.apply(plan, media: pending.loaded.media, prepared: prepared, in: model.context)
-            }
+            try applyMerge(plan, media: pending.loaded.media, prepared: prepared)
             if model.fetchBoard(model.currentBoardID ?? UUID()) == nil { model.goHome() } else { model.scheduleSnapshotRefresh() }
         }
         // The folder the banner opens: one that a new tile on an existing board opens.
@@ -152,6 +150,18 @@ struct ImportService {
         // Importing from first-run setup: setup is done once the import is (cancelling keeps setup open).
         if model.needsFirstRun { model.finishFirstRunAfterImport() }
         Task { await Self.renderImportedSVGs(model) }
+    }
+
+    /// A merge as one undo step. Before iOS 27, SwiftData's own undo takes existing tiles off their board
+    /// (BUGS.md, HUM-052), so Undo puts back what the merge touched and Redo merges again.
+    private func applyMerge(_ plan: MergePlanner.Plan, media: [String: Data], prepared: [String: Data?]) throws {
+        let incoming = plan.result.boards.flatMap(\.tiles) + plan.unplaced.map(\.tile)
+        let model = self.model
+        try model.store.change("Import", restoring: Set(incoming.map(\.id)), boards: Set(plan.result.boards.map(\.id)),
+                               mediaOf: Set(incoming.filter { $0.image != nil || $0.audio != nil }.map(\.id)),
+                               redo: { _ in try? ImportService(model: model).applyMerge(plan, media: media, prepared: prepared) }) {
+            try ConfigBridge.apply(plan, media: media, prepared: prepared, in: model.context)
+        }
     }
 
     /// "Replace everything" as one undo step. SwiftData can't undo deleting a whole setup (the tiles come
