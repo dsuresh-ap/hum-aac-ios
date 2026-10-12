@@ -63,3 +63,6 @@ Icon[]
 # --- Local tool config ---
 .mcp.json
 .claude/settings.local.json
+
+# --- Local test fixtures (real families' boards; never commit) ---
+TestFixtures/Local/

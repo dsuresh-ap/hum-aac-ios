@@ -43,6 +43,10 @@ struct HumApp: App {
                         if args.contains("-demoFolder") { UITestFixtures.addFoodFolder(model) }
                         if args.contains("-wideHome") { UITestFixtures.widenHome(model) }
                         if args.contains("-demoHistory") { UITestFixtures.addHistory(model) }
+                        // A .hum file to import, as if it arrived through "Open in Hum".
+                        if let i = args.firstIndex(of: "-importFile"), i + 1 < args.count {
+                            model.requestImport(url: URL(fileURLWithPath: args[i + 1]))
+                        }
                         if args.contains("-openFolder"), let snack = model.snapshot?.cells.joined().compactMap({ $0 }).first(where: { $0.linkedBoardID != nil }) {
                             model.tap(snack, tapTime: mach_absolute_time())
                         }
