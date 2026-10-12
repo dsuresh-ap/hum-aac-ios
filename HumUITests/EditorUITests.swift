@@ -86,7 +86,8 @@ final class EditorUITests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 3))
         field.typeText("Choo choo")
         app.buttons["Cancel"].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["Discard your changes?"].waitForExistence(timeout: 3))
+        // On an iOS 18 iPad the title is the popover's label, not a text of its own.
+        XCTAssertTrue(labeled(app, "Discard your changes?").firstMatch.waitForExistence(timeout: 3))
         dialogButton(app, "Discard changes").tap()
         XCTAssertTrue(el(app, "emptySlot.3.3").waitForExistence(timeout: 3))
     }

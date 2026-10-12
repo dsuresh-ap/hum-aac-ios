@@ -95,6 +95,8 @@ extension XCTestCase {
     func setSwitch(_ app: XCUIApplication, _ label: String, on: Bool, file: StaticString = #filePath, line: UInt = #line) {
         let toggle = app.switches[label].firstMatch
         scrollTo(app, toggle)
+        // Just inside the bottom edge it can sit under the sheet's bottom bar (a smaller iPad): one more swipe.
+        if toggle.exists && toggle.frame.maxY > app.frame.maxY * 0.75 { app.swipeUp() }
         XCTAssertTrue(toggle.exists, "No switch “\(label)”", file: file, line: line)
         if (toggle.value as? String == "1") != on {
             // The switch itself sits at the trailing edge of the row, about 30 pt in (rows are wider on iPad).
