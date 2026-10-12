@@ -84,8 +84,9 @@ enum SVGRenderer {
     }
 
     #if canImport(UIKit) && canImport(WebKit)
-    /// Waits for the page to finish loading (or fail). Gives up after 10 seconds, so one bad picture
-    /// can't stall a whole import.
+    /// Waits for the page to finish loading (or fail). Gives up after 30 seconds, so a stuck web view
+    /// can't stall a whole import. A picture that can't load fails at once; the wait is for the first
+    /// web process, which can take a while on an older iPad or a busy device (CI timed out at 10).
     private final class Loader: NSObject, WKNavigationDelegate {
         private var continuation: CheckedContinuation<Bool, Never>?
 
@@ -94,7 +95,7 @@ enum SVGRenderer {
                 self.continuation = continuation
                 view.loadHTMLString(html, baseURL: nil)
                 Task { @MainActor [weak self] in
-                    try? await Task.sleep(for: .seconds(10))
+                    try? await Task.sleep(for: .seconds(30))
                     self?.finish(false)
                 }
             }
