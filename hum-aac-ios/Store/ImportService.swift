@@ -139,7 +139,7 @@ struct ImportService {
             model.context.undoManager?.disableUndoRegistration()
             tile.imageData = jpeg  // nil if it can't be drawn: no picture beats a broken one
             model.context.undoManager?.enableUndoRegistration()
-            // A big import (e.g. a whole Snap page set) has hundreds: save and show them as they come.
+            // A big import (e.g. a whole page set) has hundreds: save and show them as they come.
             if i % 50 == 49 {
                 try? model.context.save()
                 model.scheduleSnapshotRefresh()

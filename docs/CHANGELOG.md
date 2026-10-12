@@ -1,13 +1,7 @@
 # Changelog
 
-## Unreleased: import from TD Snap
+## Unreleased
 
-- **`hum-config import-snap <file.sps> <out.hum | folder>`** turns a TD Snap page set into a Hum setup.
-  Every page reachable from Snap's Home becomes a board, and each button keeps its spot, words, colour and
-  ID (so re-importing a newer export updates tiles instead of copying them). Snap's symbols (WMF/EMF)
-  become SVG. Snap's Back/Home buttons are dropped (Hum has its own), and a left column that only held
-  navigation is removed. Keyboards, the dashboard and grids over 8 × 8 are left out and listed.
-  HumConfig reads the `.sps` with a small built-in SQLite reader, so it still has no dependencies.
 - **Fixed:** importing from Setup & sharing showed the preview only after the sheet was closed. The
   preview now opens right over it.
 - **Fixed:** pictures saved as SVG (by builds before "Process imported pictures", or synced from another
@@ -29,7 +23,7 @@
   its own starter board, and the "two Homes" repair kept the *oldest* Home. Now a family's own Home
   always beats the starter, then the newest Home wins (the latest import sticks on every device), and
   a starter board nobody changed is removed instead of lingering as a second "Home".
-- **Fixed:** tiles with their own colour (e.g. Snap's near-white) had light labels in Dark Mode and were
+- **Fixed:** tiles with their own colour (e.g. a near-white one from an import) had light labels in Dark Mode and were
   unreadable. Labels, folder marks, the sentence strip and history now pick dark or light text by the
   tile colour's contrast.
 

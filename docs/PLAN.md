@@ -245,8 +245,9 @@ AVAudioEngine (started once, kept running while foreground)
 ## 9. Privacy manifest
 
 `PrivacyInfo.xcprivacy`: `NSPrivacyTracking = false`, no tracking domains, no collected data types.
-Required-reason APIs actually used: `UserDefaults` (CA92.1 — app's own data), file timestamps for the
-disk cache (C617.1 — inside app container). Re-audited each milestone.
+Required-reason APIs actually used: `UserDefaults` (CA92.1 — app's own data) and `mach_absolute_time()`
+for the tap-to-sound latency probe (35F9.1). No file timestamp APIs are used (re-checked 2026-10-12).
+Re-audited each milestone.
 
 ## 10. CI
 

@@ -7,7 +7,9 @@ everything else. Please read them before opening a pull request.
 
 1. Free forever: no purchases, ads, subscriptions or tip jars.
 2. No analytics, tracking, accounts, third-party SDKs or developer servers. The only network use is
-   opt-in, parent-started Apple iCloud (private database) and Apple Private Cloud Compute.
+   opt-in, parent-started Apple iCloud (private database), Apple Private Cloud Compute, and the symbol
+   search (ARASAAC, Mulberry via Global Symbols; see `docs/PLAN.md` §8b). Update
+   [`docs/privacy.md`](docs/privacy.md) if you change what leaves the device.
 3. No new dependencies without a maintainer's approval (Apple frameworks only).
 4. Never gate communication; protest tiles have the same size and weight as requests.
 5. No reward or compliance mechanics (stars, tokens, praise sounds, confetti…).
