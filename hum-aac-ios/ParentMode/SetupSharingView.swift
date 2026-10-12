@@ -14,6 +14,12 @@ struct SetupSharingView: View {
     @State private var exportDocument: HumFileDocument?
     @State private var exportName = ""
     @State private var showExporter = false
+    #if os(iOS)
+    /// The exported file, shown in the share sheet (AirDrop, Messages, Mail, Save to Files…).
+    @State private var shareFile: SharedFile?
+    /// The same file, kept until the sheet has closed so its temporary copy can be deleted.
+    @State private var sharedCopy: SharedFile?
+    #endif
     @State private var showImporter = false
     @State private var errorMessage: String?
     @State private var showAI = false
@@ -41,7 +47,11 @@ struct SetupSharingView: View {
                 } header: {
                     Text("Move boards to another device")
                 } footer: {
-                    Text("Saves a .hum file with your boards and photos. Put it in Files, iCloud Drive, Google Drive or Dropbox, or AirDrop it, then open it in Hum on the other device.")
+                    #if os(iOS)
+                    Text("Makes a Hum file with your boards and photos. AirDrop it, send it, or save it to Files, iCloud Drive, Google Drive or Dropbox, then open it in Hum on the other device.")
+                    #else
+                    Text("Saves a Hum file with your boards and photos. Put it in iCloud Drive, Google Drive or Dropbox, or AirDrop it, then open it in Hum on the other device.")
+                    #endif
                 }
 
                 Section {
@@ -92,6 +102,11 @@ struct SetupSharingView: View {
             }
             .sheet(isPresented: $showAI) { AIHelperView() }
             .task(id: model.iCloudActive) { if model.iCloudActive { await model.sync.refreshAccount() } }
+            #if os(iOS)
+            .sheet(item: $shareFile, onDismiss: { sharedCopy?.remove(); sharedCopy = nil }) { file in
+                ShareSheet(url: file.url).ignoresSafeArea()
+            }
+            #endif
             .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: .humPackage, defaultFilename: exportName) { result in
                 if case .failure(let error) = result { errorMessage = error.localizedDescription }
             }
@@ -123,9 +138,16 @@ struct SetupSharingView: View {
             defer { preparingExport = false }
             do {
                 let data = try await Task.detached(priority: .userInitiated) { try HumPackage.write(document, media: media) }.value
+                let fileName = ImportService.exportFileName(boardName: name)
+                #if os(iOS)
+                let file = try SharedFile(data: data, name: fileName)
+                sharedCopy = file
+                shareFile = file
+                #else
                 exportDocument = HumFileDocument(data: data)
-                exportName = ImportService.exportFileName(boardName: name)
+                exportName = fileName
                 showExporter = true
+                #endif
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -133,7 +155,39 @@ struct SetupSharingView: View {
     }
 }
 
-/// Wraps `.hum` bytes for `fileExporter`.
+#if os(iOS)
+/// An export written to a temporary folder for the share sheet, under its real name
+/// ("Hum setup 2026-10-12.hum"), so AirDrop and Messages show that name and Hum opens it on arrival.
+struct SharedFile: Identifiable {
+    let url: URL
+    var id: URL { url }
+
+    init(data: Data, name: String) throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Export-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        url = folder.appendingPathComponent(name)
+        try data.write(to: url, options: .atomic)
+    }
+
+    /// Deletes the temporary copy once the share sheet has closed.
+    func remove() {
+        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+    }
+}
+
+/// The system share sheet for one file.
+struct ShareSheet: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+}
+#endif
+
+/// Wraps `.hum` bytes for `fileExporter` (Mac).
 nonisolated struct HumFileDocument: FileDocument {
     static let readableContentTypes: [UTType] = [.humPackage]
     var data: Data

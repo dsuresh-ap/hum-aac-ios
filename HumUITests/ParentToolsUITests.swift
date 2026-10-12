@@ -71,17 +71,19 @@ final class ParentToolsUITests: XCTestCase {
         XCTAssertFalse(tip.waitForExistence(timeout: 2), "The tip shows only once")
     }
 
-    /// Scenario: Export all boards opens the system's save sheet.
+    /// Scenario: Export all boards opens the system's share sheet.
     @MainActor
-    func testExportOpensTheSaveSheet() {
+    func testExportOpensTheShareSheet() {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
         tapToolbar(app, "setupSharing", label: "Setup & sharing")
         el(app, "exportAll").tap()
-        // The Files save sheet runs in another process; its buttons still show up here.
-        let save = app.buttons.matching(NSPredicate(format: "label IN {'Save', 'Move'}")).firstMatch
-        let opened = save.waitForExistence(timeout: 15)
-        shot(app, "export sheet")
-        XCTAssertTrue(opened, "The save sheet should open")
+        // The share sheet runs in another process; its parts still show up here.
+        let sheet = app.otherElements["ActivityListView"].firstMatch
+        let saveToFiles = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Save to Files'")).firstMatch
+        let opened = sheet.waitForExistence(timeout: 15) || saveToFiles.exists
+        _ = saveToFiles.waitForExistence(timeout: 3)  // let it finish sliding up for the screenshot
+        shot(app, "export share sheet")
+        XCTAssertTrue(opened, "Export opens the share sheet (AirDrop, Messages, Save to Files…), not only Files")
     }
 
     /// Scenario: Settings has no developer screens or jargon (HUM-022).
