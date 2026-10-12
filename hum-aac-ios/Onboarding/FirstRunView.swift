@@ -158,28 +158,54 @@ struct FirstRunView: View {
 
     private var startChoice: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("How do you want to start?").font(.system(.largeTitle, design: .serif, weight: .semibold))
-            choice("Starter board", starterDetail, "sparkles") {
-                useChosenSizeForNewFolders()
-                model.finishFirstRun(.starter)
-                growHomeToChosenSize()
+            // Scrolls at the largest text sizes, so the footnote never hides the start buttons.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    startChoices
+                    startFootnote
+                }
             }
-            .accessibilityIdentifier("firstRun.starter")
-            choice("Empty board", "A blank \(rows) × \(columns) board to fill with your child's own phrases.", "square.dashed") {
-                useChosenSizeForNewFolders()
-                model.finishFirstRun(.empty(rows: rows, columns: columns))
-            }
-            .accessibilityIdentifier("firstRun.empty")
-            // Setup finishes only once the import does: cancelling comes back here, and the file's own
-            // Home becomes Home because nothing was made before it (BUGS.md, HUM-004).
-            choice("Import a setup", "A Hum file from another device, or one made with a coding agent.", "square.and.arrow.down") {
-                useChosenSizeForNewFolders()
-                onImport()
-            }
-            .accessibilityIdentifier("firstRun.import")
-            Spacer()
+            .scrollBounceBehavior(.basedOnSize)
             Button("Back") { step = .grid }
         }
+    }
+
+    @ViewBuilder private var startChoices: some View {
+        Text("How do you want to start?").font(.system(.largeTitle, design: .serif, weight: .semibold))
+        choice("Starter board", starterDetail, "sparkles") {
+            useChosenSizeForNewFolders()
+            model.finishFirstRun(.starter)
+            growHomeToChosenSize()
+        }
+        .accessibilityIdentifier("firstRun.starter")
+        choice("Empty board", "A blank \(rows) × \(columns) board to fill with your child's own phrases.", "square.dashed") {
+            useChosenSizeForNewFolders()
+            model.finishFirstRun(.empty(rows: rows, columns: columns))
+        }
+        .accessibilityIdentifier("firstRun.empty")
+        // Setup finishes only once the import does: cancelling comes back here, and the file's own
+        // Home becomes Home because nothing was made before it (BUGS.md, HUM-004).
+        choice("Import a setup", "A Hum file from another device, or one made with a coding agent.", "square.and.arrow.down") {
+            useChosenSizeForNewFolders()
+            onImport()
+        }
+        .accessibilityIdentifier("firstRun.import")
+    }
+
+    /// How to get back into settings, and what Hum is. A footnote, not a page.
+    private var startFootnote: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Group {
+                Text("To change things later, press and hold the lock for 3 seconds.")
+                Text("Hum is a communication tool, not therapy or a medical device.")
+            }
+            .foregroundStyle(.secondary)
+            Link("Privacy policy", destination: HumLinks.privacy)
+                .accessibilityHint("Opens in your web browser")
+        }
+        .font(.footnote)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.top, 8)
     }
 
     /// The starter board has its own 5 × 4 size. A smaller choice is used for new folders instead,

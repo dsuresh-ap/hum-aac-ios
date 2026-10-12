@@ -71,6 +71,22 @@ final class FirstRunUITests: XCTestCase {
         XCTAssertTrue(el(app, "tile.hi").waitForExistence(timeout: 5))
     }
 
+    /// Scenario: at the largest text size, the last step still shows the start buttons, and the footnote
+    /// (how to get back in, what Hum is, privacy) can be scrolled to.
+    @MainActor
+    func testStartFootnoteAtTheLargestTextSize() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTesting", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        goToStartChoice(app)
+        XCTAssertTrue(el(app, "firstRun.starter").isHittable, "The footnote doesn't push the start buttons away")
+        let footnote = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'To change things later'")).firstMatch
+        scrollTo(app, footnote)
+        XCTAssertTrue(footnote.exists)
+        XCTAssertTrue(app.links["Privacy policy"].exists || app.buttons["Privacy policy"].exists)
+        shot(app, "first run footnote, largest text")
+    }
+
     /// Scenario: "Import a setup", then cancel the file picker. Setup is still open, and nothing was
     /// made behind the parent's back (HUM-004).
     @MainActor
