@@ -120,6 +120,35 @@ struct SpeechCacheTests {
         #expect(trimmed.prefix(200).contains { $0 > 0.4 })
     }
 
+    /// HUM-048: the synthesizer's ~11 ms chunks are resampled as one phrase, so there's no glitch (heard
+    /// as static or hiss) at each chunk edge, and the clip has the length it should.
+    @Test func chunkedSpeechResamplesWithoutEdgeGlitches() throws {
+        let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 22_050, channels: 1))
+        let box = SampleBox()
+        let total = 256 * 40
+        for start in stride(from: 0, to: total, by: 256) {
+            let chunk = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 256))
+            for i in 0..<256 { chunk.floatChannelData![0][i] = 0.5 * sin(2 * .pi * 440 * Float(start + i) / 22_050) }
+            chunk.frameLength = 256
+            box.append(chunk)
+        }
+        let out = box.resampled()
+        let expected = Double(total) * 48_000 / 22_050
+        #expect(abs(Double(out.count) - expected) < 64)
+        // A clean 440 Hz sine at 48 kHz bends by at most ~0.002 per sample. Ignore the converter's
+        // own ramp at the very start and end.
+        let middle = out[2000..<(out.count - 2000)]
+        let bends = zip(middle.dropFirst(2), zip(middle.dropFirst(), middle)).map { abs($0 - 2 * $1.0 + $1.1) }
+        #expect((bends.max() ?? 1) < 0.005)
+    }
+
+    /// HUM-048: a rendered phrase ends in silence, so stopping never clicks.
+    @Test func trimmedClipsEndInSilence() {
+        let samples = [Float](repeating: 0.3, count: 9600) + [Float](repeating: 0.002, count: 4800)
+        let trimmed = PCMClip.trimSilence(samples)
+        #expect(trimmed.last == 0)
+    }
+
     @Test func keyChangesWhenVoiceSettingsChange() {
         let a = SpeechKey(text: "Hi!", voiceIdentifier: "v1", rate: 0.5, pitch: 1)
         var b = a

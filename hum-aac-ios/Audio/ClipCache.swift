@@ -13,7 +13,8 @@ nonisolated struct SpeechKey: Hashable, Sendable {
 
     /// Stable file name for the disk cache. Includes a format version so old caches are ignored.
     var fileName: String {
-        let raw = "v1|\(Int(AudioConstants.sampleRate))|\(voiceIdentifier)|\(rate)|\(pitch)|\(text)"
+        // v2: phrases resampled in one pass (v1 clips have the chunk-edge hiss, BUGS.md HUM-048).
+        let raw = "v2|\(Int(AudioConstants.sampleRate))|\(voiceIdentifier)|\(rate)|\(pitch)|\(text)"
         return SHA256.hash(data: Data(raw.utf8)).map { String(format: "%02x", $0) }.joined() + ".f32"
     }
 }
