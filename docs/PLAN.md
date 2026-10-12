@@ -232,7 +232,7 @@ AVAudioEngine (started once, kept running while foreground)
   **Symbols** tab searches ARASAAC (`api.arasaac.org`, pictograms CC BY-NC-SA 4.0; Hum is free, so
   non-commercial use fits). Only the parent's search word is sent, from an ephemeral `URLSession` (no
   cookies, no disk cache). A chosen symbol is downloaded once and saved in the tile like a photo, so child
-  mode never touches the network. Credit is shown in the picker and in Settings → Credits.
+  mode never touches the network. Credit is shown in the picker and in Settings → About Hum.
 - macOS needs the sandbox **Outgoing Connections (Client)** capability for this; iOS needs nothing.
 - Privacy label: ARASAAC receives a search word that isn't linked to the user or device. Re-check the
   label wording before release.

@@ -91,11 +91,30 @@ final class ParentToolsUITests: XCTestCase {
     func testSettingsHaveNoDeveloperSection() {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
         tapToolbar(app, "settings", label: "Settings")
-        let credits = app.staticTexts["Credits"].firstMatch
-        scrollTo(app, credits)
-        XCTAssertTrue(credits.exists)
+        let about = el(app, "settings.about")
+        scrollTo(app, about)
+        XCTAssertTrue(about.exists)
         XCTAssertFalse(app.staticTexts["For developers"].exists)
         XCTAssertFalse(app.buttons["Tap-to-sound latency"].exists)
+    }
+
+    /// Scenario: Settings → About Hum shows the version, the "Important" note, the links and the credits.
+    @MainActor
+    func testAboutHumOpensFromSettings() {
+        let app = launchHum(["-skipFirstRun", "-startInParent"])
+        tapToolbar(app, "settings", label: "Settings")
+        let about = el(app, "settings.about")
+        scrollTo(app, about)
+        about.tap()
+        let privacy = el(app, "about.privacy")
+        XCTAssertTrue(privacy.waitForExistence(timeout: 5), "About Hum opens from Settings")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Version'")).firstMatch.exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Hum is a communication tool'")).firstMatch.exists)
+        XCTAssertTrue(app.buttons["Help and support"].exists)
+        let credits = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'ARASAAC'")).firstMatch
+        scrollTo(app, credits)
+        XCTAssertTrue(credits.exists, "The symbol credits are on About Hum")
+        shot(app, "about hum")
     }
 
     /// Scenario: switching the appearance to Dark changes the child's screen at once.

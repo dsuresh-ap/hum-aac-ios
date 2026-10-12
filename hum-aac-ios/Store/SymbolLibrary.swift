@@ -25,7 +25,7 @@ enum SymbolLibrary {
             }
         }
 
-        /// Required credit (shown in the picker and in Settings → Credits).
+        /// Required credit (shown in the picker and in Settings → About Hum).
         var credit: String {
             switch self {
             case .arasaac: return "ARASAAC pictograms by Sergio Palao. Origin: ARASAAC (arasaac.org). License: CC BY-NC-SA 4.0. Owner: Government of Aragón (Spain)."
@@ -53,7 +53,7 @@ enum SymbolLibrary {
         }
     }
 
-    /// Every credit, for Settings → Credits.
+    /// Every credit, for Settings → About Hum.
     static var credits: String { Source.allCases.map(\.credit).joined(separator: "\n") }
 
     /// No cookies, no cache on disk, nothing that identifies the device.

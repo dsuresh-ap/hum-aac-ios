@@ -89,7 +89,7 @@ struct SetupSharingView: View {
 
                 Section {
                     Button("How to make boards with a coding agent", systemImage: "doc.text") {
-                        if let url = URL(string: "https://github.com/dsuresh-ap/hum-aac-ios/blob/main/docs/CONFIG.md") { openURL(url) }
+                        openURL(HumLinks.configGuide)
                     }
                 } footer: {
                     Text("Hum's setup file is an open format. You can write or edit boards in any text editor or with an AI coding agent, then import them here.")
