@@ -99,9 +99,7 @@ final class ImportUITests: XCTestCase {
         // Undo brings the old boards back (the backup promised in the dialog).
         el(app, "home").tap()
         openParentMode(app)
-        let undo = app.buttons["Undo"].firstMatch
-        XCTAssertTrue(undo.isEnabled, "Replacing everything can be undone")
-        undo.tap()
+        tapUndo(app)
         XCTAssertTrue(el(app, "editTile.hi").waitForExistence(timeout: 30), "Undo restores the starter board (HUM-038)")
     }
 

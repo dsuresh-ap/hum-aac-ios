@@ -15,6 +15,9 @@ import WebKit
 /// that blocks every outside load, so an SVG can't run code or reach the network.
 @MainActor
 enum SVGRenderer {
+    /// How long to wait for a page to load.
+    static let loadTimeout: Duration = .seconds(30)
+
     /// A square picture of the SVG on white, or nil.
     static func render(_ svg: Data, points: CGFloat = 512) async -> CGImage? {
         #if canImport(UIKit) && canImport(WebKit)
@@ -33,7 +36,7 @@ enum SVGRenderer {
         let loader = Loader()
         view.navigationDelegate = loader
         defer { view.navigationDelegate = nil }
-        guard await loader.load(html, in: view) else { return nil }
+        guard await loader.load(html, in: view, timeout: loadTimeout) else { return nil }
         let snapshot = WKSnapshotConfiguration()
         snapshot.rect = view.bounds
         guard let image = try? await view.takeSnapshot(configuration: snapshot) else { return nil }
@@ -84,17 +87,18 @@ enum SVGRenderer {
     }
 
     #if canImport(UIKit) && canImport(WebKit)
-    /// Waits for the page to finish loading (or fail). Gives up after 10 seconds, so one bad picture
-    /// can't stall a whole import.
+    /// Waits for the page to finish loading (or fail). Gives up after `timeout`, so a stuck web view
+    /// can't stall a whole import. A picture that can't load fails at once; the wait is for the first
+    /// web process, which can take a while on an older iPad or a busy device.
     private final class Loader: NSObject, WKNavigationDelegate {
         private var continuation: CheckedContinuation<Bool, Never>?
 
-        func load(_ html: String, in view: WKWebView) async -> Bool {
+        func load(_ html: String, in view: WKWebView, timeout: Duration) async -> Bool {
             await withCheckedContinuation { continuation in
                 self.continuation = continuation
                 view.loadHTMLString(html, baseURL: nil)
                 Task { @MainActor [weak self] in
-                    try? await Task.sleep(for: .seconds(10))
+                    try? await Task.sleep(for: timeout)
                     self?.finish(false)
                 }
             }

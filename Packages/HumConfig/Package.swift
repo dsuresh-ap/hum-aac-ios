@@ -10,7 +10,7 @@ import PackageDescription
 
 let package = Package(
     name: "HumConfig",
-    platforms: [.iOS(.v17), .macOS(.v14)],
+    platforms: [.iOS(.v18), .macOS(.v14)],
     products: [
         .library(name: "HumConfig", targets: ["HumConfig"]),
         .executable(name: "hum-config", targets: ["hum-config"]),

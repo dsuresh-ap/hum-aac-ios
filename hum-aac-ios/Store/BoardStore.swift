@@ -59,6 +59,41 @@ final class BoardStore {
         try body()
     }
 
+    /// Runs `body` as one undo step whose Undo puts these tiles and boards back as they were and deletes
+    /// whatever `body` made. Before iOS 27, SwiftData's own undo loses a tile's board when the change
+    /// touched the board link, so the tile vanishes or the app crashes (BUGS.md, HUM-052).
+    /// `redo` does the change again. Pictures and recordings are kept only for `mediaOf` (they can be big).
+    /// Like any `change(_:undo:_:)`, it forgets older undo steps: SwiftData's own records of them don't
+    /// survive this one on iOS 26 and earlier (a redo took an untouched tile off its board).
+    func change(_ name: String, restoring tileIDs: Set<UUID>, boards boardIDs: Set<UUID>, mediaOf: Set<UUID> = [],
+                redo: @escaping @MainActor (BoardStore) -> Void, _ body: () throws -> Void) rethrows {
+        let before = Snapshot(tiles: allTiles().filter { tileIDs.contains($0.id) }.map { TileState($0, keepMedia: mediaOf.contains($0.id)) },
+                              boards: boards().filter { boardIDs.contains($0.id) }.map(BoardState.init))
+        let (tilesBefore, boardsBefore) = (Set(allTiles().map(\.id)), Set(boards().map(\.id)))
+        // Only what `body` makes is deleted by Undo, not tiles that sync brings in later.
+        let made = MadeIDs()
+        try change(name, undo: { store in
+            store.change(name, undo: redo) { store.restore(before, deleting: made) }
+        }) {
+            try body()
+            made.tiles = Set(allTiles().map(\.id)).subtracting(tilesBefore)
+            made.boards = Set(boards().map(\.id)).subtracting(boardsBefore)
+        }
+    }
+
+    private func allTiles() -> [Tile] { (try? context.fetch(FetchDescriptor<Tile>())) ?? [] }
+
+    private func restore(_ snapshot: Snapshot, deleting made: MadeIDs) {
+        let boardsByID = Dictionary(boards().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let tiles = allTiles()
+        let tilesByID = Dictionary(tiles.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        // Put things back first, so nothing that existed before is on a board that's about to go.
+        for state in snapshot.boards { if let board = boardsByID[state.id] { state.apply(to: board) } }
+        for state in snapshot.tiles { if let tile = tilesByID[state.id] { state.apply(to: tile, boards: boardsByID) } }
+        for tile in tiles where made.tiles.contains(tile.id) { context.delete(tile) }
+        for board in boardsByID.values where made.boards.contains(board.id) { context.delete(board) }
+    }
+
     /// Saves changes that aren't an undo step of their own (converted pictures, phone spots), without
     /// leaving anything on the undo stack. Undo after an import must undo the import, not these.
     func withoutUndo(_ body: () -> Void) {
@@ -86,6 +121,12 @@ final class BoardStore {
     }
 
     func board(_ id: UUID) -> Board? { boards().first { $0.id == id } }
+
+    func tile(_ id: UUID) -> Tile? {
+        var descriptor = FetchDescriptor<Tile>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
+    }
 
     func tile(on board: Board, row: Int, column: Int) -> Tile? {
         board.placedTiles.first { $0.row == row && $0.column == column }
@@ -180,7 +221,12 @@ final class BoardStore {
     func moveToBoard(_ tile: Tile, _ target: Board) -> Bool {
         guard tile.board?.id != target.id else { return tile.row != nil }
         let spot = firstEmptySpot(on: target)
-        change("Move to Folder") {
+        let (tileID, targetID) = (tile.id, target.id)
+        let boardIDs = Set([tile.board?.id, target.id].compactMap { $0 })
+        change("Move to Folder", restoring: [tileID], boards: boardIDs, redo: { store in
+            guard let tile = store.tile(tileID), let target = store.board(targetID) else { return }
+            store.moveToBoard(tile, target)
+        }) {
             let now = Date.now
             tile.board?.updatedAt = now
             tile.board = target
@@ -538,6 +584,62 @@ struct SavedBoard {
         createdAt = board.createdAt
         extraJSON = board.extraJSON
         tiles = (board.tiles ?? []).map(SavedTile.init)
+    }
+}
+
+/// Tiles and boards as they were before a change, for `BoardStore.change(_:restoring:boards:mediaOf:redo:_:)`.
+private struct Snapshot {
+    let tiles: [TileState]
+    let boards: [BoardState]
+}
+
+/// What a change made, filled in once it has run. Undo deletes these.
+private final class MadeIDs {
+    var tiles: Set<UUID> = []
+    var boards: Set<UUID> = []
+}
+
+private struct TileState {
+    let id: UUID, boardID: UUID?
+    let label: String, spokenText: String, functionRaw: String?, colorHex: String?
+    let linkedBoardID: UUID?, isHidden: Bool, symbol: String?, extraJSON: Data?
+    let row: Int?, column: Int?, positionUpdatedAt: Date
+    let phonePage: Int?, phoneRow: Int?, phoneColumn: Int?
+    let updatedAt: Date
+    let media: (image: Data?, credit: String?, audio: Data?)?
+
+    init(_ tile: Tile, keepMedia: Bool) {
+        id = tile.id; boardID = tile.board?.id
+        label = tile.label; spokenText = tile.spokenText; functionRaw = tile.functionRaw; colorHex = tile.colorHex
+        linkedBoardID = tile.linkedBoardID; isHidden = tile.isHidden; symbol = tile.symbol; extraJSON = tile.extraJSON
+        row = tile.row; column = tile.column; positionUpdatedAt = tile.positionUpdatedAt
+        phonePage = tile.phonePage; phoneRow = tile.phoneRow; phoneColumn = tile.phoneColumn
+        updatedAt = tile.updatedAt
+        media = keepMedia ? (tile.imageData, tile.imageCredit, tile.audioData) : nil
+    }
+
+    func apply(to tile: Tile, boards: [UUID: Board]) {
+        if tile.board?.id != boardID { tile.board = boardID.flatMap { boards[$0] } }
+        tile.label = label; tile.spokenText = spokenText; tile.functionRaw = functionRaw; tile.colorHex = colorHex
+        tile.linkedBoardID = linkedBoardID; tile.isHidden = isHidden; tile.symbol = symbol; tile.extraJSON = extraJSON
+        tile.row = row; tile.column = column; tile.positionUpdatedAt = positionUpdatedAt
+        tile.phonePage = phonePage; tile.phoneRow = phoneRow; tile.phoneColumn = phoneColumn
+        tile.updatedAt = updatedAt
+        if let media { tile.imageData = media.image; tile.imageCredit = media.credit; tile.audioData = media.audio }
+    }
+}
+
+private struct BoardState {
+    let id: UUID, name: String, rows: Int, columns: Int, isHome: Bool, extraJSON: Data?, updatedAt: Date
+
+    init(_ board: Board) {
+        id = board.id; name = board.name; rows = board.rows; columns = board.columns
+        isHome = board.isHome; extraJSON = board.extraJSON; updatedAt = board.updatedAt
+    }
+
+    func apply(to board: Board) {
+        board.name = name; board.rows = rows; board.columns = columns
+        board.isHome = isHome; board.extraJSON = extraJSON; board.updatedAt = updatedAt
     }
 }
 

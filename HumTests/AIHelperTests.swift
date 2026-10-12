@@ -123,6 +123,14 @@ struct AIHelperTests {
         #expect(added.first { $0.label == "train" }?.symbol == "🚂")
         model.store.undo()
         #expect(model.layout(model.home) == before)
+        #expect(model.home.tiles?.contains { $0.spokenText == "All aboard!" } == false)
+
+        // Redo adds them again without moving anything, and undo still works (BUGS.md, HUM-052).
+        model.store.undoManager?.redo()
+        #expect(model.home.tiles?.filter { ["All aboard!", "Blast off!"].contains($0.spokenText) }.count == 2)
+        for (spot, label) in before { #expect(model.layout(model.home)[spot] == label) }
+        model.store.undo()
+        #expect(model.layout(model.home) == before)
     }
 
     @Test func availabilityNeverCrashes() {

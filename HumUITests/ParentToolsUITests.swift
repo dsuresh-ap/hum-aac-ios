@@ -24,7 +24,7 @@ final class ParentToolsUITests: XCTestCase {
         add.tap()
         XCTAssertTrue(el(app, "editTile.To infinity and beyond").waitForExistence(timeout: 3), "The whole phrase is one tile")
         XCTAssertTrue(el(app, "editTile.All aboard").exists)
-        app.buttons["Undo"].firstMatch.tap()
+        tapUndo(app)
         XCTAssertTrue(el(app, "editTile.All aboard").waitForNonExistence(timeout: 3), "Adding pasted phrases is one undo step")
         XCTAssertFalse(el(app, "editTile.To infinity and beyond").exists)
     }
@@ -34,9 +34,9 @@ final class ParentToolsUITests: XCTestCase {
     @MainActor
     func testAIHelperStartsOffAndExplainsItself() throws {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
-        let ai = el(app, "aiHelper")
-        try XCTSkipUnless(ai.waitForExistence(timeout: 3), "No Apple Intelligence on this device, so the helper is hidden")
-        ai.tap()
+        // On iPhone the button sits in the toolbar's More menu.
+        try XCTSkipUnless(tapToolbarIfPresent(app, "aiHelper", label: "Help me set up"),
+                          "No Apple Intelligence on this device, so the helper is hidden")
         XCTAssertTrue(el(app, "turnOnAI").waitForExistence(timeout: 3), "The helper is off until a parent turns it on")
         el(app, "turnOnAI").tap()
         let suggest = app.buttons["Suggest tiles"].firstMatch

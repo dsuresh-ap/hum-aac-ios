@@ -36,7 +36,7 @@ hum-aac-ios/
 ```
 
 Build settings changes to the existing project: `SWIFT_VERSION = 6`, strict concurrency complete,
-`IPHONEOS_DEPLOYMENT_TARGET = 17.0`, `MACOSX_DEPLOYMENT_TARGET = 14.0`,
+`IPHONEOS_DEPLOYMENT_TARGET = 18.0` (raised from 17.0 on 2026-10-12: iOS 18 covers the iPhone XS/XR and every iPad from the 7th generation on, and it is the oldest simulator Xcode 27 can install), `MACOSX_DEPLOYMENT_TARGET = 14.0`,
 `SUPPORTED_PLATFORMS = iphoneos iphonesimulator macosx` (drop visionOS for now), real bundle ID,
 keep `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` (UI-heavy app; audio/render code is explicitly `nonisolated`).
 Both SDKs still accept these targets (iOS min 15.0, macOS min 13.1 in the 27.0 SDKs — verified).

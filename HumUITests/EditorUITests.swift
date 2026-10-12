@@ -16,9 +16,9 @@ final class EditorUITests: XCTestCase {
         el(app, "emptySlot.3.3").tap()
         let field = el(app, "spokenTextField")
         XCTAssertTrue(field.waitForExistence(timeout: 3))
-        XCTAssertFalse(el(app, "saveTile").isEnabled, "Nothing to say yet, so nothing to save")
+        XCTAssertFalse(app.buttons["saveTile"].firstMatch.isEnabled, "Nothing to say yet, so nothing to save")
         field.typeText("Let's go to the park!")
-        XCTAssertTrue(el(app, "saveTile").isEnabled)
+        XCTAssertTrue(app.buttons["saveTile"].firstMatch.isEnabled)
         // HUM-018: the label doesn't end on a dangling "the".
         XCTAssertEqual(el(app, "labelField").value as? String, "Let's go")
         // Once the parent types their own label, the phrase no longer overwrites it.
@@ -86,7 +86,8 @@ final class EditorUITests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 3))
         field.typeText("Choo choo")
         app.buttons["Cancel"].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["Discard your changes?"].waitForExistence(timeout: 3))
+        // On an iOS 18 iPad the title is the popover's label, not a text of its own.
+        XCTAssertTrue(labeled(app, "Discard your changes?").firstMatch.waitForExistence(timeout: 3))
         dialogButton(app, "Discard changes").tap()
         XCTAssertTrue(el(app, "emptySlot.3.3").waitForExistence(timeout: 3))
     }
@@ -107,9 +108,7 @@ final class EditorUITests: XCTestCase {
         dialogButton(app, "Delete tile").tap()
         XCTAssertTrue(el(app, "emptySlot.1.3").waitForExistence(timeout: 3), "Its spot is empty")
         XCTAssertTrue(el(app, "editTile.up").waitForNonExistence(timeout: 2))
-        let undo = app.buttons["Undo"].firstMatch
-        XCTAssertTrue(undo.isEnabled, "Undo should be available after a delete")
-        undo.tap()
+        tapUndo(app)
         XCTAssertTrue(el(app, "editTile.up").waitForExistence(timeout: 3), "Undo brings the tile back (HUM-002)")
     }
 
@@ -120,7 +119,7 @@ final class EditorUITests: XCTestCase {
         contextMenu(app, "editTile.up", "Delete tile")
         dialogButton(app, "Delete tile").tap()
         XCTAssertTrue(el(app, "emptySlot.1.3").waitForExistence(timeout: 3))
-        app.buttons["Undo"].firstMatch.tap()
+        tapUndo(app)
         XCTAssertTrue(el(app, "editTile.up").waitForExistence(timeout: 3), "Undo brings the tile back in the editor (HUM-002)")
         // Is the tile really back, or just redrawn? The child's board is rebuilt from the store.
         finishEditing(app)

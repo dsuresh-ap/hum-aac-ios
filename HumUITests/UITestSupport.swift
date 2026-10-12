@@ -26,19 +26,44 @@ extension XCTestCase {
 
     /// Taps an editor toolbar button. On iPhone some of them sit in the toolbar's "More" (⋯) menu.
     func tapToolbar(_ app: XCUIApplication, _ id: String, label: String) {
+        XCTAssertTrue(tapToolbarIfPresent(app, id, label: label), "\(label) should be in the toolbar's More menu")
+    }
+
+    /// Like `tapToolbar`, but returns false instead of failing when the button isn't there at all
+    /// (for buttons only some devices have, like the AI helper).
+    @discardableResult
+    func tapToolbarIfPresent(_ app: XCUIApplication, _ id: String, label: String) -> Bool {
         let direct = el(app, id)
         // Give a sheet that is closing a moment to get out of the way.
         let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND hittable == true"), object: direct)
-        if XCTWaiter.wait(for: [ready], timeout: 3) == .completed { return direct.tap() }
-        let more = app.buttons["OverflowBarButtonItem"].firstMatch
+        if XCTWaiter.wait(for: [ready], timeout: 3) == .completed {
+            direct.tap()
+            return true
+        }
+        let more = moreButton(app)
+        guard more.exists else { return false }
         let item = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@ AND identifier != %@", label, id)).firstMatch
         // The first tap on "More" right after entering the editor is sometimes ignored (BUGS.md, HUM-014).
         for _ in 0..<2 where !item.exists {
             more.tap()
             _ = item.waitForExistence(timeout: 2)
         }
-        XCTAssertTrue(item.exists, "\(label) should be in the toolbar's More menu")
+        guard item.exists else { return false }
         item.tap()
+        return true
+    }
+
+    /// The toolbar's "More" (⋯) button. iOS 26 and later name it `OverflowBarButtonItem`; iOS 18 only labels it.
+    func moreButton(_ app: XCUIApplication) -> XCUIElement {
+        let named = app.buttons["OverflowBarButtonItem"].firstMatch
+        if named.exists { return named }
+        // Only in the navigation bar: the child's phone pages have a "More" tile too.
+        return app.navigationBars.buttons.matching(NSPredicate(format: "label == 'More' AND identifier == ''")).firstMatch
+    }
+
+    /// Taps the editor's Undo, which on iPhone can be in the toolbar's More menu.
+    func tapUndo(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(tapToolbarIfPresent(app, "Undo", label: "Undo"), "Undo should be in the toolbar", file: file, line: line)
     }
 
     /// The element whose accessibility label is exactly `label` (menu items, dialog buttons, rows).
@@ -46,8 +71,14 @@ extension XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label))
     }
 
-    /// A dialog's button: the last match, because a form button with the same title sits underneath.
+    /// A dialog's button, not the form button with the same title underneath it.
     func dialogButton(_ app: XCUIApplication, _ label: String) -> XCUIElement {
+        // An action sheet or alert holds its own buttons (on iOS 18 they come before the form's in the tree).
+        for container in [app.sheets, app.alerts] {
+            let button = container.buttons[label].firstMatch
+            if button.waitForExistence(timeout: 1) { return button }
+        }
+        // Otherwise (an iPad popover, the Mac): the last match, because the dialog is on top.
         let buttons = app.buttons.matching(NSPredicate(format: "label == %@", label))
         _ = buttons.firstMatch.waitForExistence(timeout: 3)
         return buttons.element(boundBy: max(buttons.count - 1, 0))
@@ -64,6 +95,8 @@ extension XCTestCase {
     func setSwitch(_ app: XCUIApplication, _ label: String, on: Bool, file: StaticString = #filePath, line: UInt = #line) {
         let toggle = app.switches[label].firstMatch
         scrollTo(app, toggle)
+        // Just inside the bottom edge it can sit under the sheet's bottom bar (a smaller iPad): one more swipe.
+        if toggle.exists && toggle.frame.maxY > app.frame.maxY * 0.75 { app.swipeUp() }
         XCTAssertTrue(toggle.exists, "No switch “\(label)”", file: file, line: line)
         if (toggle.value as? String == "1") != on {
             // The switch itself sits at the trailing edge of the row, about 30 pt in (rows are wider on iPad).
@@ -93,7 +126,8 @@ extension XCTestCase {
 
     /// The back button of a pushed screen inside a sheet (not the editor's own toolbar behind it).
     func goBack(_ app: XCUIApplication, from parent: String) {
-        app.buttons.matching(NSPredicate(format: "identifier == 'BackButton' AND label == %@", parent)).firstMatch.tap()
+        // iOS 26 and later name it `BackButton`; iOS 18 leaves it unnamed. Not the editor's own "Home & folders".
+        app.navigationBars.buttons.matching(NSPredicate(format: "label == %@ AND (identifier == 'BackButton' OR identifier == '')", parent)).firstMatch.tap()
     }
 
     /// Leaves the editor for the child's board.

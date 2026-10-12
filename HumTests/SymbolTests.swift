@@ -44,7 +44,7 @@ struct SymbolTests {
 
     /// Mulberry symbols are SVG: NSImage draws them on macOS, WebKit on iOS.
     @MainActor
-    @Test func svgSymbolsBecomeTileImages() async throws {
+    @Test(.needsWebKit) func svgSymbolsBecomeTileImages() async throws {
         let svg = """
             <svg xmlns="http://www.w3.org/2000/svg" width="100" height="50" viewBox="0 0 100 50">
             <circle cx="50" cy="25" r="20" fill="red"/></svg>
@@ -104,5 +104,14 @@ struct SymbolTests {
                                              bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue))
         context.draw(image, in: CGRect(x: 0, y: 1 - image.height, width: image.width, height: image.height))
         return Double(Int(pixel[0]) + Int(pixel[1]) + Int(pixel[2])) / (3 * 255)
+    }
+}
+
+extension Trait where Self == ConditionTrait {
+    /// For tests that draw SVGs with WebKit. In GitHub's iOS simulator WebKit's processes take up to 40 s
+    /// to start and then stop responding, so CI (which sets TEST_RUNNER_HUM_CI=1) skips these.
+    static var needsWebKit: Self {
+        .enabled(if: ProcessInfo.processInfo.environment["HUM_CI"] != "1",
+                 "WebKit doesn't start reliably in the CI simulator")
     }
 }

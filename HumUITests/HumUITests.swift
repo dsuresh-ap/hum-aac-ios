@@ -64,7 +64,7 @@ final class HumUITests: XCTestCase {
         field.typeText("All aboard!")
         element(app, "saveTile").tap()
         XCTAssertTrue(element(app, "editTile.All aboard").waitForExistence(timeout: 3))
-        app.buttons["Undo"].firstMatch.tap()
+        tapUndo(app)
         XCTAssertTrue(element(app, "emptySlot.3.3").waitForExistence(timeout: 3), "Undo should remove the new tile")
     }
 
@@ -121,7 +121,7 @@ final class HumUITests: XCTestCase {
         XCTAssertTrue(summary.label.contains("No tiles will move."))
         element(app, "applyImport").tap()
         XCTAssertTrue(element(app, "editTile.all aboard").waitForExistence(timeout: 3))
-        app.buttons["Undo"].firstMatch.tap()
+        tapUndo(app)
         XCTAssertTrue(element(app, "emptySlot.3.3").waitForExistence(timeout: 3), "Undo should remove the imported tile")
     }
 }

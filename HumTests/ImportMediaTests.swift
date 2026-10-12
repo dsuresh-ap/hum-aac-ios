@@ -75,7 +75,7 @@ struct ImportMediaTests {
         #expect(tile.imageData == nil)
     }
 
-    @Test func svgPicturesBecomeJPEGs() async throws {
+    @Test(.needsWebKit) func svgPicturesBecomeJPEGs() async throws {
         let model = makeModel()
         let svg = Data("""
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="15" fill="red"/></svg>
@@ -129,7 +129,7 @@ struct ImportMediaTests {
     }
 
     /// Older builds kept imported SVGs as they were, and the Mac showed blank tiles. Launch converts them.
-    @Test func svgPicturesSavedByOlderBuildsAreRepaired() async throws {
+    @Test(.needsWebKit) func svgPicturesSavedByOlderBuildsAreRepaired() async throws {
         let model = makeModel()
         let tile = try #require(model.home.placedTiles.first)
         tile.imageData = Data("""

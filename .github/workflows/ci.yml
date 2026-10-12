@@ -67,4 +67,14 @@ jobs:
           UDID=$(xcrun simctl list devices available | grep -m1 -E "iPad|iPhone" | grep -oE "[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}")
           echo "Simulator: $UDID"
           xcodebuild -project hum-aac-ios.xcodeproj -scheme Hum -destination "id=$UDID" \
-            -only-testing:HumTests CODE_SIGNING_ALLOWED=NO test
+            -only-testing:HumTests -resultBundlePath HumTests.xcresult CODE_SIGNING_ALLOWED=NO test
+        env:
+          # Skips the tests that need WebKit, which doesn't start reliably here (`.needsWebKit`).
+          TEST_RUNNER_HUM_CI: "1"
+      - name: Keep the test results when tests fail
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HumTests-xcresult
+          path: HumTests.xcresult
+          retention-days: 7
