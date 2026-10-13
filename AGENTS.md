@@ -16,8 +16,8 @@ agents asked by a parent to **write or edit a Hum setup** (`hum.json` / `.hum`).
 4. **Never add praise, reward or compliance phrases**: no "good job", "well done", "quiet hands",
    "look at me", "first work then…", stickers, tokens or stars. Tiles are the child's voice.
 5. **Protest and regulation tiles are first-class.** "No thank you", "Stop!", "All done",
-   "I need a break", "Too loud" and "Help me" stay on the Home board, with the same size as every
-   other tile. Never remove or hide them.
+   "I need a break", "Too loud" and "Help me" have the same size as every other tile. The parent
+   decides which boards they go on.
 6. **Never remove tiles** unless the parent asked. Prefer `"hidden": true`, which keeps the slot.
 7. **Validate before handing the file back:**
    ```bash

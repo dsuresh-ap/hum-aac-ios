@@ -98,7 +98,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Tapping")
                 } footer: {
-                    Text("Every tap always makes a sound, even very fast repeated taps. Repeated tapping is communication too.")
+                    Text("Every tap always makes a sound, even very fast repeated taps. Repeated tapping is communication too. On a board that scrolls, tiles speak when the finger lifts, so scrolling never speaks.")
                 }
 
                 Section {
@@ -125,15 +125,10 @@ struct SettingsView: View {
                     Toggle("Go back to Home after a tile in a folder speaks", isOn: $settings.returnHomeAfterFolderTap)
                     LabeledContent("Size for new boards") {
                         HStack(spacing: 8) {
-                            GridPreview(rows: settings.newBoardRows, columns: settings.newBoardColumns).frame(width: 22, height: 22)
-                            Text("\(settings.newBoardRows) × \(settings.newBoardColumns)").monospacedDigit()
+                            Text("\(settings.newBoardColumns) across").monospacedDigit()
                         }
                     }
-                    // A board needs at least 2 spots, like the grid size sheet says.
-                    Stepper("Rows: \(settings.newBoardRows)", value: $settings.newBoardRows,
-                            in: (settings.newBoardColumns > 1 ? 1 : 2)...8)
-                    Stepper("Columns: \(settings.newBoardColumns)", value: $settings.newBoardColumns,
-                            in: (settings.newBoardRows > 1 ? 1 : 2)...8)
+                    GridSizePicker(columns: $settings.newBoardColumns)
                 } header: {
                     Text("Folders and boards")
                 } footer: {

@@ -107,8 +107,8 @@ Images are downscaled on import/capture (ImageIO, HEIC where supported, JPEG fal
 - **Validation:** schema-driven, dependency-free. HumConfig ships a small JSON Schema validator covering the
   keywords our schema uses (`type, properties, required, additionalProperties, items, enum, const,
   minLength, maxLength, minimum, maximum, pattern, format: uuid, $ref/$defs`), plus semantic checks the schema
-  can't express (unique IDs, tile inside grid, no two tiles in one slot, linked board exists, exactly one home,
-  protest/regulation tiles reachable on Home). Errors are friendly: *"Tile 'snack' has no words to say."*
+  can't express (unique IDs, tile inside grid, no two tiles in one slot, linked board exists, exactly one home).
+  Which boards protest and regulation tiles go on is the parent's choice (changed 2026-10). Errors are friendly: *"Tile 'snack' has no words to say."*
 - **Zip without dependencies:** a minimal pure-Swift ZIP reader/writer (writer uses STORE — media is
   already compressed; reader supports STORE + DEFLATE via a small pure-Swift inflate, so `.obz` files from
   CoughDrop etc. open). CRC-32 included. Works on Linux too.
@@ -121,16 +121,21 @@ Images are downscaled on import/capture (ImageIO, HEIC where supported, JPEG fal
 
 ## 4. Motor-plan stability rules (enforced in `BoardStore`, unit-tested)
 
-1. Tiles are addressed by (row, column). Nothing in the app computes positions from list order.
+1. Tiles are addressed by (row, column). The only time positions come from reading order is a parent's
+   own tile size change (fewer or more across): tiles re-flow left to right, top to bottom, so their order
+   stays the same (changed 2026-10).
 2. Hiding a tile keeps its slot (renders as empty space in child mode).
-3. Only `BoardStore.move(tile:to:)` (explicit parent drag) changes `row/column` and `positionUpdatedAt`.
+3. Only `BoardStore.move(tile:to:)` (explicit parent drag) and `setColumns` (the parent's tile size
+   change) change `row/column` and `positionUpdatedAt`.
 4. **Merge import / AI apply / App Intent apply:** existing tile IDs keep their current position (incoming
    row/column ignored unless "Replace everything"). New tiles go to their requested slot if free; otherwise
    they become **unplaced** and edit mode shows *"2 new tiles need a spot"* — they never push anything.
 5. **Sync conflicts:** if two tiles end up in one slot after a CloudKit merge, the tile whose
    `positionUpdatedAt` is older keeps the slot; the other becomes unplaced (parent is told). A deterministic
    resolver runs on every remote-change notification, so all devices reach the same answer.
-6. Shrinking a board's grid is blocked if it would cut off tiles ("Move or remove these 3 tiles first").
+6. A tile size change never cuts tiles off: it re-flows the tiles and gives the board the rows they need
+   (the board scrolls). Parents don't set rows: the editor shows one spare empty row, and a tile placed
+   there makes the board a row taller. A tile synced below the last row grows the board too.
 7. Child mode renders from a **snapshot** of the board. Incoming changes (sync, intent, import) are applied
    to the snapshot only after a quiet period (≥ 2 s since the last touch) — never mid-tap.
 
@@ -179,7 +184,11 @@ AVAudioEngine (started once, kept running while foreground)
 ## 6. Child mode & parent mode (summary of UI architecture)
 
 - `AppModel` (@Observable, MainActor): current board, mode (child/parent), settings, pending changes.
-- Child grid is a fixed `Grid` sized to the window (no scrolling, ever). Empty/hidden slots render as space.
+- Child grid has fixed rows × columns. Tiles fill the window when they fit; when a board is taller than the
+  window, it scrolls down (never sideways) and always opens at the top. Tiles on a scrolling board speak when
+  the finger lifts, so a scroll never speaks. iPhone phone-layout pages don't scroll. Empty/hidden slots
+  render as space. (Changed 2026-10: the child grid used to never scroll. If scrolling doesn't work for
+  children, the fallback is up/down arrows next to Home and Back.)
   Linked tiles show a folder corner; Home button fixed top-leading. Lock gate fixed in the opposite corner.
 - **Edit gate:** (1) press-and-hold lock 3 s with a filling ring (default); (2) two-finger triple-tap
   (iOS via a `UIGestureRecognizer` representable; on Mac this option is replaced by a menu command

@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased: tile size slider and scrolling boards (trial)
+
+- **Tile size slider.** The grid size sheet, new folders and Settings pick a tile size instead of rows
+  and columns. The slider offers what fits on this screen; the choice is saved as the board's columns,
+  so tiles never reflow when the screen turns or the window changes. There's no rows stepper: the
+  editor always shows one spare empty row, and adding a tile there makes the board a row taller (up
+  to 20 rows).
+- **Tall boards scroll down** in child mode (never sideways) and always open at the top. Tiles fill
+  the window when they fit, as before. On a board that scrolls, tiles speak when the finger lifts, so a
+  scroll never speaks. The scroll bar is hidden. The editor shows a "Scrolls below here" line where the child's screen ends.
+  iPhone pages for wide boards still don't scroll; narrow tall boards scroll there too.
+- **A new tile size re-flows tiles in reading order** (left to right, top to bottom) and adds the rows
+  they need. Nothing is cut off and nothing goes to the "needs a spot" tray; the sheet says how many
+  tiles move. The preview shows the child's screen at the new size, with the rows below it faded.
+- **Protest tiles on Home is the parent's choice.** No more warnings or AI copies to keep "no" and
+  "stop" on Home. They still have the same size as every other tile.
+- If scrolling doesn't work for children, the fallback is up/down arrows next to Home and Back.
+
 ## Unreleased: About Hum and picture credits
 
 - **Settings → About Hum** shows the version, what Hum is (a communication tool, not a medical device

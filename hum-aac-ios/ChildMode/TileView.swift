@@ -8,11 +8,15 @@ import SwiftUI
 /// It speaks on touch-down by default (fastest, and right for children who stim vocally). Every touch
 /// speaks: no debounce and no rate limit. The press highlight is just view state, set *after* the sound
 /// is queued, so drawing can never delay audio.
+///
+/// On a board that scrolls, the tile is a button instead: it speaks when the finger lifts, and the system
+/// cancels the tap when the finger scrolls, so a scroll never speaks.
 struct TileView: View {
     let cell: BoardSnapshot.Cell
     let showLabel: Bool
     let labelOnTop: Bool
     let speakOnTouchDown: Bool
+    var inScrollView = false
     let onTap: (UInt64) -> Void
 
     @State private var pressed = false
@@ -50,7 +54,9 @@ struct TileView: View {
             }
             .frame(width: geo.size.width, height: geo.size.height)
             .contentShape(.rect(cornerRadius: Theme.tileCorner, style: .continuous))
-            .gesture(touchGesture(size: geo.size))
+            .modifier(TouchHandling(inScrollView: inScrollView, pressed: $pressed, gesture: touchGesture(size: geo.size)) {
+                onTap(mach_absolute_time())
+            })
         }
         .accessibilityElement()
         .accessibilityLabel(accessibilityText)
@@ -146,6 +152,38 @@ struct TileView: View {
         } else {
             Color.clear
         }
+    }
+}
+
+/// A drag gesture that speaks on touch-down, or (inside a scroll view) a button the scroll can cancel.
+private struct TouchHandling<G: Gesture>: ViewModifier {
+    let inScrollView: Bool
+    @Binding var pressed: Bool
+    let gesture: G
+    let action: () -> Void
+
+    func body(content: Content) -> some View {
+        if inScrollView {
+            Button(action: action) { content }
+                .buttonStyle(PressReporting(pressed: $pressed))
+        } else {
+            content.gesture(gesture)
+        }
+    }
+}
+
+/// Draws the tile as it is and passes the press state to it, so the key still pushes down.
+private struct PressReporting: ButtonStyle {
+    @Binding var pressed: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                withAnimation(reduceMotion ? nil : (isPressed ? .easeOut(duration: 0.06) : Theme.pressAnimation)) {
+                    pressed = isPressed
+                }
+            }
     }
 }
 

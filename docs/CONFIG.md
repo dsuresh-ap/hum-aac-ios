@@ -23,7 +23,7 @@ So in Hum:
 |---|---|
 | **One tile = one whole gestalt** | Splitting a gestalt into words removes its meaning for a Stage 1–2 GLP. |
 | **Positions never change on their own** | Children find tiles by where they are (motor planning), not by reading. |
-| **Protest tiles are as big as request tiles** | "No" and "stop" are real communication and must always be reachable. |
+| **Protest tiles are as big as request tiles** | "No" and "stop" are real communication. The parent decides which boards they go on. |
 | **No praise or reward phrases** | Hum is the child's voice, not a behavior tool. |
 
 ## The format
@@ -36,7 +36,7 @@ So in Hum:
     {
       "id": "a6f3…",                  // UUID, stable forever
       "name": "Home",
-      "rows": 3, "columns": 4,        // 1–8 each; the child never scrolls
+      "rows": 3, "columns": 4,        // rows 1–20, columns 1–8; a taller board scrolls down
       "isHome": true,                 // exactly one Home in a full setup
       "tiles": [
         {

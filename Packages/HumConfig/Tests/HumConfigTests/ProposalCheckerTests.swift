@@ -60,7 +60,7 @@ struct ProposalCheckerTests {
         func board(_ text: String) -> UUID? { document.boards.first { $0.tiles.contains { $0.spokenText == text } }?.id }
         #expect(board("Let's have crackers") == food.id)
         #expect(board("Juice please") == drinks.id)
-        #expect(board("Stop it") == homeID)
+        #expect(board("Stop it") == food.id)
     }
 
     /// HUM-018: labels don't end on a dangling small word.
@@ -112,10 +112,10 @@ struct ProposalCheckerTests {
         #expect(result.tiles.first?.label == "To infinity and beyond")
     }
 
-    @Test func protestOnSubBoardIsAlsoOfferedOnHome() {
+    /// Parents decide where protest tiles go: nothing is copied to Home.
+    @Test func protestOnSubBoardStaysThere() {
         let result = ProposalChecker.check([.init(label: "stop", spokenText: "Stop the train!", function: .protest, boardName: "Trains")], parentPhrases: [], existing: existing())
-        #expect(result.tiles.count == 2)
-        #expect(result.tiles.contains { $0.boardName == "Home" })
+        #expect(result.tiles.map(\.boardName) == ["Trains"])
     }
 
     @Test func documentOnlyAddsAndNothingMoves() {

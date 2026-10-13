@@ -32,7 +32,8 @@ final class FirstRunUITests: XCTestCase {
 
         openParentMode(app)
         XCTAssertTrue(el(app, "emptySlot.1.1").exists)
-        XCTAssertFalse(el(app, "emptySlot.2.0").exists, "2 × 2 has no third row")
+        XCTAssertTrue(el(app, "emptySlot.2.0").exists, "The editor adds one spare row to add tiles in")
+        XCTAssertFalse(el(app, "emptySlot.3.0").exists, "…and only one")
         XCTAssertFalse(el(app, "emptySlot.0.2").exists, "2 × 2 has no third column")
     }
 

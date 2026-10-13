@@ -181,35 +181,34 @@ final class EditorUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Editing Home"].waitForExistence(timeout: 3))
     }
 
-    /// Scenario: a bigger grid adds empty spots at the bottom and right.
+    /// Scenario: the editor always has a spare empty row at the bottom. Adding a tile there makes the
+    /// board a row taller, and a new spare row appears.
     @MainActor
-    func testGrowingTheGridAddsEmptySpots() {
+    func testSpareRowGrowsTheBoard() {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
-        el(app, "gridSize").tap()
-        let rowsUp = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Rows:' AND identifier == 'Increment'")).firstMatch
-        XCTAssertTrue(rowsUp.waitForExistence(timeout: 3))
-        rowsUp.tap()
-        el(app, "applyGridSize").tap()
-        XCTAssertTrue(el(app, "gridSize").label.contains("6 rows, 4 columns"))
-        XCTAssertTrue(el(app, "editTile.hi").exists)
-        // On iPhone a 6 × 4 board still fits the phone, so the new row shows here.
-        if !isPad { XCTAssertTrue(el(app, "emptySlot.5.0").waitForExistence(timeout: 3)) }
+        let spare = el(app, "emptySlot.5.0")
+        XCTAssertTrue(spare.waitForExistence(timeout: 5), "The starter has 5 rows; the editor shows a 6th")
+        XCTAssertFalse(el(app, "emptySlot.6.0").exists, "Only one spare row")
+        for _ in 0..<4 where !spare.isHittable { app.swipeUp() }
+        spare.tap()
+        typePhraseAndSave(app, "Down here!")
+        XCTAssertTrue(el(app, "emptySlot.6.0").waitForExistence(timeout: 3), "A new spare row appears below")
     }
 
-    /// Scenario: shrinking cuts off tiles. Hum names them and puts them in the "needs a spot" tray only
-    /// if the parent agrees; nothing is deleted.
+    /// Scenario: the tile size never cuts tiles off. Bigger tiles re-flow in reading order with no dialog
+    /// and nothing in the "needs a spot" tray. There's no rows stepper: rows come from the tiles.
     @MainActor
-    func testShrinkingAsksAndUsesTheTray() {
+    func testBiggerTilesReflowWithoutTheTray() {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
         el(app, "gridSize").tap()
-        let rowsDown = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Rows:' AND identifier == 'Decrement'")).firstMatch
-        XCTAssertTrue(rowsDown.waitForExistence(timeout: 3))
-        rowsDown.tap()
+        XCTAssertTrue(el(app, "tileSize").waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Rows:'")).firstMatch.exists, "No rows stepper")
+        el(app, "tileSize").adjust(toNormalizedSliderPosition: 1)
         el(app, "applyGridSize").tap()
-        XCTAssertTrue(app.staticTexts["3 tiles won't fit"].waitForExistence(timeout: 3))
-        dialogButton(app, "Move them to “needs a spot”").tap()
-        // HUM-024: they aren't "new" tiles.
-        XCTAssertTrue(app.staticTexts["3 tiles need a spot. Drag each one onto the board."].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.alerts.firstMatch.waitForExistence(timeout: 1), "No dialog")
+        XCTAssertTrue(el(app, "editTile.hi").waitForExistence(timeout: 3))
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'need a spot'")).firstMatch.exists,
+                       "Nothing goes to the tray")
     }
 
     /// Scenario: no "smaller than 88 points" jargon (HUM-005).

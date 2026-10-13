@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import SwiftUI
+import HumConfig
 import SwiftData
 
 /// Home and folders: create, rename, duplicate, delete and resize them; choose the Home board.
@@ -15,13 +16,10 @@ struct BoardManagerView: View {
     @Query private var tiles: [Tile]
 
     @State private var newBoardName = ""
-    @State private var newRows = 3
     @State private var newColumns = 4
     @State private var boardToDelete: Board?
     @State private var errorMessage: String?
     @State private var search = ""
-    /// A board waiting for "Make Home anyway", because it lacks Home's protest tiles.
-    @State private var homeCandidate: Board?
 
     /// Home first, then A→Z, filtered by the search field (a big import can add a hundred folders).
     private var listed: [Board] {
@@ -46,7 +44,7 @@ struct BoardManagerView: View {
                     ForEach(listed) { board in
                         NavigationLink {
                             BoardDetailView(board: board, errorMessage: $errorMessage, onDelete: { boardToDelete = board },
-                                            onMakeHome: { makeHome(board) })
+                                            onMakeHome: { model.store.setHome(board) })
                         } label: {
                             HStack {
                                 Label {
@@ -60,7 +58,7 @@ struct BoardManagerView: View {
                                     Image(systemName: board.isHome ? "house.fill" : "folder")
                                 }
                                 Spacer()
-                                Text("\(board.rows) × \(board.columns)").foregroundStyle(.secondary).monospacedDigit()
+                                Text("\(board.columns) across").foregroundStyle(.secondary).monospacedDigit()
                             }
                         }
                         .contextMenu {
@@ -70,7 +68,7 @@ struct BoardManagerView: View {
                             }
                             Button("Duplicate", systemImage: "plus.square.on.square") { model.store.duplicate(board) }
                             if !board.isHome {
-                                Button("Make Home board", systemImage: "house") { makeHome(board) }
+                                Button("Make Home board", systemImage: "house") { model.store.setHome(board) }
                                 Button("Delete…", systemImage: "trash", role: .destructive) { boardToDelete = board }
                             }
                         }
@@ -80,28 +78,19 @@ struct BoardManagerView: View {
                 Section {
                     TextField("Folder name, e.g. Food or Outside", text: $newBoardName)
                         .onSubmit(makeFolder)
-                    GridSizePicker(rows: $newRows, columns: $newColumns)
+                    GridSizePicker(columns: $newColumns)
                     Button("Make folder", systemImage: "folder.badge.plus", action: makeFolder)
                         .disabled(newBoardName.trimmingCharacters(in: .whitespaces).isEmpty)
                 } header: {
                     Text("New folder")
                 } footer: {
-                    Text("Adds a folder tile to \(hostBoard?.name ?? "Home") in its first empty spot, then opens the new folder so you can fill it. Keep \"no\", \"stop\" and \"all done\" on Home too.")
+                    Text("Adds a folder tile to \(hostBoard?.name ?? "Home") in its first empty spot, then opens the new folder so you can fill it.")
                 }
             }
             .formStyle(.grouped)
             .navigationTitle("Home & folders")
             .modifier(SearchWhenLong(isLong: boards.count > 12, text: $search))
-            .alert("Make \(homeCandidate?.name ?? "this folder") the Home board?",
-                   isPresented: Binding(get: { homeCandidate != nil }, set: { if !$0 { homeCandidate = nil } }),
-                   presenting: homeCandidate) { board in
-                Button("Make Home anyway") { model.store.setHome(board) }
-                Button("Cancel", role: .cancel) {}
-            } message: { board in
-                Text(missingMessage(for: board))
-            }
             .onAppear {
-                newRows = model.settings.newBoardRows
                 newColumns = model.settings.newBoardColumns
             }
             .toolbar {
@@ -126,27 +115,11 @@ struct BoardManagerView: View {
         #endif
     }
 
-    /// Asks first when the new Home would lack the protest tiles the current Home has (BUGS.md, HUM-040).
-    private func makeHome(_ board: Board) {
-        if model.store.protestTilesMissing(from: board).isEmpty {
-            model.store.setHome(board)
-        } else {
-            homeCandidate = board
-        }
-    }
-
-    private func missingMessage(for board: Board) -> String {
-        let missing = model.store.protestTilesMissing(from: board)
-        let names = missing.prefix(3).map { "“\($0)”" }.joined(separator: ", ")
-        let more = missing.count > 3 ? " and \(missing.count - 3) more" : ""
-        return "\(board.name) doesn't have \(names)\(more). Your child needs a way to say no and ask for help from Home. You can add those tiles to \(board.name) afterwards."
-    }
-
     /// Makes the folder and the tile that opens it, then opens the folder in the editor.
     private func makeFolder() {
         let name = newBoardName.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty, let host = hostBoard else { return }
-        let folder = model.store.addFolder(named: name, on: host, rows: newRows, columns: newColumns)
+        let folder = model.store.addFolder(named: name, on: host, rows: newColumns == 1 ? 2 : 1, columns: newColumns)
         newBoardName = ""
         model.editBoard(host.id)
         model.openFolderInEditor(folder.id)
@@ -175,8 +148,8 @@ private struct BoardDetailView: View {
                 } label: {
                     LabeledContent("Grid size") {
                         HStack(spacing: 8) {
-                            GridPreview(rows: board.rows, columns: board.columns).frame(width: 22, height: 22)
-                            Text("\(board.rows) × \(board.columns)").monospacedDigit()
+                            Image(systemName: "square.grid.2x2")
+                            Text("\(board.columns) across").monospacedDigit()
                         }
                     }
                 }
@@ -203,21 +176,45 @@ private struct BoardDetailView: View {
     }
 }
 
-/// Rows × columns steppers with a tiny live preview.
+/// A tile size slider: how many tiles go across, from what fits on this screen. Bigger tiles means fewer
+/// across. That number is saved as the board's columns, so tiles never reflow when the screen turns or the
+/// window changes. Rows come from the tiles: a board that's taller than the screen scrolls down.
 struct GridSizePicker: View {
-    @Binding var rows: Int
     @Binding var columns: Int
+    /// The fewest columns allowed (a board's tiles need at least this many within the maximum rows).
+    var minColumns = 1
+    @Environment(AppModel.self) private var model
+
+    /// The most columns the slider offers: as many as fit at a usable size on this screen. iPhone shows
+    /// wide boards in pages, so it offers all 8. A board that already has more keeps its number.
+    private var maxColumns: Int {
+        let fitting = AppModel.isPhone
+            ? HumValidator.columnRange.upperBound
+            : GridMetrics.maxColumns(across: model.boardArea.width, spacing: Theme.gridSpacing)
+        return max(fitting, columns, minColumns + 1, 2)
+    }
+
+    /// Bigger tiles to the right: the slider runs over column counts, reversed.
+    private var size: Binding<Double> {
+        Binding(get: { Double(maxColumns + 1 - columns) },
+                set: { columns = maxColumns + 1 - Int($0.rounded()) })
+    }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading) {
-                // At least 2 spots, like the grid size sheet asks (BUGS.md, HUM-013).
-                Stepper("Rows: \(rows)", value: $rows, in: (columns > 1 ? 1 : 2)...8)
-                Stepper("Columns: \(columns)", value: $columns, in: (rows > 1 ? 1 : 2)...8)
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Tile size")
+            Slider(value: size, in: 1...Double(maxColumns + 1 - minColumns), step: 1) {
+                Text("Tile size")
+            } minimumValueLabel: {
+                Image(systemName: "square.grid.4x3.fill").font(.caption).accessibilityLabel("Smaller")
+            } maximumValueLabel: {
+                Image(systemName: "square.grid.2x2.fill").font(.title3).accessibilityLabel("Bigger")
             }
-            GridPreview(rows: rows, columns: columns)
-                .frame(width: 64, height: 64)
-                .accessibilityHidden(true)
+            .accessibilityValue("\(columns) tile\(columns == 1 ? "" : "s") across")
+            .accessibilityIdentifier("tileSize")
+            Text("\(columns) tile\(columns == 1 ? "" : "s") across")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 }

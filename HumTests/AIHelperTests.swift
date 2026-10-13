@@ -101,11 +101,11 @@ struct AIHelperTests {
         #expect(proposal.notes.first?.contains("on this device") == true)
     }
 
-    @Test func protestOnASubBoardIsAlsoOfferedOnHome() async throws {
+    @Test func protestOnASubBoardStaysThere() async throws {
         let model = makeModel()
         let fake = FakeModel([.success([.init(label: "no slide", spokenText: "No more slide!", function: .protest, boardName: "Park")])])
         let proposal = try await AIHelper.propose(.describe("park"), mode: .onDevice, existing: existing(model), generator: fake.generator)
-        #expect(Set(proposal.tiles.compactMap(\.boardName)) == ["Park", "Home"])
+        #expect(Set(proposal.tiles.compactMap(\.boardName)) == ["Park"])
     }
 
     /// Adding suggestions takes free spots, never moves a tile, and is one undo step.

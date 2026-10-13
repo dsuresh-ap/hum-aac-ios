@@ -78,25 +78,12 @@ public enum ProposalChecker {
             }
         }
 
-        // 6. Protest and regulation tiles are never only on a sub-board: also offer them on Home.
-        let homeName = existing.homeBoard?.name
-        let homePhrases = Set(existing.homeBoard?.tiles.map { GLPRules.normalize($0.spokenText) } ?? [])
-        var extras: [ProposedTile] = []
-        for tile in unique {
-            guard let f = tile.function, GLPRules.mustStayOnHome.contains(f),
-                  let board = tile.boardName, board != homeName,
-                  !homePhrases.contains(GLPRules.normalize(tile.spokenText)) else { continue }
-            var copy = tile
-            copy.boardName = homeName
-            extras.append(copy)
-            notes.append("Also added “\(tile.label)” to Home, so it can always be reached.")
-        }
-        return ProposalCheckResult(tiles: unique + extras, notes: notes)
+        return ProposalCheckResult(tiles: unique, notes: notes)
     }
 
     /// Builds a document holding only the new tiles, placed in free spots, for the normal import preview.
     /// Tiles go on the board being edited. A tile can go elsewhere only when the model named a folder:
-    /// - a folder that a tile on the board being edited already opens, or Home for protest tiles (rule 6);
+    /// - a folder that a tile on the board being edited already opens;
     /// - a new folder, which gets a folder tile on the board being edited, so the child can reach it.
     /// Any other board name is ignored. Existing tiles are never included, so nothing can move or be removed.
     public static func document(from tiles: [ProposedTile], targetBoardID: UUID?, existing: HumDocument) -> HumDocument {
@@ -121,8 +108,7 @@ public enum ProposalChecker {
             let sameName = { (other: String) in other.localizedCaseInsensitiveCompare(name) == .orderedSame }
             if !name.isEmpty, let fallback, !sameName(fallback.name) {
                 if let match = existing.boards.first(where: { sameName($0.name) }) {
-                    let protestToHome = match.isHome && tile.function.map(GLPRules.mustStayOnHome.contains) == true
-                    if reachable.contains(match.id) || protestToHome { return copy(of: match) }
+                    if reachable.contains(match.id) { return copy(of: match) }
                     return copy(of: fallback)  // a board the child can't reach from here: stay on this one
                 }
                 if let made = newFolders[name.lowercased()], let board = boards[made] { return board }

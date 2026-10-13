@@ -100,7 +100,7 @@ Goal: help a busy parent set up and grow boards fast, in GLP-aware ways. AI live
 - Features (start with the first two; propose the rest in PLAN.md):
   1. **"Describe what you need"** — e.g. "My child loves trains and says 'all aboard!' when she wants to go." → proposed tiles/board.
   2. **Gestalt capture** — parent types or pastes phrases the child says (scripts, movie lines) and the context; AI proposes whole-gestalt tiles with a short label, the full `spokenText`, and a `function` tag. It never splits a gestalt into words.
-  3. **Organize** — suggest grouping tiles into sub-boards by communicative function. Must keep protest/regulation tiles on Home and must not move tiles that already exist unless the parent picks that option.
+  3. **Organize** — suggest grouping tiles into sub-boards by communicative function. Must not move tiles that already exist unless the parent picks that option.
   4. **Label helper** — suggest a short tile label for a long gestalt.
 - Put the GLP rules in the model's instructions (system prompt), and also **enforce them in code** after generation: no reward/praise/compliance phrases, no splitting gestalts, protest tiles keep equal weight, no tile removals. Code checks win over model output.
 - Show a clear message when the model is not available (device not eligible, Apple Intelligence off, model still downloading). The rest of the app works normally.
@@ -113,7 +113,7 @@ Goal: help a busy parent set up and grow boards fast, in GLP-aware ways. AI live
 - A tile with a linked board shows a small folder corner mark. Tap → speaks its phrase (if it has one) and opens the linked board. A large, fixed **Home** button is always in the same corner.
 - If a tile is tapped while speech is playing: stop the current sound and play the new tap at once (default). Same tile tapped again → restart it at once. See "Audio engine" for the other modes.
 - Visual press feedback must never delay the sound, and must keep up with fast repeated taps.
-- No scrolling in child mode. If the board has more tiles than fit, the parent must choose a bigger grid or split into sub-boards (warn the parent in edit mode, not the child).
+- A board taller than the screen scrolls down in child mode (never sideways), and opens at the top. (Changed 2026-10: this used to be "no scrolling".)
 - Calm visuals: no animation loops, no sounds except speech, muted default palette, full Dark Mode support, honor Increase Contrast and Reduce Motion.
 - Minimum tile hit target: 88 × 88 pt on iPhone; larger on iPad. Support grids from 1×2 up to 6×8.
 - A sync or import must never change the screen while the child is tapping. Apply incoming changes only when the child is not in the middle of a tap, and never reorder tiles.
@@ -146,7 +146,6 @@ Show a one-time tip that explains Apple **Guided Access** for full lock-down. Ne
 - Protest / regulation: "No thank you", "Stop!", "All done", "I need a break", "Too loud", "Help me"
 - Requests: "Let's go!", "I want more", "Let's have a snack", "Let's play", "Up!", "I want to go outside"
 - Connection / commenting: "Uh oh!", "Look at that!", "Hi!", "Bye-bye!", "That's funny!", "Let's do it again!"
-Protest tiles must not be on a hidden sub-board; they are on Home.
 
 ## Milestones
 
