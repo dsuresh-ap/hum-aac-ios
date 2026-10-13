@@ -34,7 +34,9 @@ struct SetupSharingView: View {
                         .accessibilityIdentifier("exportAll")
                         .disabled(preparingExport)
                     if let id = model.editingBoardID, let board = model.fetchBoard(id) {
-                        Button("Export “\(board.name)” only…", systemImage: "square.and.arrow.up.on.square") { export(boardID: id, name: board.name) }
+                        // Not "square.and.arrow.up.on.square": on macOS 27 that symbol sits low and cuts off
+                        // the bottom of the button.
+                        Button("Export “\(board.name)” only…", systemImage: "square.and.arrow.up") { export(boardID: id, name: board.name) }
                             .disabled(preparingExport)
                     }
                     if preparingExport {
@@ -122,6 +124,7 @@ struct SetupSharingView: View {
         }
         #if os(macOS)
         .frame(minWidth: 480, minHeight: 440)
+        .modifier(HumFileDrop())
         #endif
         // The preview opens right here, over this sheet, instead of waiting for it to close.
         .modifier(ImportPreviewHost(isActive: true))

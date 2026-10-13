@@ -412,6 +412,39 @@ final class AppModel {
 
     func noteTouch() { lastTouch = .now }
 
+    // MARK: Shortcuts and Siri
+
+    /// Says a tile's phrase from outside the board (Shortcuts, Siri, the Action button). It works in
+    /// parent mode too: a phrase is never held back behind the grown-up gate.
+    func say(tileID: UUID) async -> Bool {
+        guard let tile = fetchTile(tileID) else { return false }
+        let key = tile.audioData.map { Self.recordingKey(tile.id, $0) }
+        guard !tile.spokenText.isEmpty || key != nil else { return false }
+        if let key, let audio = tile.audioData { await speech.loadRecording(id: key, data: audio) }
+        lastTouch = .now
+        speech.start()
+        speech.speak(tile.spokenText, recordingID: key)
+        history.add(label: tile.label, spokenText: tile.spokenText, function: tile.function, colorHex: tile.colorHex)
+        return true
+    }
+
+    /// Shows a board from Shortcuts or Siri. While a grown-up is editing, the editor jumps to it instead.
+    func showFromShortcut(boardID: UUID) -> Bool {
+        guard !needsFirstRun, fetchBoard(boardID) != nil else { return false }
+        if mode == .parent {
+            editBoard(boardID)
+        } else {
+            open(boardID: boardID)
+        }
+        return true
+    }
+
+    func fetchTile(_ id: UUID) -> Tile? {
+        var descriptor = FetchDescriptor<Tile>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
+    }
+
     // MARK: Snapshots
 
     /// Rebuilds the snapshot now (navigation, leaving parent mode).

@@ -74,6 +74,8 @@ struct ExportHumSetupIntent: AppIntent {
 struct HumShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(intent: AddTileIntent(), phrases: ["Add a tile to \(.applicationName)"], shortTitle: "Add a Tile", systemImageName: "plus.square")
+        AppShortcut(intent: SayPhraseIntent(), phrases: ["Say a phrase with \(.applicationName)"], shortTitle: "Say a Phrase", systemImageName: "speaker.wave.2")
+        AppShortcut(intent: OpenBoardIntent(), phrases: ["Open a board in \(.applicationName)"], shortTitle: "Open a Board", systemImageName: "square.grid.2x2")
         AppShortcut(intent: ExportHumSetupIntent(), phrases: ["Export my \(.applicationName) setup"], shortTitle: "Export Setup", systemImageName: "square.and.arrow.up")
     }
 }

@@ -122,6 +122,13 @@ final class SpeechService {
         }
     }
 
+    /// Decodes one recording right now, for a phrase said from Shortcuts or Siri (its board may not be showing).
+    func loadRecording(id: String, data: Data) async {
+        guard recordings[id] == nil else { return }
+        let clip = await Task.detached(priority: .userInitiated) { PCMClip.decode(fileData: data) }.value
+        if let clip { recordings[id] = clip }
+    }
+
     private func enqueue(_ keys: [SpeechKey], urgent: Bool) {
         for key in keys where !key.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             guard cache.memory(for: key) == nil, !queued.contains(key) else { continue }
