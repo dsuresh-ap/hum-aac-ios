@@ -9,6 +9,9 @@
   child types a word and picks a result; nothing is said. Instead the next thing to press glows: the
   folder on Home, then the tile inside it (or Home or Back when they've wandered off). Tapping the tile
   ends it, and it speaks as usual. The child learns the way, so the motor plan stays the same.
+- **The word finder's glow is a thick yellow ring** with a dark edge and a soft halo, easy to see on
+  white, teal and dark tiles. The magnifier is a small circle next to the lock, and the board name
+  stays on one line, so the iPhone top bar isn't crowded.
 - **"Might be related"** results under the exact ones use Apple's on-device word meanings
   (NaturalLanguage): "vehicle" finds car, "noise" finds "It's too loud". No network.
 

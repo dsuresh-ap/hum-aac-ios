@@ -68,6 +68,9 @@ struct ChildBoardView: View {
             if let snapshot = model.snapshot, !snapshot.isHome {
                 Text(snapshot.name)
                     .font(.system(.title2, design: .rounded, weight: .semibold))
+                    // One line that shrinks to fit, so a long name never pushes the buttons around.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(Theme.ink.opacity(0.6))
                     .accessibilityAddTraits(.isHeader)
             }
@@ -77,13 +80,18 @@ struct ChildBoardView: View {
                     // On a narrow iPhone only the ✕ shows, so the top bar never runs out of room.
                     FindingPill(target: target, showsTarget: sizeClass != .compact) { model.stopFinding() }
                 }
-                FinderButton { showFinder = true }
             }
-            if model.settings.editGate == .holdLock {
-                EditGateButton { model.mode = .parent }
-            } else {
-                // Keep the corner's size stable so nothing shifts when the gate type changes.
-                Color.clear.frame(width: 52, height: 52)
+            // The finder sits right next to the lock (their touch areas meet but don't overlap).
+            HStack(spacing: 0) {
+                if model.settings.showWordFinder {
+                    FinderButton { showFinder = true }
+                }
+                if model.settings.editGate == .holdLock {
+                    EditGateButton { model.mode = .parent }
+                } else {
+                    // Keep the corner's size stable so nothing shifts when the gate type changes.
+                    Color.clear.frame(width: 52, height: 52)
+                }
             }
         }
         .padding(.horizontal, Theme.gridPadding)
@@ -130,6 +138,7 @@ struct BoardGrid: View {
 
     private func grid(_ layout: GridMetrics.Layout) -> some View {
         let settings = model.settings
+        let hint = model.finderHint
         return VStack(spacing: spacing) {
             ForEach(0..<snapshot.rows, id: \.self) { row in
                 HStack(spacing: spacing) {
@@ -147,7 +156,9 @@ struct BoardGrid: View {
                             }
                             .id(cell.id)
                             .frame(width: layout.tileWidth, height: layout.tileHeight)
-                            .overlay { if model.finderHint == .tile(cell.id) { FinderGlow() } }
+                            .overlay { if hint == .tile(cell.id) { FinderGlow() } }
+                            // The ring reaches past the tile: draw it over the tiles next to it.
+                            .zIndex(hint == .tile(cell.id) ? 1 : 0)
                         } else {
                             Color.clear
                                 .frame(width: layout.tileWidth, height: layout.tileHeight)
@@ -155,25 +166,29 @@ struct BoardGrid: View {
                         }
                     }
                 }
+                .zIndex(snapshot.cells[row].contains { $0.map { hint == .tile($0.id) } ?? false } ? 1 : 0)
             }
         }
     }
 }
 
-/// Opens the word finder. Same size and look as Back, in a fixed spot by the lock.
+/// Opens the word finder. A small outlined circle like the lock, so it stays out of the child's way
+/// and leaves the top bar room for the board name.
 private struct FinderButton: View {
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(Theme.ink.opacity(0.85))
-                .frame(width: 72, height: 52)
-                .background(Theme.chrome, in: .rect(cornerRadius: 16, style: .continuous))
-                .background(alignment: .bottom) {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.chrome).brightness(-0.06).offset(y: 4)
-                }
+            ZStack {
+                Circle().stroke(Theme.tileText.opacity(0.2), lineWidth: 3)
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Theme.tileText.opacity(0.6))
+            }
+            .frame(width: 36, height: 36)
+            // A 44-point target, the smallest Apple recommends.
+            .padding(4)
+            .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Find a word")

@@ -121,20 +121,30 @@ struct WordFinderView: View {
     }
 }
 
-/// The glow on the next thing to press for the word finder. It pulses gently, or stays still with
-/// Reduce Motion. It never blocks a touch.
+/// The glow on the next thing to press for the word finder: a thick yellow ring with a dark edge, so it
+/// shows on white, teal and dark tiles alike. It sits just outside the tile and gently grows and shrinks
+/// (still with Reduce Motion). It never blocks a touch.
 struct FinderGlow: View {
     var cornerRadius: CGFloat = Theme.tileCorner
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var bright = false
+    @State private var pulse = false
+
+    static let color = Color(red: 1, green: 0.82, blue: 0.1)
+    private let outset: CGFloat = 5
 
     var body: some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .strokeBorder(Color.accentColor, lineWidth: 6)
-            .opacity(reduceMotion ? 1 : (bright ? 1 : 0.35))
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: bright)
-            .onAppear { bright = true }
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
+        let shape = RoundedRectangle(cornerRadius: cornerRadius + outset, style: .continuous)
+        ZStack {
+            shape.strokeBorder(Self.color, lineWidth: 7)
+            // A thin dark edge inside the yellow, so it stands out on light tiles too.
+            shape.inset(by: 7).strokeBorder(Color.black.opacity(0.6), lineWidth: 2)
+        }
+        .padding(-outset)
+        .shadow(color: Self.color.opacity(pulse ? 0.9 : 0.5), radius: pulse ? 16 : 8)
+        .scaleEffect(reduceMotion ? 1 : (pulse ? 1.04 : 1))
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.7).repeatForever(autoreverses: true), value: pulse)
+        .onAppear { pulse = true }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
