@@ -41,6 +41,15 @@ AuthKey_*.p8
 *.pem
 *.key
 
+# --- TestFlight / App Store release (local only) ---
+# App Store Connect API keys, private signing overrides and personal release notes
+# (tester emails, Apple Account details) stay on the owner's Mac.
+fastlane/api_key.json
+*.api_key.json
+Local.xcconfig
+*.local.xcconfig
+*.local.md
+
 # --- CI / release tooling output ---
 fastlane/report.xml
 fastlane/Preview.html
