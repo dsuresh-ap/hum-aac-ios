@@ -75,3 +75,6 @@ Icon[]
 
 # --- Local test fixtures (real families' boards; never commit) ---
 TestFixtures/Local/
+
+# Local Claude Code skills (personal tools, e.g. the TD Snap converter). Never committed.
+.claude/skills/
