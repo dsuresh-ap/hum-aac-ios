@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased: word finder
+
+- **Find in the editor** (magnifier in the toolbar, ⌘F on the Mac). Type a word to find tiles and
+  folders by label or phrase; each result shows where it lives (Home › Food). Tapping one opens its
+  board and rings the tile for a few seconds.
+- **Word finder for the child** (Settings → Tiles, off at first). A magnifier sits by the lock. The
+  child types a word and picks a result; nothing is said. Instead the next thing to press glows: the
+  folder on Home, then the tile inside it (or Home or Back when they've wandered off). Tapping the tile
+  ends it, and it speaks as usual. The child learns the way, so the motor plan stays the same.
+- **"Might be related"** results under the exact ones use Apple's on-device word meanings
+  (NaturalLanguage): "vehicle" finds car, "noise" finds "It's too loud". No network.
+
 ## Unreleased: Shortcuts actions and Mac fixes
 
 - **Say a Phrase** and **Open a Board** in Shortcuts and Siri. Pick a tile or board; Hum opens and

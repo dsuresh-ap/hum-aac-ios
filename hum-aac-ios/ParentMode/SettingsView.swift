@@ -110,6 +110,8 @@ struct SettingsView: View {
                     .disabled(!settings.showLabels)
                     Toggle("Sentence strip", isOn: $settings.sentenceStrip)
                     Toggle("History box (what was said recently)", isOn: $settings.showHistory)
+                    Toggle("Word finder (magnifier at the top)", isOn: $settings.showWordFinder)
+                        .accessibilityIdentifier("wordFinderToggle")
                     Picker("Appearance", selection: $settings.appearance) {
                         Text("Match this device").tag(HumSettings.Appearance.system)
                         Text("Light").tag(HumSettings.Appearance.light)
@@ -118,7 +120,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Tiles")
                 } footer: {
-                    Text("The sentence strip collects tapped tiles so your child can play them together; it's for later stages of language. The history box shows what was said recently, so you can catch up if you missed it. Both are off at first, and each tile always speaks on its own.")
+                    Text("The sentence strip collects tapped tiles so your child can play them together; it's for later stages of language. The history box shows what was said recently, so you can catch up if you missed it. The word finder looks up a word and lights up the way to its tile, without saying it, so the path is learned. All three are off at first, and each tile always speaks on its own.")
                 }
 
                 Section {

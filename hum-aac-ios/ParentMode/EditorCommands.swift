@@ -14,6 +14,7 @@ struct EditorCommands {
     var aiHelper: (() -> Void)?
     var gridSize: () -> Void
     var foldersList: () -> Void
+    var find: () -> Void
     var back: (() -> Void)?
     var home: () -> Void
     var history: () -> Void
@@ -48,6 +49,9 @@ struct EditorMenuCommands: Commands {
                 .disabled(editor?.back == nil)
             Button("Go to Home") { editor?.home() }
                 .keyboardShortcut("h", modifiers: [.command, .shift])
+                .disabled(editor == nil)
+            Button("Find…") { editor?.find() }
+                .keyboardShortcut("f")
                 .disabled(editor == nil)
             Button("Home & Folders…") { editor?.foldersList() }
                 .keyboardShortcut("b", modifiers: [.command, .shift])

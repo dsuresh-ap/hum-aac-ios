@@ -73,6 +73,7 @@ final class AppModel {
     var mode: Mode = .child {
         didSet {
             if mode == .parent {
+                stopFinding()
                 editPath = []
                 editingBoardID = currentBoardID
                 editingPage = currentPage
@@ -393,6 +394,7 @@ final class AppModel {
     /// Called from the touch handler. Sound first, everything else after.
     func tap(_ cell: BoardSnapshot.Cell, tapTime: UInt64) {
         lastTouch = .now
+        if cell.id == finderRoute?.last?.tileID { stopFinding() }
         if let page = cell.nextPage { return openPage(page) }
         // A silent folder tile (no phrase, no recording) just opens its board.
         if !cell.spokenText.isEmpty || cell.recordingKey != nil {
@@ -411,6 +413,48 @@ final class AppModel {
     }
 
     func noteTouch() { lastTouch = .now }
+
+    // MARK: Word finder
+
+    /// The way to a tile the child looked up. The next thing to press glows; nothing speaks or moves.
+    private(set) var finderRoute: [WordFinder.Step]?
+    /// What the child is looking for, shown next to the finder button.
+    private(set) var finderTarget: String?
+    /// A tile the editor shows with a ring for a moment, after Find.
+    var editorHighlightID: UUID?
+
+    func startFinding(_ result: WordFinder.Result) {
+        guard let route = result.route, !route.isEmpty else { return }
+        finderRoute = route
+        finderTarget = result.label
+    }
+
+    func stopFinding() {
+        finderRoute = nil
+        finderTarget = nil
+    }
+
+    /// Where the child should press next for the word finder.
+    enum FinderHint: Equatable { case tile(UUID), home, back }
+
+    var finderHint: FinderHint? {
+        guard let route = finderRoute, let snapshot else { return nil }
+        guard let step = route.first(where: { $0.boardID == snapshot.boardID }) else { return .home }
+        if snapshot.cells.joined().contains(where: { $0?.id == step.tileID }) { return .tile(step.tileID) }
+        // On an iPhone page: the tile is on a later page ("More") or an earlier one (Back).
+        guard snapshot.paged, let page = fetchTile(step.tileID).flatMap(PhoneLayout.spot(of:))?.page else { return nil }
+        return page > snapshot.page ? .tile(Self.moreCellID(snapshot.boardID, page: snapshot.page)) : .back
+    }
+
+    /// Opens a found tile or board in the editor and rings the tile.
+    func showInEditor(_ result: WordFinder.Result) {
+        editBoard(result.boardID)
+        guard result.kind == .tile else { return }
+        if let board = fetchBoard(result.boardID), showsPhoneLayout(board) {
+            editingPage = fetchTile(result.id).flatMap(PhoneLayout.spot(of:))?.page ?? 0
+        }
+        editorHighlightID = result.id
+    }
 
     // MARK: Shortcuts and Siri
 
