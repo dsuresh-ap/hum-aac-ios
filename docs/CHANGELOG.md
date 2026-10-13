@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased: Shortcuts actions and Mac fixes
+
+- **Say a Phrase** and **Open a Board** in Shortcuts and Siri. Pick a tile or board; Hum opens and
+  says the phrase in the child's Hum voice (or the parent's recording), or shows the board. They work
+  from the Action button, Back Tap and automations. A phrase is said even while a grown-up is editing;
+  opening a board then moves the editor instead. Neither action changes a tile.
+- **Mac: dropping a .hum file on Setup & sharing works.** The sheet is its own window, so drops there
+  never reached the window behind it. Drops also work during first-run setup.
+- **Mac: "Export “Home” only…" is no longer cut off.** Its icon sat low on macOS 27 and pushed the
+  button past its row; it now uses the same icon as "Export all boards…".
+
 ## Unreleased: tile size slider and scrolling boards (trial)
 
 - **Tile size slider.** The grid size sheet, new folders and Settings pick a tile size instead of rows

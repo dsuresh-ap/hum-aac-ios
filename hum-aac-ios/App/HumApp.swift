@@ -5,6 +5,7 @@ import SwiftUI
 import HumConfig
 import SwiftData
 import UniformTypeIdentifiers
+import AppIntents
 
 @main
 struct HumApp: App {
@@ -15,10 +16,13 @@ struct HumApp: App {
         // UI tests start from a clean, in-memory store and fresh settings.
         let testing = ProcessInfo.processInfo.arguments.contains("-uiTesting")
         let defaults = testing ? UserDefaults(suiteName: "HumUITests-\(UUID().uuidString)")! : .standard
-        _model = State(initialValue: AppModel(
+        let model = AppModel(
             container: Persistence.makeContainer(inMemory: testing, iCloud: !testing && DeviceSettings(defaults: defaults).iCloudSyncEnabled),
             settings: DeviceSettings(defaults: defaults),
-            history: SpeechHistory(fileURL: testing ? nil : SpeechHistory.defaultURL)))
+            history: SpeechHistory(fileURL: testing ? nil : SpeechHistory.defaultURL))
+        _model = State(initialValue: model)
+        // Shortcuts and Siri actions use this same model (Intents/ChildIntents.swift).
+        AppDependencyManager.shared.add(dependency: model)
     }
 
     var body: some Scene {
@@ -98,11 +102,7 @@ struct RootView: View {
             if case .success(let url) = result { model.requestImport(url: url) }
         }
         #if os(macOS)
-        .dropDestination(for: URL.self) { urls, _ in
-            guard model.mode == .parent, let url = urls.first else { return false }
-            model.requestImport(url: url)
-            return true
-        }
+        .modifier(HumFileDrop(isEnabled: model.mode == .parent || model.needsFirstRun))
         #endif
     }
 
@@ -114,6 +114,23 @@ struct RootView: View {
         }
     }
 }
+
+#if os(macOS)
+/// Imports a .hum (or hum.json) file dragged in from Finder. A sheet is its own window on the Mac, so
+/// Setup & sharing adds this too: drops on a sheet never reach the window behind it.
+struct HumFileDrop: ViewModifier {
+    @Environment(AppModel.self) private var model
+    var isEnabled = true
+
+    func body(content: Content) -> some View {
+        content.dropDestination(for: URL.self) { urls, _ in
+            guard isEnabled, let url = urls.first(where: \.isFileURL) else { return false }
+            model.requestImport(url: url)
+            return true
+        }
+    }
+}
+#endif
 
 /// Small, deterministic setups for UI tests and screenshots. Only reachable with -uiTesting.
 @MainActor
