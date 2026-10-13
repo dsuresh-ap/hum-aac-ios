@@ -137,16 +137,6 @@ struct BugFixTests {
         #expect(snack.label == "Food and drink")
     }
 
-    /// HUM-040: a folder without Home's protest tiles is flagged before it becomes Home.
-    @Test func protestTilesMissingFromANewHome() throws {
-        let model = makeModel()
-        let snack = try #require(model.home.placedTiles.first { $0.label == "snack" })
-        let food = model.store.makeFolder(named: "Food", for: snack, rows: 2, columns: 2)
-        let missing = model.store.protestTilesMissing(from: food)
-        #expect(missing.contains("no thank you") && missing.contains("stop"))
-        #expect(model.store.protestTilesMissing(from: model.home).isEmpty)
-    }
-
     /// HUM-021: the history box reads "Said: Hi! Say it again.", not "Hi!.".
     @Test func historySentencesDontDoublePunctuation() {
         #expect(HistoryBoxSentence.make("Hi!") == "Hi!")

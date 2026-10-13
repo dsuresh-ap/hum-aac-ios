@@ -291,7 +291,8 @@ private struct EditGrid: View {
 
     /// True on iPhone for boards too big for its screen: the editor shows and edits the phone layout.
     private var phone: Bool { model.showsPhoneLayout(board) }
-    private var rows: Int { phone ? PhoneLayout.rows : board.rows }
+    /// The board's rows plus a spare empty row to add tiles in (`BoardStore.editorRows`).
+    private var rows: Int { phone ? PhoneLayout.rows : BoardStore.editorRows(board) }
     private var columns: Int { phone ? PhoneLayout.columns : board.columns }
     /// The phone pages, plus an empty one after them when the parent turned to it to add tiles there.
     private var pageCount: Int { max(PhoneLayout.pageCount(board), model.editingPage + 1) }
@@ -303,13 +304,16 @@ private struct EditGrid: View {
             GeometryReader { geo in
                 let spacing = phone ? 8 : Theme.gridSpacing
                 // Edit tiles never get smaller than this. When the board doesn't fit, the editor scrolls
-                // instead of squeezing tiles on top of each other (iPhone in landscape, 8 × 8 boards).
-                // Only the editor scrolls; the child's board never does.
-                let fitWidth = (geo.size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
-                let fitHeight = (geo.size.height - spacing * CGFloat(rows - 1)) / CGFloat(rows)
+                // instead of squeezing tiles on top of each other (iPhone in landscape, tall boards).
+                // Off the phone layout, tiles get the same shape as on the child's board, which scrolls too.
+                let fitWidth = GridMetrics.tileWidth(across: geo.size.width, columns: columns, spacing: spacing)
+                let fitHeight = phone
+                    ? (geo.size.height - spacing * CGFloat(rows - 1)) / CGFloat(rows)
+                    : GridMetrics.layout(in: geo.size, rows: board.rows, columns: columns, spacing: spacing).tileHeight
                 let width = max(fitWidth, Self.minimumTile)
                 let height = max(fitHeight, Self.minimumTile)
-                let axes: Axis.Set = [fitWidth < Self.minimumTile ? .horizontal : [], fitHeight < Self.minimumTile ? .vertical : []]
+                let tallerThanScreen = height * CGFloat(rows) + spacing * CGFloat(rows - 1) > geo.size.height + 0.5
+                let axes: Axis.Set = [fitWidth < Self.minimumTile ? .horizontal : [], tallerThanScreen ? .vertical : []]
                 let byPosition: [String: Tile] = phone
                     ? Dictionary(uniqueKeysWithValues: PhoneLayout.tiles(on: board, page: page).map { ("\($0.key.row),\($0.key.column)", $0.value) })
                     : Dictionary(board.placedTiles.map { ("\($0.row!),\($0.column!)", $0) }, uniquingKeysWith: { a, _ in a })
@@ -330,6 +334,12 @@ private struct EditGrid: View {
                         }
                     }
                 }
+                .overlay(alignment: .top) {
+                    // Where the child's screen ends, so the parent can keep important tiles above it.
+                    if let fold = childFold, fold < rows {
+                        FoldLine().offset(y: CGFloat(fold) * (height + spacing) - spacing / 2 - 1)
+                    }
+                }
                 if axes.isEmpty {
                     grid
                 } else {
@@ -340,6 +350,7 @@ private struct EditGrid: View {
                 }
             }
         }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { model.editorBoardArea = $0 }
         // New tiles (added on a Mac, or from an import) get a phone spot before they're shown here.
         .task(id: "\(board.id)-\(board.placedTiles.count)") { model.arrangePhoneLayout(board) }
         // Every delete asks first, like the tile editor's.
@@ -349,6 +360,13 @@ private struct EditGrid: View {
         } message: { _ in
             Text("Its spot will be empty. Other tiles stay where they are. You can undo this.")
         }
+    }
+
+    /// How many rows the child sees before scrolling, or nil when the whole board shows (or isn't known yet).
+    private var childFold: Int? {
+        guard !phone, model.boardArea != .zero else { return nil }
+        let visible = GridMetrics.visibleRows(in: model.boardArea, rows: board.rows, columns: columns, spacing: Theme.gridSpacing)
+        return visible < rows ? visible : nil
     }
 
     /// "Page 1 of 2" with arrows, for boards shown in their phone layout.
@@ -746,19 +764,40 @@ private struct EditBand: View {
             Spacer(minLength: 0)
             Button(action: onGridSize) {
                 HStack(spacing: 8) {
-                    GridPreview(rows: board.rows, columns: board.columns).frame(width: 22, height: 22)
-                    Text("\(board.rows) × \(board.columns)").monospacedDigit()
+                    Image(systemName: "square.grid.2x2")
+                    Text("\(board.columns) across").monospacedDigit()
                 }
                 .font(.callout.weight(.semibold))
             }
             .buttonStyle(.bordered)
-            .accessibilityLabel("Grid size: \(board.rows) rows, \(board.columns) columns. Change")
+            .accessibilityLabel("Tile size: \(board.columns) across. Change")
             .accessibilityIdentifier("gridSize")
         }
         .padding(.horizontal, Theme.gridPadding + 4)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.editBand)
+    }
+}
+
+/// A dashed line across the editor where the child's screen ends; rows below it are reached by scrolling.
+private struct FoldLine: View {
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            Rectangle()
+                .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+                .frame(height: 2)
+            Text("Scrolls below here")
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 8).padding(.vertical, 2)
+                .background(Theme.editBand, in: .capsule)
+                .offset(y: -12)
+        }
+        .foregroundStyle(Theme.ink.opacity(0.6))
+        .allowsHitTesting(false)
+        .accessibilityElement()
+        .accessibilityLabel("Your child scrolls to see the rows below here")
+        .accessibilityIdentifier("scrollFold")
     }
 }
 

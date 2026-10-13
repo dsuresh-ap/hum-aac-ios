@@ -3,6 +3,7 @@
 
 import Foundation
 import SwiftData
+import HumConfig
 
 /// Repairs what iCloud sync can produce, without ever moving a tile on its own.
 ///
@@ -72,8 +73,12 @@ enum SyncResolver {
             var bySpot: [String: [Tile]] = [:]
             for tile in board.tiles ?? [] where !tile.isDeleted {
                 guard let row = tile.row, let column = tile.column else { continue }
-                if row >= board.rows || column >= board.columns || row < 0 || column < 0 {
-                    // Outside the grid (another device shrank it with consent): wait in the tray.
+                if row >= board.rows, row < HumValidator.rowRange.upperBound, column < board.columns, column >= 0 {
+                    // Below the last row: another device added a row (its row count may sync later).
+                    board.rows = row + 1
+                    bySpot["\(row),\(column)", default: []].append(tile)
+                } else if row >= board.rows || column >= board.columns || row < 0 || column < 0 {
+                    // Outside the grid (another device changed the tile size): wait in the tray.
                     tile.row = nil
                     tile.column = nil
                     report.unplacedTiles += 1

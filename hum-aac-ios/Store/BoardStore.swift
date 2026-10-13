@@ -7,7 +7,8 @@ import HumConfig
 
 /// Every parent edit goes through here. It enforces the motor-plan rules and makes every change undoable.
 ///
-/// - Only `move` changes a tile's position (and stamps `positionUpdatedAt`).
+/// - Only `move` and a parent's tile size change (`setColumns`) change a tile's position, and both
+///   stamp `positionUpdatedAt`.
 /// - Adding, hiding and deleting never shift other tiles.
 /// - A board can only shrink if no tile would be cut off.
 @MainActor
@@ -134,6 +135,15 @@ final class BoardStore {
 
     // MARK: Tiles
 
+    /// The rows the editor shows: the board's own rows plus one spare row, so there's always room to add
+    /// a tile. A tile put in the spare row makes the board one row taller (`growRows`).
+    static func editorRows(_ board: Board) -> Int { min(board.rows + 1, HumValidator.rowRange.upperBound) }
+
+    /// Makes `board` tall enough for a tile in `row`. Call inside the change that places the tile.
+    private func growRows(_ board: Board, toFit row: Int) {
+        if row >= board.rows { board.rows = min(row + 1, HumValidator.rowRange.upperBound) }
+    }
+
     /// Adds a tile to an empty slot. Throws if the slot is taken (callers only offer empty slots).
     @discardableResult
     func addTile(to board: Board, row: Int, column: Int, label: String, spokenText: String) throws -> Tile {
@@ -142,6 +152,7 @@ final class BoardStore {
         change("Add Tile") {
             context.insert(tile)
             tile.board = board
+            growRows(board, toFit: row)
             board.updatedAt = .now
         }
         return tile
@@ -149,7 +160,7 @@ final class BoardStore {
 
     /// Moves a tile to a slot. If another tile is there, the two swap. Both moves are explicit parent actions.
     func move(_ tile: Tile, to row: Int, column: Int, on board: Board) {
-        guard row >= 0, column >= 0, row < board.rows, column < board.columns else { return }
+        guard row >= 0, column >= 0, row < Self.editorRows(board), column < board.columns else { return }
         if tile.row == row && tile.column == column && tile.board?.id == board.id { return }
         change("Move Tile") {
             let now = Date.now
@@ -169,6 +180,7 @@ final class BoardStore {
             tile.column = column
             tile.board = board
             tile.positionUpdatedAt = now
+            growRows(board, toFit: row)
         }
     }
 
@@ -331,6 +343,7 @@ final class BoardStore {
             tile.phonePage = phoneSpot?.page
             tile.phoneRow = phoneSpot?.row
             tile.phoneColumn = phoneSpot?.column
+            growRows(board, toFit: row)
             edit(tile)
             if let newFolderName {
                 let folder = Board(name: newFolderName, rows: rows, columns: columns, isHome: false)
@@ -390,18 +403,6 @@ final class BoardStore {
                 tile.updatedAt = .now
             }
         }
-    }
-
-    /// Protest and regulation tiles on the current Home ("No thank you", "Stop!", "Help me") that
-    /// `board` doesn't have. Making `board` Home would leave the child without them there.
-    func protestTilesMissing(from board: Board) -> [String] {
-        guard let home = boards().first(where: \.isHome), home.id != board.id else { return [] }
-        let there = Set(board.placedTiles.map { GLPRules.normalize($0.spokenText) })
-        return home.placedTiles
-            .filter { $0.function.map(GLPRules.mustStayOnHome.contains) == true && !$0.isHidden }
-            .sorted { ($0.row ?? 0, $0.column ?? 0) < ($1.row ?? 0, $1.column ?? 0) }
-            .filter { !there.contains(GLPRules.normalize($0.spokenText)) }
-            .map(\.label)
     }
 
     func setHome(_ board: Board) {
@@ -469,22 +470,62 @@ final class BoardStore {
         board.placedTiles.filter { ($0.row ?? 0) >= rows || ($0.column ?? 0) >= columns }
     }
 
-    /// Changes the grid size. Growing never moves tiles.
-    ///
-    /// Shrinking is refused if it would cut tiles off, unless the parent explicitly agreed to
-    /// `moveCutOffToTray`: then those tiles go to the "needs a spot" tray (they are not deleted, and no
-    /// other tile moves). Every tile that stays keeps its exact row and column.
-    func resize(_ board: Board, rows: Int, columns: Int, moveCutOffToTray: Bool = false) throws {
+    /// Changes the grid size without moving any tile (first run, fixtures). It's refused if tiles would be
+    /// cut off; a parent's change goes through `setColumns` instead, which never cuts tiles off.
+    func resize(_ board: Board, rows: Int, columns: Int) throws {
         let rows = min(max(rows, 1), HumValidator.rowRange.upperBound)
         let columns = min(max(columns, 1), HumValidator.columnRange.upperBound)
         guard rows * columns >= 2 else { throw StoreError.tooSmall }
         let cut = tilesCutOff(board, rows: rows, columns: columns)
-        guard cut.isEmpty || moveCutOffToTray else { throw StoreError.wouldCutOff(cut.map(\.label)) }
+        guard cut.isEmpty else { throw StoreError.wouldCutOff(cut.map(\.label)) }
         change("Change Grid Size") {
+            board.rows = rows
+            board.columns = columns
+            board.updatedAt = .now
+        }
+    }
+
+    /// Where every placed tile goes when `board` becomes `columns` wide, keeping reading order: left to
+    /// right, top to bottom, with empty spots kept as gaps, and the rows that needs.
+    ///
+    /// If keeping the gaps would need more than the maximum rows, the tiles close up instead (same order).
+    func reflowedSpots(_ board: Board, columns: Int) -> (spots: [UUID: (row: Int, column: Int)], rows: Int) {
+        let tiles = board.placedTiles.sorted { ($0.row!, $0.column!) < ($1.row!, $1.column!) }
+        guard columns != board.columns else {
+            let spots = Dictionary(uniqueKeysWithValues: tiles.map { ($0.id, (row: $0.row!, column: $0.column!)) })
+            return (spots, (tiles.map { $0.row! }.max() ?? -1) + 1)
+        }
+        var indices = tiles.map { $0.row! * board.columns + $0.column! }
+        if let last = indices.last, last / columns >= HumValidator.rowRange.upperBound {
+            indices = Array(indices.indices)
+        }
+        var spots: [UUID: (row: Int, column: Int)] = [:]
+        for (tile, index) in zip(tiles, indices) { spots[tile.id] = (index / columns, index % columns) }
+        return (spots, indices.last.map { $0 / columns + 1 } ?? 0)
+    }
+
+    /// The fewest columns that still fit every placed tile within the maximum rows.
+    func minimumColumns(_ board: Board) -> Int {
+        let count = board.placedTiles.count
+        let maxRows = HumValidator.rowRange.upperBound
+        return max(1, (count + maxRows - 1) / maxRows)
+    }
+
+    /// Changes how many tiles go across, from the parent's tile size slider. One undo step.
+    ///
+    /// Tiles re-flow in reading order (`reflowedSpots`): the order the child knows stays the same, and the
+    /// board gets exactly the rows its tiles need. Nothing is cut off and nothing goes to the tray.
+    func setColumns(_ board: Board, _ columns: Int) {
+        let columns = min(max(columns, minimumColumns(board)), HumValidator.columnRange.upperBound)
+        let (spots, needed) = reflowedSpots(board, columns: columns)
+        // At least 2 spots, and at least one row.
+        let rows = min(max(needed, columns == 1 ? 2 : 1), HumValidator.rowRange.upperBound)
+        change("Change Tile Size") {
             let now = Date.now
-            for tile in cut {
-                tile.row = nil
-                tile.column = nil
+            for tile in board.placedTiles {
+                guard let spot = spots[tile.id], spot.row != tile.row || spot.column != tile.column else { continue }
+                tile.row = spot.row
+                tile.column = spot.column
                 tile.positionUpdatedAt = now
             }
             board.rows = rows

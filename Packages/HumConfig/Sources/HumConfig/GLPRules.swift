@@ -48,7 +48,4 @@ public enum GLPRules {
         }
         return false
     }
-
-    /// Functions that must stay on the Home board with equal size and weight (protest and regulation).
-    public static let mustStayOnHome: Set<TileFunction> = [.protest, .regulation]
 }

@@ -494,7 +494,8 @@ struct TileEditorSheet: View {
             tile.imageCredit = imageData == nil ? nil : imageCredit
             tile.audioData = audioData
         }
-        let rows = model.settings.newBoardRows, columns = model.settings.newBoardColumns
+        // A new folder starts with one row (two if it's one across); it grows as tiles are added.
+        let columns = model.settings.newBoardColumns, rows = columns == 1 ? 2 : 1
         var saved: Tile?
         switch request.kind {
         case .new(let boardID, let row, let column):

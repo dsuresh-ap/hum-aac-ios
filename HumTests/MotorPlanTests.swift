@@ -69,13 +69,54 @@ struct MotorPlanTests {
         #expect(model.home.rows == 5)
     }
 
-    @Test func shrinkingWithConsentMovesOnlyCutTilesToTheTray() throws {
+    /// Labels in reading order (left to right, top to bottom).
+    func readingOrder(_ board: Board) -> [String] {
+        board.placedTiles.sorted { ($0.row!, $0.column!) < ($1.row!, $1.column!) }.map(\.label)
+    }
+
+    /// Bigger tiles (fewer across) re-flow in reading order: same order, more rows, nothing in the tray.
+    @Test func fewerColumnsKeepsTheOrderAndAddsRows() throws {
+        let model = makeModel()
+        let order = readingOrder(model.home)
+        model.store.setColumns(model.home, 3)
+        #expect(model.home.columns == 3)
+        #expect(readingOrder(model.home) == order)
+        #expect(model.home.unplacedTiles.isEmpty)
+        #expect(model.home.placedTiles.allSatisfy { $0.row! < model.home.rows && $0.column! < 3 })
+    }
+
+    /// Smaller tiles re-flow the same way, and one Undo puts every tile back.
+    @Test func moreColumnsKeepsTheOrderAndUndoes() throws {
         let model = makeModel()
         let before = model.layout(model.home)
-        try model.store.resize(model.home, rows: 4, columns: 4, moveCutOffToTray: true)
-        let after = model.layout(model.home)
-        #expect(after == before.filter { !$0.key.hasPrefix("4,") })
-        #expect(Set(model.home.unplacedTiles.map(\.label)) == ["no thank you", "stop", "all done"])
+        let order = readingOrder(model.home)
+        model.store.setColumns(model.home, 6)
+        #expect(readingOrder(model.home) == order)
+        model.store.undo()
+        #expect(model.layout(model.home) == before)
+        #expect(model.home.columns == 4)
+    }
+
+    /// The editor's spare row: a tile added there makes the board one row taller, in the same undo step.
+    @Test func addingInTheSpareRowGrowsTheBoard() throws {
+        let model = makeModel()
+        #expect(BoardStore.editorRows(model.home) == 6)
+        try model.store.addTile(to: model.home, row: 5, column: 0, label: "new", spokenText: "New one")
+        #expect(model.home.rows == 6)
+        #expect(BoardStore.editorRows(model.home) == 7)
+        model.store.undo()
+        #expect(model.home.rows == 5)
+    }
+
+    /// Dragging a tile into the spare row moves only that tile and grows the board.
+    @Test func movingIntoTheSpareRowGrowsTheBoard() throws {
+        let model = makeModel()
+        let before = model.layout(model.home)
+        let hi = try #require(model.home.placedTiles.first { $0.label == "hi" })
+        model.store.move(hi, to: 5, column: 2, on: model.home)
+        #expect(model.home.rows == 6)
+        #expect(hi.row == 5 && hi.column == 2)
+        #expect(model.layout(model.home).filter { $0.value != "hi" } == before.filter { $0.value != "hi" })
     }
 
     @Test func undoRestoresAMove() throws {

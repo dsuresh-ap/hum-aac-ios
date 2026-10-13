@@ -43,19 +43,19 @@
           "pattern": "\\S"
         },
         "rows": {
-          "description": "Number of grid rows (1-8). Changing this on an existing board must not move tiles; only grow it, never shrink it below tiles that are in use.",
+          "description": "Number of grid rows (1-20). A board taller than the screen scrolls down. Changing this on an existing board must not move tiles; only grow it, never shrink it below tiles that are in use.",
           "type": "integer",
           "minimum": 1,
-          "maximum": 8
+          "maximum": 20
         },
         "columns": {
-          "description": "Number of grid columns (1-8). Common sizes: 3x3 on iPhone, 4x5 or 5x4 on iPad and Mac.",
+          "description": "Number of grid columns (1-8). Columns never change on their own: the board scrolls down, never sideways. Common sizes: 3x3 on iPhone, 4x5 or 5x4 on iPad and Mac.",
           "type": "integer",
           "minimum": 1,
           "maximum": 8
         },
         "isHome": {
-          "description": "True for the board the app opens on and returns to with the Home button. Protest and regulation tiles belong here.",
+          "description": "True for the board the app opens on and returns to with the Home button.",
           "type": "boolean"
         },
         "tiles": {

@@ -3,80 +3,43 @@
 
 import SwiftUI
 
-/// Show more or fewer tiles on a board.
+/// Bigger or smaller tiles on a board: a tile size slider (how many go across).
 ///
-/// Every tile keeps its exact row and column (motor planning). A bigger grid just adds empty spots.
-/// A smaller grid only removes spots; if tiles sit in those spots, the parent is told which ones and can
-/// choose to put them in the "needs a spot" tray. They're never deleted, and nothing else moves.
+/// A new tile size re-flows the tiles in reading order, so the order the child knows stays the same, and
+/// the board gets the rows it needs. A taller board scrolls, so no tile is ever cut off or sent to the tray.
 struct GridSizeSheet: View {
     let board: Board
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
-    @State private var rows = 3
     @State private var columns = 3
-    @State private var confirmCut = false
     @State private var confirmDiscard = false
-    @State private var errorMessage: String?
 
-    static let presets: [(Int, Int)] = [(2, 2), (2, 3), (3, 3), (3, 4), (4, 5), (5, 6), (6, 8)]
-
-    /// The quick sizes, with the board's own size first when it isn't one of them (the starter's 5 × 4),
-    /// so something is always selected when the sheet opens.
-    private var quickSizes: [(Int, Int)] {
-        Self.presets.contains { $0 == (board.rows, board.columns) } ? Self.presets : [(board.rows, board.columns)] + Self.presets
-    }
-
-    private var cutOff: [Tile] { model.store.tilesCutOff(board, rows: rows, columns: columns) }
-    private var changed: Bool { rows != board.rows || columns != board.columns }
+    /// Where every tile goes at the picked size.
+    private var reflow: (spots: [UUID: (row: Int, column: Int)], rows: Int) { model.store.reflowedSpots(board, columns: columns) }
+    /// How many tiles change spot at the picked size.
+    private var moving: Int { board.placedTiles.filter { t in reflow.spots[t.id].map { $0 != (t.row!, t.column!) } ?? false }.count }
+    private var changed: Bool { columns != board.columns }
+    /// The rows the board gets at the picked size (at least 2 spots).
+    private var rows: Int { max(reflow.rows, columns == 1 ? 2 : 1) }
 
     var body: some View {
         NavigationStack {
             Form {
+                // The controls first, so the preview below changes while the parent drags.
                 Section {
-                    HStack {
-                        Spacer()
-                        PreviewGrid(board: board, rows: rows, columns: columns)
-                            .frame(width: 220, height: 220)
-                        Spacer()
-                    }
-                    .listRowBackground(Color.clear)
-                }
-
-                Section("Quick sizes (rows × columns)") {
-                    ScrollView(.horizontal) {
-                        HStack(spacing: 10) {
-                            ForEach(quickSizes.indices, id: \.self) { i in
-                                let (r, c) = quickSizes[i]
-                                let selected = r == rows && c == columns
-                                Button {
-                                    rows = r
-                                    columns = c
-                                } label: {
-                                    VStack(spacing: 6) {
-                                        GridPreview(rows: r, columns: c).frame(width: 44, height: 44)
-                                        Text("\(r) × \(c)").font(.callout.weight(.semibold)).monospacedDigit()
-                                    }
-                                    .padding(10)
-                                    .background(selected ? Color.accentColor.opacity(0.18) : Theme.chrome, in: .rect(cornerRadius: 12))
-                                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.accentColor, lineWidth: selected ? 2 : 0))
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel("\(r) rows, \(c) columns")
-                                .accessibilityAddTraits(selected ? .isSelected : [])
-                            }
-                        }
-                    }
-                }
-
-                Section {
-                    Stepper("Rows: \(rows)", value: $rows, in: (columns > 1 ? 1 : 2)...8)
-                    Stepper("Columns: \(columns)", value: $columns, in: (rows > 1 ? 1 : 2)...8)
+                    GridSizePicker(columns: $columns, minColumns: model.store.minimumColumns(board))
                 } footer: {
                     Text(footer)
                 }
+
+                Section {
+                    ScreenPreview(board: board, spots: reflow.spots, rows: rows, columns: columns, area: model.boardArea)
+                        .frame(maxWidth: .infinity)
+                        .listRowBackground(Color.clear)
+                }
             }
             .formStyle(.grouped)
-            .navigationTitle("Grid size for \(board.name)")
+            .navigationTitle("Tile size for \(board.name)")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -86,31 +49,19 @@ struct GridSizeSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Apply") { apply() }
-                        .disabled(!changed || rows * columns < 2)
+                        .disabled(!changed)
                         .accessibilityIdentifier("applyGridSize")
                 }
             }
             .interactiveDismissDisabled(changed)
             .confirmationDialog("Keep the old size?", isPresented: $confirmDiscard, titleVisibility: .visible) {
                 Button("Discard new size", role: .destructive) { dismiss() }
-                Button("Apply \(rows) × \(columns)") { apply() }
+                Button("Apply \(columns) across") { apply() }
                 Button("Keep editing", role: .cancel) {}
             } message: {
-                Text("You picked \(rows) × \(columns) but haven't applied it.")
+                Text("You picked \(columns) tiles across but haven't applied it.")
             }
-            .confirmationDialog(cutTitle, isPresented: $confirmCut, titleVisibility: .visible) {
-                Button("Move them to “needs a spot”") { apply(moveCutOff: true) }
-                Button("Keep the current size", role: .cancel) {}
-            } message: {
-                Text("\(cutOff.map { "“\($0.label)”" }.joined(separator: ", ")) won't fit. They'll wait in the tray below the board until you place them. Every other tile stays exactly where it is.")
-            }
-            .alert("Can't change the size", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
-                Button("OK", role: .cancel) {}
-            } message: { Text(errorMessage ?? "") }
-            .onAppear {
-                rows = board.rows
-                columns = board.columns
-            }
+            .onAppear { columns = board.columns }
         }
         #if os(macOS)
         .frame(minWidth: 460, minHeight: 560)
@@ -118,62 +69,118 @@ struct GridSizeSheet: View {
     }
 
     private var footer: String {
-        if rows * columns < 2 { return "A board needs at least 2 spots." }
-        if !cutOff.isEmpty {
-            return "\(cutOff.count) tile\(cutOff.count == 1 ? "" : "s") won't fit this size (shown with a dashed outline)."
+        var text = ""
+        if moving > 0 {
+            text += "\(moving) tile\(moving == 1 ? "" : "s") move so every tile keeps its place in the order (left to right, top to bottom). Your child may need time to find them again."
+        } else {
+            text += "No tile moves."
         }
-        let total = rows * columns
-        let base = "\(total) spots. Tiles keep their places: a bigger grid adds empty spots at the right and bottom."
-        // The grid is shared by every device; shrinking it to fit a phone isn't needed any more.
-        guard AppModel.isPhone else { return base }
-        return base + " On iPhone, big boards are split into pages, so you don't need to shrink them here. Tiles keep their places on iPad and Mac."
+        // The grid is shared by every device. iPhone shows boards wider than 4 tiles as pages.
+        if AppModel.isPhone && columns > PhoneLayout.columns {
+            text += " On iPhone, boards more than \(PhoneLayout.columns) tiles across are shown as pages."
+        }
+        return text
     }
 
-    private var cutTitle: String { "\(cutOff.count) tile\(cutOff.count == 1 ? "" : "s") won't fit" }
-
-    private func apply(moveCutOff: Bool = false) {
-        if !cutOff.isEmpty && !moveCutOff {
-            confirmCut = true
-            return
-        }
-        do {
-            try model.store.resize(board, rows: rows, columns: columns, moveCutOffToTray: moveCutOff)
-            dismiss()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+    private func apply() {
+        model.store.setColumns(board, columns)
+        dismiss()
     }
 }
 
-/// Live preview: existing tiles in their real spots (colored), empty spots outlined, and tiles that
-/// would not fit drawn dashed outside the new grid.
-private struct PreviewGrid: View {
+/// Live preview of the child's screen at the new size: the screen's own shape, tiles at their new size
+/// with their colors and pictures, and the rows the child scrolls to drawn faded below the screen's edge.
+private struct ScreenPreview: View {
     let board: Board
+    /// Where each tile goes at the new size (from `BoardStore.reflowedSpots`).
+    let spots: [UUID: (row: Int, column: Int)]
     let rows: Int
     let columns: Int
+    /// The child's board area on this device (`AppModel.boardArea`). Zero until a board has been shown.
+    let area: CGSize
+
+    /// The most room the little screen gets (a phone's tall screen is limited by height).
+    private let maxSize = CGSize(width: 280, height: 220)
+    /// How much of the scrolled part shows below the screen, as a share of the screen's height.
+    private let belowShare: CGFloat = 0.6
 
     var body: some View {
-        let shownRows = max(rows, board.rows)
-        let shownColumns = max(columns, board.columns)
-        let tiles = Dictionary(board.placedTiles.map { ("\($0.row!),\($0.column!)", $0) }, uniquingKeysWith: { a, _ in a })
-        VStack(spacing: 3) {
-            ForEach(0..<shownRows, id: \.self) { r in
-                HStack(spacing: 3) {
-                    ForEach(0..<shownColumns, id: \.self) { c in
-                        let inside = r < rows && c < columns
-                        let tile = tiles["\(r),\(c)"]
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(tile.map { Theme.tileColor(function: $0.function, hex: $0.colorHex) } ?? Color.clear)
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 4)
-                                    .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: inside ? [] : [3, 3]))
-                                    .foregroundStyle(Theme.ink.opacity(inside ? 0.25 : (tile == nil ? 0 : 0.6)))
+        let screen = area == .zero ? CGSize(width: 1024, height: 700) : area
+        let scale = min(maxSize.width / screen.width, maxSize.height / screen.height)
+        let width = screen.width * scale
+        let spacing = Theme.gridSpacing
+        let layout = GridMetrics.layout(in: screen, rows: rows, columns: columns, spacing: spacing)
+        let tile = CGSize(width: layout.tileWidth * scale, height: layout.tileHeight * scale)
+        let gap = spacing * scale
+        let screenHeight = screen.height * scale
+        let contentHeight = CGFloat(rows) * tile.height + CGFloat(rows - 1) * gap
+        let shownHeight = min(contentHeight, screenHeight * (1 + belowShare))
+        let tiles = Dictionary(board.placedTiles.compactMap { t in spots[t.id].map { ("\($0.row),\($0.column)", t) } },
+                               uniquingKeysWith: { a, _ in a })
+
+        VStack(spacing: 10) {
+            ZStack(alignment: .top) {
+                VStack(spacing: gap) {
+                    ForEach(0..<rows, id: \.self) { r in
+                        HStack(spacing: gap) {
+                            ForEach(0..<columns, id: \.self) { c in
+                                cell(tiles["\(r),\(c)"], size: tile)
                             }
-                            .opacity(inside || tile != nil ? 1 : 0)
+                        }
                     }
                 }
+                .frame(width: width, height: shownHeight, alignment: .top)
+                .clipped()
+                // Below the screen's edge: faded, and fading out, so it reads as "scroll to see".
+                .mask {
+                    VStack(spacing: 0) {
+                        Rectangle().frame(height: min(screenHeight, shownHeight))
+                        if shownHeight > screenHeight {
+                            LinearGradient(colors: [.black.opacity(0.45), .black.opacity(0)], startPoint: .top, endPoint: .bottom)
+                        }
+                    }
+                }
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(Theme.ink.opacity(0.5), lineWidth: 2)
+                    .frame(width: width + 12, height: screenHeight + 12)
+                    .offset(y: -6)
+            }
+            .padding(.top, 6)
+            .frame(height: shownHeight + 6, alignment: .top)
+
+            if layout.scrolls {
+                Label("Faded rows are below the screen. Your child scrolls down to reach them.", systemImage: "arrow.down")
+                    .font(.footnote).foregroundStyle(.secondary)
             }
         }
-        .accessibilityHidden(true)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilitySummary(layout: layout))
+        .accessibilityIdentifier("gridSizePreview")
+    }
+
+    @ViewBuilder
+    private func cell(_ tile: Tile?, size: CGSize) -> some View {
+        let shape = RoundedRectangle(cornerRadius: min(size.width, size.height) * 0.18, style: .continuous)
+        if let tile {
+            shape.fill(Theme.tileColor(function: tile.function, hex: tile.colorHex))
+                .overlay {
+                    if let symbol = tile.symbol, !symbol.isEmpty {
+                        Text(symbol).font(.system(size: min(size.width, size.height) * 0.5))
+                    }
+                }
+                .frame(width: size.width, height: size.height)
+        } else {
+            shape.strokeBorder(Theme.ink.opacity(0.18), lineWidth: 1)
+                .frame(width: size.width, height: size.height)
+        }
+    }
+
+    private func accessibilitySummary(layout: GridMetrics.Layout) -> String {
+        var text = "\(columns) tiles across, \(rows) rows."
+        if layout.scrolls, area != .zero {
+            let visible = GridMetrics.visibleRows(in: area, rows: rows, columns: columns, spacing: Theme.gridSpacing)
+            text += " \(visible) rows fit on the screen; the rest scroll."
+        }
+        return text
     }
 }

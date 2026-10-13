@@ -7,8 +7,8 @@ import SwiftData
 /// The phone layout: how a board too big for a phone screen is shown on iPhone.
 ///
 /// A board keeps one grid (`rows` × `columns`) for iPad and Mac. On iPhone, a board wider than 4 columns
-/// or taller than 8 rows is shown as pages of 4 × 8 instead. Each tile has its own phone spot
-/// (`phonePage`, `phoneRow`, `phoneColumn`), so the phone has a stable motor plan of its own and resizing
+/// is shown as pages of 4 × 8 instead; a narrow board taller than the screen scrolls down. Each tile has
+/// its own phone spot (`phonePage`, `phoneRow`, `phoneColumn`), so the phone has a stable motor plan of its own and resizing
 /// or moving tiles on one kind of device never pushes tiles into the tray on the other.
 ///
 /// - The first time a phone shows a board, tiles fill the pages in the board's reading order.
@@ -26,8 +26,8 @@ enum PhoneLayout {
         static func < (a: Spot, b: Spot) -> Bool { (a.page, a.row, a.column) < (b.page, b.row, b.column) }
     }
 
-    /// A board this small is shown as it is on a phone.
-    static func fits(_ board: Board) -> Bool { board.columns <= columns && board.rows <= rows }
+    /// A board this narrow is shown as it is on a phone. A tall one scrolls down, like on iPad and Mac.
+    static func fits(_ board: Board) -> Bool { board.columns <= columns }
 
     /// The spot kept for "More" on every page.
     static func isMoreSpot(row: Int, column: Int) -> Bool { row == rows - 1 && column == columns - 1 }

@@ -157,7 +157,8 @@ struct ValidationTests {
         #expect(try JSONValue.parse(loaded.document.encodedJSON()) == JSONValue.parse(input))
     }
 
-    @Test func protestOnlyOnSubBoardIsWarned() throws {
+    /// Parents decide where protest tiles go: one only on a sub-board is fine.
+    @Test func protestOnlyOnSubBoardIsFine() throws {
         let input = json("""
         {"formatVersion": 1, "boards": [
           {"id": "11111111-1111-1111-1111-111111111111", "name": "Home", "rows": 1, "columns": 2, "isHome": true, "tiles": []},
@@ -165,7 +166,7 @@ struct ValidationTests {
             {"id": "22222222-2222-2222-2222-222222222222", "label": "stop", "spokenText": "Stop!", "row": 0, "column": 0, "function": "protest"}]}]}
         """)
         let loaded = try HumConfigLoader.load(input)
-        #expect(loaded.warnings.contains { $0.message.contains("should also be on Home") })
+        #expect(loaded.warnings.isEmpty)
     }
 }
 

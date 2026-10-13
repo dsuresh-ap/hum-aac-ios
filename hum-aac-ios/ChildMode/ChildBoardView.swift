@@ -4,7 +4,7 @@
 import SwiftUI
 import HumConfig
 
-/// The child's screen: a full-window grid of large tiles. No scrolling, ever.
+/// The child's screen: a full-window grid of large tiles. A board taller than the window scrolls down.
 ///
 /// The Home button stays in the top-leading corner and the parent lock in the top-trailing corner, on
 /// every board, so the child's motor plan never changes.
@@ -79,36 +79,57 @@ struct ChildBoardView: View {
 }
 
 /// Lays out the snapshot in a fixed rows × columns grid. Empty and hidden slots stay empty.
+///
+/// Tiles fill the window when they fit. A board taller than the window scrolls down (never sideways)
+/// and opens at the top, so the first rows are always in the same place.
 struct BoardGrid: View {
     let snapshot: BoardSnapshot
     var spacing: CGFloat = Theme.gridSpacing
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        let settings = model.settings
         GeometryReader { geo in
-            let width = (geo.size.width - spacing * CGFloat(snapshot.columns - 1)) / CGFloat(snapshot.columns)
-            let height = (geo.size.height - spacing * CGFloat(snapshot.rows - 1)) / CGFloat(snapshot.rows)
-            VStack(spacing: spacing) {
-                ForEach(0..<snapshot.rows, id: \.self) { row in
-                    HStack(spacing: spacing) {
-                        ForEach(0..<snapshot.columns, id: \.self) { column in
-                            if let cell = snapshot.cells[row][column] {
-                                TileView(
-                                    cell: cell,
-                                    showLabel: settings.showLabels,
-                                    labelOnTop: settings.labelPosition == .top,
-                                    speakOnTouchDown: settings.activation == .touchDown
-                                ) { tapTime in
-                                    model.tap(cell, tapTime: tapTime)
-                                }
-                                .id(cell.id)
-                                .frame(width: max(width, 0), height: max(height, 0))
-                            } else {
-                                Color.clear
-                                    .frame(width: max(width, 0), height: max(height, 0))
-                                    .accessibilityHidden(true)
+            let layout = GridMetrics.layout(in: geo.size, rows: snapshot.rows, columns: snapshot.columns,
+                                            spacing: spacing, canScroll: !snapshot.paged)
+            if layout.scrolls {
+                ScrollView(.vertical) {
+                    grid(layout)
+                }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
+                // A new board (or page) starts at the top. Sync updates to the same board keep the place.
+                .id("\(snapshot.boardID)-\(snapshot.page)")
+                .accessibilityIdentifier("boardScroll")
+            } else {
+                grid(layout)
+            }
+        }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { model.childBoardArea = $0 }
+    }
+
+    private func grid(_ layout: GridMetrics.Layout) -> some View {
+        let settings = model.settings
+        return VStack(spacing: spacing) {
+            ForEach(0..<snapshot.rows, id: \.self) { row in
+                HStack(spacing: spacing) {
+                    ForEach(0..<snapshot.columns, id: \.self) { column in
+                        if let cell = snapshot.cells[row][column] {
+                            TileView(
+                                cell: cell,
+                                showLabel: settings.showLabels,
+                                labelOnTop: settings.labelPosition == .top,
+                                // A touch on a scrolling board may be the start of a scroll: speak on lift.
+                                speakOnTouchDown: settings.activation == .touchDown && !layout.scrolls,
+                                inScrollView: layout.scrolls
+                            ) { tapTime in
+                                model.tap(cell, tapTime: tapTime)
                             }
+                            .id(cell.id)
+                            .frame(width: layout.tileWidth, height: layout.tileHeight)
+                        } else {
+                            Color.clear
+                                .frame(width: layout.tileWidth, height: layout.tileHeight)
+                                .accessibilityHidden(true)
                         }
                     }
                 }

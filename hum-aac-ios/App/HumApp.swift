@@ -42,6 +42,7 @@ struct HumApp: App {
                         if args.contains("-darkMode") { model.settings.appearance = .dark }
                         if args.contains("-demoFolder") { UITestFixtures.addFoodFolder(model) }
                         if args.contains("-wideHome") { UITestFixtures.widenHome(model) }
+                        if args.contains("-tallHome") { UITestFixtures.lengthenHome(model) }
                         if args.contains("-demoHistory") { UITestFixtures.addHistory(model) }
                         // A .hum file to import, as if it arrived through "Open in Hum".
                         if let i = args.firstIndex(of: "-importFile"), i + 1 < args.count {
@@ -121,6 +122,16 @@ enum UITestFixtures {
     static func widenHome(_ model: AppModel) {
         guard let home = model.store.boards().first(where: \.isHome) else { return }
         try? model.store.resize(home, rows: home.rows, columns: 6)
+        model.goHome()
+    }
+
+    /// Makes Home 12 rows tall (tiles keep their spots) with a tile in the last row: the board scrolls.
+    static func lengthenHome(_ model: AppModel) {
+        guard let home = model.store.boards().first(where: \.isHome) else { return }
+        try? model.store.resize(home, rows: 12, columns: home.columns)
+        if let tile = try? model.store.addTile(to: home, row: 11, column: 0, label: "bottom", spokenText: "All the way down!") {
+            tile.symbol = "⬇️"
+        }
         model.goHome()
     }
 

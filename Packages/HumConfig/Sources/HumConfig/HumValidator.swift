@@ -5,8 +5,8 @@ import Foundation
 
 /// Checks that need more than the JSON Schema: unique IDs, grid placement, links, and GLP rules.
 public enum HumValidator {
-    /// Supported grid sizes (inclusive). 1×2 up to 6×8 per the product spec.
-    public static let rowRange = 1...8
+    /// Supported grid sizes (inclusive). Rows go up to 20 because a tall board scrolls down.
+    public static let rowRange = 1...20
     public static let columnRange = 1...8
 
     public static func semanticIssues(in doc: HumDocument) -> [ValidationIssue] {
@@ -67,18 +67,6 @@ public enum HumValidator {
             }
         }
 
-        // Protest and regulation tiles belong on Home, where they can always be reached.
-        // A copy on a sub-board is fine as long as the same phrase is also on Home.
-        if let home = doc.homeBoard {
-            let onHome = Set(home.tiles.map { GLPRules.normalize($0.spokenText) })
-            for (b, board) in doc.boards.enumerated() where board.id != home.id {
-                for (t, tile) in board.tiles.enumerated() where !onHome.contains(GLPRules.normalize(tile.spokenText)) {
-                    if let f = tile.function, GLPRules.mustStayOnHome.contains(f) {
-                        issues.append(.init(.warning, "Tile '\(tile.label)' (\(f.rawValue)) is on '\(board.name)'. Protest and regulation tiles should also be on Home so they can always be reached.", path: "/boards/\(b)/tiles/\(t)"))
-                    }
-                }
-            }
-        }
         return issues
     }
 }

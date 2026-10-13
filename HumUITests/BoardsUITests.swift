@@ -88,16 +88,13 @@ final class BoardsUITests: XCTestCase {
     }
 
     /// Scenario: the parent makes a folder the Home board. The child starts there, and Home goes there.
-    /// Food has no "stop" or "no thank you", so Hum warns first (HUM-040).
     @MainActor
     func testMakeAFolderHome() {
         let app = launchHum(["-skipFirstRun", "-demoFolder", "-startInParent"])
         openBoards(app)
         boardRow(app, "Food").press(forDuration: 1.2)
         app.buttons["Make Home board"].firstMatch.tap()
-        let warning = app.alerts["Make Food the Home board?"]
-        XCTAssertTrue(warning.waitForExistence(timeout: 3), "Hum warns that Food lacks the protest tiles")
-        warning.buttons["Make Home anyway"].tap()
+        XCTAssertFalse(app.alerts.firstMatch.waitForExistence(timeout: 1), "The parent decides what's on Home: no warning")
         closeSheet(app)
         finishEditing(app)
         el(app, "home").tap()

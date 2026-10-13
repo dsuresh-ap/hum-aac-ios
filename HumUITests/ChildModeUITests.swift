@@ -41,6 +41,24 @@ final class ChildModeUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(size.height, 88)
     }
 
+    /// Scenario: a board taller than the screen scrolls down. A swipe that starts on a tile scrolls
+    /// without speaking; a tap on a tile that was below the fold speaks.
+    @MainActor
+    func testTallBoardScrollsAndScrollingNeverSpeaks() {
+        let app = launchHum(["-skipFirstRun", "-tallHome", "-demoHistory"])
+        XCTAssertTrue(el(app, "boardScroll").waitForExistence(timeout: 5), "A 12-row Home scrolls")
+        let bottom = el(app, "tile.bottom")
+        XCTAssertFalse(bottom.isHittable, "The last row starts below the fold")
+        let help = el(app, "tile.help")
+        for _ in 0..<4 where !bottom.isHittable {
+            (help.isHittable ? help : el(app, "boardScroll")).swipeUp()
+        }
+        XCTAssertTrue(bottom.isHittable, "Scrolling down reaches the last row")
+        XCTAssertFalse(app.buttons["Said: Help me. Say it again."].exists, "Starting a scroll on a tile must not speak it")
+        bottom.tap()
+        XCTAssertTrue(app.buttons["Said: All the way down! Say it again."].waitForExistence(timeout: 3), "A tap still speaks")
+    }
+
     /// Scenario: the child taps the same tile again and again (stimming). Every tap counts, and the
     /// parent sees one history entry with the count, not a wall of duplicates and never a warning.
     @MainActor

@@ -51,6 +51,8 @@ struct BoardSnapshot: Equatable {
     var cells: [[Cell?]]
     /// The phone layout's page (0 on bigger screens).
     var page = 0
+    /// True when this is a phone layout page. Pages are sized to fit, so they never scroll.
+    var paged = false
 }
 
 @MainActor
@@ -109,6 +111,13 @@ final class AppModel {
     }
 
     // MARK: Phone layout
+
+    /// The space the child's board grid last had on screen, and the editor's grid.
+    var childBoardArea: CGSize = .zero
+    var editorBoardArea: CGSize = .zero
+    /// The child's board area, or the editor's until the child's board has been shown. The grid size
+    /// picker and the editor's "Scrolls below here" line use it.
+    var boardArea: CGSize { childBoardArea != .zero ? childBoardArea : editorBoardArea }
 
     /// True on iPhone: boards too big for a phone screen are shown in their phone layout (`PhoneLayout`).
     var usesPhoneLayout = AppModel.isPhone
@@ -450,7 +459,7 @@ final class AppModel {
                 symbol: "➡️", image: nil, linkedBoardID: nil, linkedBoardExists: false, recordingKey: nil, nextPage: page + 1)
         }
         snapshot = BoardSnapshot(boardID: board.id, name: board.name, rows: rows, columns: columns, isHome: board.isHome,
-                                 cells: cells, page: page)
+                                 cells: cells, page: page, paged: phone)
         speech.prepareRecordings(recordings)
         prerender(board)
     }
