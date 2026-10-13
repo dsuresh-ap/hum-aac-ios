@@ -22,6 +22,7 @@ struct ParentEditorView: View {
     @State private var showHistory = false
     @State private var showAI = false
     @State private var showPaste = false
+    @State private var showFinder = false
     @State private var errorMessage: String?
     @State private var notice: EditNotice?
 
@@ -30,7 +31,7 @@ struct ParentEditorView: View {
     }
 
     private var anySheet: Bool {
-        editor != nil || showBoards || showSettings || showSharing || showGridSize || showHistory || showAI || showPaste
+        editor != nil || showBoards || showSettings || showSharing || showGridSize || showHistory || showAI || showPaste || showFinder
     }
 
     var body: some View {
@@ -85,6 +86,7 @@ struct ParentEditorView: View {
             .sheet(isPresented: $showHistory) { HistoryView() }
             .sheet(isPresented: $showAI) { AIHelperView() }
             .sheet(isPresented: $showPaste) { PastePhrasesSheet() }
+            .sheet(isPresented: $showFinder) { WordFinderView(purpose: .editor) { model.showInEditor($0) } }
             .alert("Can't do that", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -122,6 +124,7 @@ struct ParentEditorView: View {
             aiHelper: AIHelper.isSupportedOnThisDevice ? { showAI = true } : nil,
             gridSize: { showGridSize = true },
             foldersList: { showBoards = true },
+            find: { showFinder = true },
             back: model.editPath.isEmpty ? nil : { model.backInEditor() },
             home: { model.editBoard(boards.first(where: \.isHome)?.id) },
             history: { showHistory = true },
@@ -184,6 +187,14 @@ struct ParentEditorView: View {
             }
             .help("Go to another board, or manage Home and folders")
             .accessibilityIdentifier("boardsMenu")
+
+            Button {
+                showFinder = true
+            } label: {
+                Label("Find", systemImage: "magnifyingglass")
+            }
+            .help("Find a tile or folder")
+            .accessibilityIdentifier("findTile")
 
             Button {
                 model.store.undo()
@@ -330,6 +341,7 @@ private struct EditGrid: View {
                                     }
                                 }
                                 .frame(width: width, height: height)
+                                .id(byPosition["\(row),\(column)"]?.id)
                             }
                         }
                     }
@@ -344,9 +356,15 @@ private struct EditGrid: View {
                     grid
                 } else {
                     // Dragging a tile near an edge scrolls, so far spots can still be reached.
-                    ScrollView(axes) { grid }
-                        .scrollIndicators(.visible)
-                        .accessibilityIdentifier("editGridScroll")
+                    ScrollViewReader { proxy in
+                        ScrollView(axes) { grid }
+                            .scrollIndicators(.visible)
+                            .accessibilityIdentifier("editGridScroll")
+                            // A tile found with Find may be off screen.
+                            .task(id: model.editorHighlightID) {
+                                if let id = model.editorHighlightID { withAnimation { proxy.scrollTo(id, anchor: .center) } }
+                            }
+                    }
                 }
             }
         }
@@ -433,6 +451,13 @@ private struct EditGrid: View {
                                      return true
                                  }
                              })
+                    .overlay { if model.editorHighlightID == tile.id { FinderGlow() } }
+                    .task(id: model.editorHighlightID) {
+                        // The ring fades after a few seconds.
+                        guard model.editorHighlightID == tile.id else { return }
+                        try? await Task.sleep(for: .seconds(4))
+                        if model.editorHighlightID == tile.id { model.editorHighlightID = nil }
+                    }
                     .onTapGesture { editor = TileEditorRequest(kind: .edit(tileID: tile.id)) }
                     .draggable(tile.id.uuidString)
                     .contextMenu {

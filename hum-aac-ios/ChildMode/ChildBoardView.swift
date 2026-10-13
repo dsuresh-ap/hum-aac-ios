@@ -20,6 +20,7 @@ struct ChildBoardView: View {
     #endif
     /// Tighter margins on iPhone so 4 columns stay close to the 88 pt minimum tile width.
     private var padding: CGFloat { sizeClass == .compact ? 8 : Theme.gridPadding }
+    @State private var showFinder = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,6 +41,9 @@ struct ChildBoardView: View {
             }
         }
         .background(Theme.background)
+        .sheet(isPresented: $showFinder) {
+            WordFinderView(purpose: .child) { model.startFinding($0) }
+        }
         #if os(iOS)
         // The lock sits near the top edge, where iPadOS holds touches back for its own swipes, so the
         // 3-second hold started late and parents let go too early (BUGS.md, HUM-044). Hum's touches go
@@ -56,8 +60,10 @@ struct ChildBoardView: View {
     private var topBar: some View {
         HStack {
             HomeButton(isHome: model.snapshot?.isHome ?? true) { model.goHome() }
+                .overlay { if model.finderHint == .home { FinderGlow(cornerRadius: 16) } }
             // Back always has its own slot, so nothing shifts when it appears.
             BackButton(enabled: model.canGoBack) { model.goBack() }
+                .overlay { if model.finderHint == .back { FinderGlow(cornerRadius: 16) } }
             Spacer()
             if let snapshot = model.snapshot, !snapshot.isHome {
                 Text(snapshot.name)
@@ -66,6 +72,13 @@ struct ChildBoardView: View {
                     .accessibilityAddTraits(.isHeader)
             }
             Spacer()
+            if model.settings.showWordFinder {
+                if let target = model.finderTarget {
+                    // On a narrow iPhone only the ✕ shows, so the top bar never runs out of room.
+                    FindingPill(target: target, showsTarget: sizeClass != .compact) { model.stopFinding() }
+                }
+                FinderButton { showFinder = true }
+            }
             if model.settings.editGate == .holdLock {
                 EditGateButton { model.mode = .parent }
             } else {
@@ -92,11 +105,19 @@ struct BoardGrid: View {
             let layout = GridMetrics.layout(in: geo.size, rows: snapshot.rows, columns: snapshot.columns,
                                             spacing: spacing, canScroll: !snapshot.paged)
             if layout.scrolls {
-                ScrollView(.vertical) {
-                    grid(layout)
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical) {
+                        grid(layout)
+                    }
+                    .scrollIndicators(.hidden)
+                    .scrollBounceBehavior(.basedOnSize)
+                    // The word finder's next tile may be below the fold: bring it into view.
+                    .task(id: model.finderHint) {
+                        if case .tile(let id) = model.finderHint {
+                            withAnimation { proxy.scrollTo(id, anchor: .center) }
+                        }
+                    }
                 }
-                .scrollIndicators(.hidden)
-                .scrollBounceBehavior(.basedOnSize)
                 // A new board (or page) starts at the top. Sync updates to the same board keep the place.
                 .id("\(snapshot.boardID)-\(snapshot.page)")
                 .accessibilityIdentifier("boardScroll")
@@ -126,6 +147,7 @@ struct BoardGrid: View {
                             }
                             .id(cell.id)
                             .frame(width: layout.tileWidth, height: layout.tileHeight)
+                            .overlay { if model.finderHint == .tile(cell.id) { FinderGlow() } }
                         } else {
                             Color.clear
                                 .frame(width: layout.tileWidth, height: layout.tileHeight)
@@ -135,6 +157,50 @@ struct BoardGrid: View {
                 }
             }
         }
+    }
+}
+
+/// Opens the word finder. Same size and look as Back, in a fixed spot by the lock.
+private struct FinderButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(Theme.ink.opacity(0.85))
+                .frame(width: 72, height: 52)
+                .background(Theme.chrome, in: .rect(cornerRadius: 16, style: .continuous))
+                .background(alignment: .bottom) {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.chrome).brightness(-0.06).offset(y: 4)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Find a word")
+        .accessibilityIdentifier("wordFinder")
+    }
+}
+
+/// What the word finder is showing the way to, with a button to stop.
+private struct FindingPill: View {
+    let target: String
+    var showsTarget = true
+    let onStop: () -> Void
+
+    var body: some View {
+        Button(action: onStop) {
+            HStack(spacing: 6) {
+                if showsTarget { Text(target).lineLimit(1) }
+                Image(systemName: "xmark.circle.fill")
+            }
+            .font(.system(.headline, design: .rounded))
+            .foregroundStyle(Theme.ink.opacity(0.85))
+            .padding(.horizontal, 14).frame(height: 44)
+            .background(Color.accentColor.opacity(0.25), in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Stop finding \(target)")
+        .accessibilityIdentifier("stopFinding")
     }
 }
 
