@@ -102,3 +102,32 @@ struct ContentLanguageTests {
         #expect(Set(GLPRules.discouragedPhrases).subtracting(try keys("PraisePhrases")).isEmpty, "Run the generator in docs/LOCALIZATION.md")
     }
 }
+
+/// The app ships translations; these load a few through the real bundle, plural rules included.
+@Suite("Translations")
+struct TranslationTests {
+    nonisolated static let languages = ["de", "es", "fr", "it", "pt-BR", "zh-Hans"]
+
+    private func bundle(_ language: String) throws -> Bundle {
+        let path = try #require(Bundle.main.path(forResource: language, ofType: "lproj"), "\(language).lproj is missing")
+        return try #require(Bundle(path: path))
+    }
+
+    @Test(arguments: languages)
+    func everyLanguageShips(_ language: String) throws {
+        let strings = try bundle(language)
+        for table in ["Localizable", "EmojiKeywords", "PraisePhrases", "InfoPlist"] {
+            #expect(strings.path(forResource: table, ofType: "strings") != nil, "\(language): \(table) is missing")
+        }
+        // A string every language translates, so it must not come back as the English key.
+        #expect(strings.localizedString(forKey: "Grown-up settings", value: nil, table: nil) != "Grown-up settings")
+    }
+
+    @Test func pluralsFollowEachLanguage() throws {
+        let german = try bundle("de").localizedString(forKey: "%lld tiles across", value: nil, table: nil)
+        #expect(String.localizedStringWithFormat(german, 1) == "1 Feld pro Zeile")
+        #expect(String.localizedStringWithFormat(german, 3) == "3 Felder pro Zeile")
+        let chinese = try bundle("zh-Hans").localizedString(forKey: "%lld tiles across", value: nil, table: nil)
+        #expect(String.localizedStringWithFormat(chinese, 3) == "每行 3 张卡片")
+    }
+}

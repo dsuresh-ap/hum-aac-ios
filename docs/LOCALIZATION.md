@@ -3,6 +3,21 @@
 Hum's source language is US English. Everything a parent or child sees can be translated without touching
 code. This page says where each kind of text lives and the rules for translating it.
 
+## Languages
+
+Hum ships in English (source), German, French, Italian, Spanish, Brazilian Portuguese and Simplified
+Chinese. They're the biggest markets that both Apple Intelligence (the AI helper) and ARASAAC (the symbol
+search) cover. The translations were drafted with AI and checked by script (every placeholder and plural
+form), but not yet by native speakers. Before a release, ask a native-speaking parent or speech-language
+therapist to review at least: the sample tiles and spoken samples, `PraisePhrases.xcstrings`, and the
+Settings paths (Apple renames menus between versions).
+
+The starter board stays in English in every language for now; the first-run card says so.
+
+Two limits in Simplified Chinese: Chinese has no spaces between words, so the praise check only matches a
+tile whose whole text is the phrase, and emoji guesses from a tile's words rarely match. Search in the
+emoji picker works.
+
 ## Where the text is
 
 | What | File | How it gets there |
