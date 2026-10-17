@@ -61,7 +61,7 @@ struct TileView: View {
         .accessibilityElement()
         .accessibilityLabel(accessibilityText)
         .accessibilityAddTraits(.isButton)
-        .accessibilityHint(cell.linkedBoardID != nil ? Text("Opens a board") : Text(""))
+        .accessibilityHint(cell.linkedBoardID != nil ? Text("Opens a folder") : Text(verbatim: ""))
         .accessibilityAction { onTap(mach_absolute_time()) }
         .accessibilityIdentifier("tile.\(cell.label)")
     }
@@ -69,7 +69,7 @@ struct TileView: View {
     /// What VoiceOver reads: the phrase, or for a silent tile its label (and "folder" only if it opens one).
     private var accessibilityText: String {
         if !cell.spokenText.isEmpty { return cell.spokenText }
-        return cell.linkedBoardID != nil ? "\(cell.label), folder" : cell.label
+        return cell.linkedBoardID != nil ? String(localized: "\(cell.label), folder") : cell.label
     }
 
     private func touchGesture(size: CGSize) -> some Gesture {

@@ -24,23 +24,21 @@ struct ImportReport: Equatable {
         let s = summary
         var text: String
         if mode == .replace {
-            text = "Your boards are now the ones from “\(fileName)”. Undo brings back the old ones."
+            text = String(localized: "Your boards are now the ones from “\(fileName)”. Undo brings back the old ones.")
         } else if let home = s.homeFolderName {
-            text = "Added “\(fileName)” as a folder called “\(home)” on Home"
-            if s.newBoards > 1 { text += ", with \(s.newBoards - 1) more folder\(s.newBoards == 2 ? "" : "s") inside" }
-            text += "."
+            text = s.newBoards > 1
+                ? String(localized: "Added “\(fileName)” as a folder called “\(home)” on Home, with \(s.newBoards - 1) more folders inside.")
+                : String(localized: "Added “\(fileName)” as a folder called “\(home)” on Home.")
         } else if s.newBoards > 0, let folderName {
-            text = "Added \(plural(s.newTiles, "tile")) and a new folder, “\(folderName)”."
+            text = String(localized: "Added \(s.newTiles) tiles and a new folder, “\(folderName)”.")
         } else {
-            text = s.newTiles > 0 ? "Added \(plural(s.newTiles, "tile"))." : "Updated \(plural(s.changedTiles, "tile"))."
+            text = s.newTiles > 0 ? String(localized: "Added \(s.newTiles) tiles.") : String(localized: "Updated \(s.changedTiles) tiles.")
         }
         if s.unplacedTiles > 0 {
-            text += " \(plural(s.unplacedTiles, "tile")) \(s.unplacedTiles == 1 ? "waits" : "wait") below the board for a spot."
+            text += " " + String(localized: "\(s.unplacedTiles) tiles wait below the board for a spot.")
         }
         return text
     }
-
-    private func plural(_ n: Int, _ word: String) -> String { "\(n) \(word)\(n == 1 ? "" : "s")" }
 }
 
 /// A file that has been read and checked, waiting for the parent to choose Merge or Replace.
@@ -68,7 +66,7 @@ struct ImportService {
         defer { if access { url.stopAccessingSecurityScopedResource() } }
         let data: Data
         do { data = try Data(contentsOf: url) } catch {
-            throw HumConfigError.badPackage("Hum couldn't read the file.")
+            throw HumConfigError.badPackage(.unreadable)
         }
         return try prepare(data: data, fileName: url.lastPathComponent)
     }
@@ -102,10 +100,10 @@ struct ImportService {
 
         var message: String {
             switch self {
-            case .backingUp: "Saving a backup of your boards…"
-            case .pictures(_, 0): "Getting ready…"
-            case .pictures(let done, let total): "Preparing pictures… \(done) of \(total)"
-            case .saving: "Saving your boards…"
+            case .backingUp: String(localized: "Saving a backup of your boards…")
+            case .pictures(_, 0): String(localized: "Getting ready…")
+            case .pictures(let done, let total): String(localized: "Preparing pictures… \(done) of \(total)")
+            case .saving: String(localized: "Saving your boards…")
             }
         }
     }
@@ -254,7 +252,7 @@ struct ImportService {
         var (document, media) = ConfigBridge.export(boards: boards)
         if boardID == nil {
             document.settings = currentSettings()
-            document.name = "Hum setup"
+            document.name = String(localized: "Hum boards")
         }
         return (document, media)
     }
@@ -270,7 +268,7 @@ struct ImportService {
     static func exportFileName(boardName: String? = nil) -> String {
         let date = Date.now.formatted(.iso8601.year().month().day())
         if let boardName { return "\(boardName) \(date).hum" }
-        return "Hum setup \(date).hum"
+        return String(localized: "Hum boards \(date)", comment: "The name of an exported file; the date is like 2026-10-12.") + ".hum"
     }
 
     // MARK: Backups

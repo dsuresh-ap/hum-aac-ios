@@ -264,7 +264,7 @@ struct ZipTests {
 
     @Test func zipWithoutHumJSONIsFriendlyError() {
         let zip = ZipArchive.write([.init(path: "other.txt", data: json("x"))])
-        #expect(throws: HumConfigError.badPackage("It has no hum.json inside.")) { try HumConfigLoader.load(zip) }
+        #expect(throws: HumConfigError.badPackage(.noConfig)) { try HumConfigLoader.load(zip) }
     }
 }
 

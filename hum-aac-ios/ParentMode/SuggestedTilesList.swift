@@ -48,7 +48,7 @@ struct PastePhrasesSheet: View {
     @FocusState private var editing: Bool
 
     private var targetName: String {
-        model.editingBoardID.flatMap(model.fetchBoard)?.name ?? "Home"
+        model.editingBoardID.flatMap(model.fetchBoard)?.name ?? String(localized: "Home")
     }
 
     /// The same checks as AI output: no praise phrases, no duplicates, short labels, an emoji each.
@@ -79,7 +79,7 @@ struct PastePhrasesSheet: View {
                     Section("Tiles to add") {
                         SuggestedTilesList(tiles: result.tiles, selected: $selected, targetName: targetName)
                         ForEach(result.notes, id: \.self) { note in
-                            Label(note, systemImage: "info.circle").font(.footnote).foregroundStyle(.secondary)
+                            Label(note.localizedText, systemImage: "info.circle").font(.footnote).foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -117,10 +117,10 @@ struct PastePhrasesSheet: View {
     private func add(_ tiles: [ProposedTile]) {
         let chosen = tiles.indices.filter(selected.contains).map { tiles[$0] }
         do {
-            try ImportService(model: model).addSuggested(chosen, targetBoardID: model.editingBoardID, source: "Pasted phrases")
+            try ImportService(model: model).addSuggested(chosen, targetBoardID: model.editingBoardID, source: String(localized: "Pasted phrases"))
             dismiss()
         } catch {
-            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            errorMessage = friendlyMessage(for: error)
         }
     }
 }

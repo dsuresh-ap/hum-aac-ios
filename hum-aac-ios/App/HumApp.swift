@@ -13,6 +13,8 @@ struct HumApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        // Emoji search words and the praise check in Hum's language (HumConfig's own lists are English).
+        ContentLanguage.install()
         // UI tests start from a clean, in-memory store and fresh settings.
         let testing = ProcessInfo.processInfo.arguments.contains("-uiTesting")
         let defaults = testing ? UserDefaults(suiteName: "HumUITests-\(UUID().uuidString)")! : .standard

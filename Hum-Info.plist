@@ -6,7 +6,7 @@
 	<array>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>Hum Setup</string>
+			<string>Hum File</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>LSHandlerRank</key>
@@ -28,7 +28,7 @@
 				<string>public.data</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Hum Setup</string>
+			<string>Hum File</string>
 			<key>UTTypeIdentifier</key>
 			<string>com.dhananjaysuresh.hum-aac.hum</string>
 			<key>UTTypeTagSpecification</key>

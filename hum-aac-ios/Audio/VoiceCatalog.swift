@@ -64,11 +64,11 @@ enum VoiceCatalog {
     }
 
     static func qualityName(_ voice: AVSpeechSynthesisVoice) -> String {
-        if voice.voiceTraits.contains(.isPersonalVoice) { return "Personal Voice" }
+        if voice.voiceTraits.contains(.isPersonalVoice) { return String(localized: "Personal Voice") }
         switch voice.quality {
-        case .premium: return "Premium, most natural"
-        case .enhanced: return "Enhanced, natural"
-        default: return "Standard"
+        case .premium: return String(localized: "Premium, most natural", comment: "A voice's quality. Premium is Apple's name for it.")
+        case .enhanced: return String(localized: "Enhanced, natural", comment: "A voice's quality. Enhanced is Apple's name for it.")
+        default: return String(localized: "Standard", comment: "A voice's quality.")
         }
     }
 }
@@ -80,10 +80,10 @@ enum VoiceStyle: String, CaseIterable, Sendable {
 
     var title: String {
         switch self {
-        case .natural: "Natural"
-        case .younger: "Younger"
-        case .calm: "Calm"
-        case .custom: "Custom"
+        case .natural: String(localized: "Natural", comment: "A voice style.")
+        case .younger: String(localized: "Younger", comment: "A voice style: higher and a little slower.")
+        case .calm: String(localized: "Calm", comment: "A voice style.")
+        case .custom: String(localized: "Custom", comment: "A voice style: the parent's own speed and pitch.")
         }
     }
 

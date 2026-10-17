@@ -181,8 +181,14 @@ struct TileEditorSheet: View {
     }
 
     private var title: String {
-        if existing != nil { return link == .none ? "Edit tile" : "Edit folder" }
-        return folderFirst ? "New folder" : "New tile"
+        if existing != nil { return link == .none ? String(localized: "Edit tile") : String(localized: "Edit folder") }
+        return folderFirst ? String(localized: "New folder") : String(localized: "New tile")
+    }
+
+    /// What VoiceOver reads for the picture square.
+    private var pictureAccessibilityLabel: String {
+        if imageData != nil { return String(localized: "Picture: photo") }
+        return shownSymbol.isEmpty ? String(localized: "Picture: none") : String(localized: "Picture: \(shownSymbol)")
     }
 
     // MARK: Sections
@@ -208,7 +214,7 @@ struct TileEditorSheet: View {
                     setPicture(processed)
                     return true
                 }
-                .accessibilityLabel(imageData == nil ? "Picture: \(shownSymbol.isEmpty ? "none" : shownSymbol)" : "Picture: photo")
+                .accessibilityLabel(pictureAccessibilityLabel)
 
                 VStack(alignment: .leading, spacing: 8) {
                     #if os(iOS)
@@ -336,7 +342,8 @@ struct TileEditorSheet: View {
                         model.speech.engine.restart()
                     }
                     .foregroundStyle(.red)
-                    Text(String(format: "%.1f s", recorder.elapsed)).monospacedDigit().foregroundStyle(.secondary)
+                    Text(Duration.seconds(recorder.elapsed).formatted(.units(allowed: [.seconds], width: .narrow, fractionalPart: .show(length: 1))))
+                        .monospacedDigit().foregroundStyle(.secondary)
                 } else {
                     Button(audioData == nil ? "Record your voice" : "Record again", systemImage: "mic.circle") {
                         Task { await recorder.start() }
@@ -356,7 +363,7 @@ struct TileEditorSheet: View {
                     .font(.footnote).foregroundStyle(.orange)
             }
         } footer: {
-            Text("Optional. Record the phrase with the same tune your child hears. The tile plays your recording instead of the computer voice. It stays on this device.")
+            Text("Optional. Record the phrase with the same tune and rhythm your child knows. The tile plays your recording instead of the computer voice. It stays on this device.")
         }
     }
 
@@ -369,7 +376,7 @@ struct TileEditorSheet: View {
                 if !others.isEmpty {
                     Divider()
                     ForEach(others) { b in
-                        Text(b.isHome ? "\(b.name) (Home)" : b.name).tag(Link.board(b.id))
+                        Text(b.isHome ? String(localized: "\(b.name) (Home)") : b.name).tag(Link.board(b.id))
                     }
                 }
             }
@@ -381,7 +388,7 @@ struct TileEditorSheet: View {
     }
 
     private var newFolderTitle: String {
-        hasLabel ? "A new folder: \(BoardStore.folderName(from: label))" : "A new folder"
+        hasLabel ? String(localized: "A new folder: \(BoardStore.folderName(from: label))") : String(localized: "A new folder")
     }
 
     private var moreSection: some View {

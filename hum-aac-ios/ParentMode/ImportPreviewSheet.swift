@@ -37,7 +37,7 @@ struct ImportPreviewSheet: View {
                 }
 
                 Section {
-                    Text(plan.summary.sentence)
+                    Text(plan.summary.localizedSentence)
                         .font(.title3.weight(.semibold))
                         .accessibilityIdentifier("importSummary")
                 } header: {
@@ -45,8 +45,8 @@ struct ImportPreviewSheet: View {
                 }
 
                 Section {
-                    Picker("How", selection: $mode) {
-                        Text("Merge").tag(MergePlanner.Mode.merge)
+                    Picker("How to import", selection: $mode) {
+                        Text("Add to my boards").tag(MergePlanner.Mode.merge)
                         Text("Replace everything").tag(MergePlanner.Mode.replace)
                     }
                     .pickerStyle(.segmented)
@@ -75,17 +75,17 @@ struct ImportPreviewSheet: View {
                 if !warnings.isEmpty {
                     Section("Good to know") {
                         ForEach(Array(warnings.prefix(8).enumerated()), id: \.offset) { _, issue in
-                            Label(issue.message, systemImage: "info.circle").font(.callout)
+                            Label(issue.localizedMessage, systemImage: "info.circle").font(.callout)
                         }
                     }
                 }
             }
             .formStyle(.grouped)
-            .navigationTitle("Import a setup")
+            .navigationTitle("Import boards")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(progress != nil) }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(mode == .merge ? "Merge" : "Replace…") {
+                    Button(mode == .merge ? "Add" : "Replace…") {
                         if mode == .merge { apply() } else { confirmReplace = true }
                     }
                     .disabled(progress != nil)
@@ -95,7 +95,7 @@ struct ImportPreviewSheet: View {
             .confirmationDialog("Replace all your boards?", isPresented: $confirmReplace, titleVisibility: .visible) {
                 Button("Replace everything", role: .destructive) { apply() }
             } message: {
-                Text("\(pending.replace.summary.sentence) A backup of your current boards is saved first, and you can undo.")
+                Text("\(pending.replace.summary.localizedSentence) A backup of your current boards is saved first, and you can undo.")
             }
             .alert("Import didn't work", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK", role: .cancel) {}
@@ -119,10 +119,10 @@ struct ImportPreviewSheet: View {
     /// One line per tile: “Let's go!”, or “snack: Let's have a snack.”, or “Chat (opens a folder)”.
     static func describe(_ tile: HumTile) -> String {
         let phrase = tile.spokenText.trimmingCharacters(in: .whitespaces)
-        if phrase.isEmpty { return tile.linkedBoardID != nil ? "\(tile.label) (opens a folder)" : tile.label }
+        if phrase.isEmpty { return tile.linkedBoardID != nil ? String(localized: "\(tile.label) (opens a folder)") : tile.label }
         let bare = { (text: String) in text.trimmingCharacters(in: .punctuationCharacters).lowercased() }
-        if bare(phrase) == bare(tile.label) { return "“\(phrase)”" }
-        return "\(tile.label): “\(phrase)”"
+        if bare(phrase) == bare(tile.label) { return String(localized: "“\(phrase)”", comment: "Words in quotes.") }
+        return String(localized: "\(tile.label): “\(phrase)”", comment: "A tile's label, then its phrase in quotes.")
     }
 
     private func apply() {
@@ -134,7 +134,7 @@ struct ImportPreviewSheet: View {
                 try await ImportService(model: model).apply(pending, mode: mode) { progress = $0 }
                 dismiss()
             } catch {
-                errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                errorMessage = friendlyMessage(for: error)
             }
         }
     }

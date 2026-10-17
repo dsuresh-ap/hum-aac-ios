@@ -65,24 +65,24 @@ enum AIHelper {
             if #available(iOS 27.0, macOS 27.0, *) {
                 switch PrivateCloudComputeLanguageModel().availability {
                 case .available: return .available
-                case .unavailable(.deviceNotEligible): return .unavailable("This device can't use Private Cloud Compute.")
-                case .unavailable: return .unavailable("Private Cloud Compute isn't ready yet. Check that Apple Intelligence is on and you're online.")
+                case .unavailable(.deviceNotEligible): return .unavailable(String(localized: "This device can't use Private Cloud Compute."))
+                case .unavailable: return .unavailable(String(localized: "Private Cloud Compute isn't ready yet. Check that Apple Intelligence is on and you're online."))
                 }
             }
             #endif
-            return .unavailable("Private Cloud Compute needs iOS, iPadOS or macOS 27.")
+            return .unavailable(String(localized: "Private Cloud Compute needs iOS, iPadOS or macOS 27 or later."))
         }
         if #available(iOS 26.0, macOS 26.0, *) {
             switch SystemLanguageModel.default.availability {
             case .available: return .available
-            case .unavailable(.deviceNotEligible): return .unavailable("This device doesn't support Apple Intelligence.")
-            case .unavailable(.appleIntelligenceNotEnabled): return .unavailable("Turn on Apple Intelligence in Settings to use the helper.")
-            case .unavailable(.modelNotReady): return .unavailable("Apple Intelligence is still getting ready (the model may be downloading). Try again later.")
-            case .unavailable: return .unavailable("Apple Intelligence isn't available right now.")
+            case .unavailable(.deviceNotEligible): return .unavailable(String(localized: "This device doesn't support Apple Intelligence."))
+            case .unavailable(.appleIntelligenceNotEnabled): return .unavailable(String(localized: "Turn on Apple Intelligence in Settings to use the helper."))
+            case .unavailable(.modelNotReady): return .unavailable(String(localized: "Apple Intelligence is still getting ready (it may still be downloading). Try again later."))
+            case .unavailable: return .unavailable(String(localized: "Apple Intelligence isn't available right now."))
             }
         }
         #endif
-        return .unavailable("The AI helper needs iOS, iPadOS or macOS 26 or later with Apple Intelligence.")
+        return .unavailable(String(localized: "The AI helper needs iOS, iPadOS or macOS 26 or later with Apple Intelligence."))
     }
 
     /// True when at least one mode can run on this device (the helper is hidden otherwise).
@@ -138,9 +138,9 @@ enum AIHelper {
             result = try await generate(shortPrompt, mode)
         }
         let checked = ProposalChecker.check(result.tiles, parentPhrases: parentPhrases, existing: existing)
-        var notes = checked.notes
+        var notes = checked.notes.map(\.localizedText)
         if result.usedOnDeviceFallback {
-            notes.insert("Private Cloud Compute couldn't be reached, so these suggestions came from the model on this device.", at: 0)
+            notes.insert(String(localized: "Private Cloud Compute couldn't be reached, so these suggestions were made on this device instead."), at: 0)
         }
         return Proposal(tiles: checked.tiles, notes: notes, parentPhrases: parentPhrases)
     }
@@ -194,17 +194,19 @@ enum AIHelper {
 
         var errorDescription: String? {
             switch self {
-            case .unavailable: return "The AI helper isn't available on this device right now."
-            case .stillDownloading: return "Apple Intelligence is still downloading on this device. Try again a little later."
-            case .contextTooLong: return "That request is too long for the helper. Try a shorter description or fewer phrases at once."
-            case .cantHelpWithThat: return "The helper couldn't make suggestions for that. Try describing what your child says or loves in a different way."
-            case .unsupportedLanguage: return "The helper doesn't support this language yet."
-            case .busy: return "The helper is busy. Try again in a moment."
+            case .unavailable: return String(localized: "The AI helper isn't available on this device right now.")
+            case .stillDownloading: return String(localized: "Apple Intelligence is still downloading on this device. Try again a little later.")
+            case .contextTooLong: return String(localized: "That's too much for the helper at once. Try a shorter description or fewer phrases.")
+            case .cantHelpWithThat: return String(localized: "The helper couldn't make suggestions for that. Try describing what your child says or loves in a different way.")
+            case .unsupportedLanguage: return String(localized: "The helper doesn't support this language yet.")
+            case .busy: return String(localized: "The helper is busy. Try again in a moment.")
             case .quotaReached(let date):
-                if let date { return "You've used today's Private Cloud Compute requests. They refresh \(date.formatted(.relative(presentation: .named))). You can switch to \"On this device\" now." }
-                return "You've used today's Private Cloud Compute requests. You can switch to \"On this device\" now."
-            case .cloudUnreachable: return "Private Cloud Compute couldn't be reached, and the model on this device isn't available either. Check your connection and try again."
-            case .other: return "Something went wrong. Please try again, or try a shorter request."
+                if let date {
+                    return String(localized: "You've used today's Private Cloud Compute requests. They refresh \(date.formatted(.relative(presentation: .named))). You can switch to “On this device” now.")
+                }
+                return String(localized: "You've used today's Private Cloud Compute requests. You can switch to “On this device” now.")
+            case .cloudUnreachable: return String(localized: "Private Cloud Compute couldn't be reached, and the helper on this device isn't available either. Check your internet connection and try again.")
+            case .other: return String(localized: "Something went wrong. Please try again, or ask for less at once.")
             }
         }
     }

@@ -39,10 +39,10 @@ public enum HumConfigLoader {
         var json = try JSONValue.parse(data)
 
         guard case .object = json else {
-            throw HumConfigError.invalid([.init(.error, "The file should start with { and contain \"formatVersion\" and \"boards\".")])
+            throw HumConfigError.invalid([.init(.error, .notAnObject)])
         }
         guard let version = json["formatVersion"]?.intValue else {
-            throw HumConfigError.invalid([.init(.error, "The file has no 'formatVersion'. Add \"formatVersion\": 1 at the top.", path: "/formatVersion")])
+            throw HumConfigError.invalid([.init(.error, .noFormatVersion, path: "/formatVersion")])
         }
         if version > HumDocument.currentFormatVersion {
             throw HumConfigError.newerFormat(found: version, supported: HumDocument.currentFormatVersion)
@@ -58,7 +58,7 @@ public enum HumConfigLoader {
             document = try JSONDecoder().decode(HumDocument.self, from: migrated)
         } catch {
             // Should not happen after schema validation; still never crash.
-            throw HumConfigError.invalid([.init(.error, "The file has a shape Hum doesn't understand.")])
+            throw HumConfigError.invalid([.init(.error, .unknownShape)])
         }
 
         let issues = HumValidator.semanticIssues(in: document)
@@ -85,7 +85,7 @@ public enum HumConfigLoader {
         for board in doc.boards {
             for tile in board.tiles {
                 for path in [tile.image, tile.audio].compactMap({ $0 }) where media[path] == nil {
-                    issues.append(.init(.warning, "Tile '\(tile.label)' points to '\(path)', which isn't in the file. The tile still works without it."))
+                    issues.append(.init(.warning, .missingMedia(tile: tile.label, path: path)))
                 }
             }
         }
@@ -98,7 +98,7 @@ public enum HumConfigLoader {
 enum Migrations {
     static func migrate(_ json: JSONValue, from version: Int) throws -> JSONValue {
         guard version >= 1 else {
-            throw HumConfigError.invalid([.init(.error, "Format version \(version) is not supported.", path: "/formatVersion")])
+            throw HumConfigError.invalid([.init(.error, .unsupportedVersion(version), path: "/formatVersion")])
         }
         // Version 1 is current. Future steps go here, e.g.:
         // var json = json

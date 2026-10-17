@@ -19,8 +19,8 @@ struct TileEntity: AppEntity {
     let boardName: String
 
     var displayRepresentation: DisplayRepresentation {
-        let said = spokenText.isEmpty ? "Recorded voice" : "“\(spokenText)”"
-        return DisplayRepresentation(title: "\(label)", subtitle: "\(said) · \(boardName)")
+        let subtitle: LocalizedStringResource = spokenText.isEmpty ? "Recorded voice · \(boardName)" : "“\(spokenText)” · \(boardName)"
+        return DisplayRepresentation(title: "\(label)", subtitle: subtitle)
     }
 
     init(_ tile: Tile) {
@@ -110,7 +110,7 @@ struct SayPhraseIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         guard await model.say(tileID: tile.id) else {
-            throw IntentError.message("That tile isn't in Hum any more, or has nothing to say.")
+            throw IntentError.message("That tile isn't in Hum anymore, or has nothing to say.")
         }
         return .result()
     }
@@ -133,7 +133,7 @@ struct OpenBoardIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         guard model.showFromShortcut(boardID: board.id) else {
-            throw IntentError.message("That board isn't in Hum any more.")
+            throw IntentError.message("That board isn't in Hum anymore.")
         }
         return .result()
     }

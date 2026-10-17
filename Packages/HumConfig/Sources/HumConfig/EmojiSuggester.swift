@@ -30,6 +30,7 @@ public enum EmojiSuggester {
         for (text, weight) in [(label, 3), (spokenText, 2)] {
             let words = tokens(text)
             // Two-word keywords first ("ice cream", "all done"), then single words.
+            let index = self.index
             for pair in zip(words, words.dropFirst()) {
                 for emoji in index["\(pair.0) \(pair.1)"] ?? [] { add(emoji, weight * 2) }
             }
@@ -53,15 +54,32 @@ public enum EmojiSuggester {
         suggestions(label: label, spokenText: spokenText, limit: 1).first
     }
 
-    /// Entries whose keywords start with the search text (for the picker's search field).
+    /// Entries whose keywords start with the search text (for the picker's search field). Searches the
+    /// English keywords and any added with `addKeywords`.
     public static func search(_ text: String) -> [String] {
         let query = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return [] }
+        let extra = added.read { $0.keywords }
         var seen = Set<String>()
         return categories.flatMap(\.entries)
-            .filter { entry in entry.keywords.contains { $0.hasPrefix(query) } }
+            .filter { entry in (entry.keywords + (extra[entry.emoji] ?? [])).contains { $0.hasPrefix(query) } }
             .map(\.emoji)
             .filter { seen.insert($0).inserted }
+    }
+
+    /// Adds search words in another language, e.g. `["🧃": ["zumo", "jugo"]]`. The app calls this once at
+    /// launch with its translated keywords (HumConfig itself only has English). Only emoji in `categories`
+    /// are used; the words count for the picker's search and for suggestions from a tile's words.
+    public static func addKeywords(_ keywords: [String: [String]]) {
+        let known = Set(categories.flatMap(\.entries).map(\.emoji))
+        added.write { store in
+            for (emoji, words) in keywords where known.contains(emoji) {
+                for word in words.map({ $0.lowercased().trimmingCharacters(in: .whitespaces) }) where !word.isEmpty {
+                    if !(store.keywords[emoji]?.contains(word) ?? false) { store.keywords[emoji, default: []].append(word) }
+                    if !(store.index[word]?.contains(emoji) ?? false) { store.index[word, default: []].append(emoji) }
+                }
+            }
+        }
     }
 
     /// True when `text` is exactly one emoji (what a tile's `symbol` should be).
@@ -103,8 +121,17 @@ public enum EmojiSuggester {
         "do", "can", "have", "let", "we", "us", "be", "go's",
     ]
 
-    /// keyword → emoji, built once from `categories`.
-    static let index: [String: [String]] = {
+    /// keyword → emoji, from `categories` and the words added with `addKeywords`.
+    static var index: [String: [String]] { added.read { $0.index } }
+
+    /// The English keywords, plus words in other languages added by the app. Locked, because the
+    /// suggester runs on any thread.
+    private struct Added {
+        var keywords: [String: [String]] = [:]
+        var index: [String: [String]]
+    }
+
+    private static let added = Locked(Added(index: {
         var map: [String: [String]] = [:]
         for entry in categories.flatMap(\.entries) {
             for keyword in entry.keywords where !(map[keyword]?.contains(entry.emoji) ?? false) {
@@ -112,7 +139,7 @@ public enum EmojiSuggester {
             }
         }
         return map
-    }()
+    }()))
 
     // MARK: The emoji set
 

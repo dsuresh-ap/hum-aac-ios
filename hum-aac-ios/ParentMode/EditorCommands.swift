@@ -56,7 +56,7 @@ struct EditorMenuCommands: Commands {
             Button("Home & Folders…") { editor?.foldersList() }
                 .keyboardShortcut("b", modifiers: [.command, .shift])
                 .disabled(editor == nil)
-            Button("Grid Size…") { editor?.gridSize() }
+            Button("Tile Size…") { editor?.gridSize() }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
                 .disabled(editor == nil)
             Divider()
@@ -66,7 +66,7 @@ struct EditorMenuCommands: Commands {
             Button("History") { editor?.history() }
                 .keyboardShortcut("y")
                 .disabled(editor == nil)
-            Button("Setup & Sharing…") { editor?.sharing() }
+            Button("Share & Sync…") { editor?.sharing() }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
                 .disabled(editor == nil)
             Divider()

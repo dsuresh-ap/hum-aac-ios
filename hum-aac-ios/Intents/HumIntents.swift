@@ -37,32 +37,32 @@ struct AddTileIntent: AppIntent {
             throw IntentError.message("Hum tiles are the child's own voice, so praise and instruction phrases aren't added.")
         }
         let document = try await MainActor.run { try IntentSupport.documentAddingTile(text: text, label: label, boardName: boardName) }
-        try PendingChanges.enqueue(try document.encodedJSON(), name: "From Shortcuts: add “\(text)”.json")
+        try PendingChanges.enqueue(try document.encodedJSON(), name: String(localized: "From Shortcuts: add “\(text)”") + ".json")
         return .result(dialog: "Ready. A grown-up will see “\(text)” the next time they open Hum's grown-up settings.")
     }
 }
 
 struct ImportHumConfigIntent: AppIntent {
-    static let title: LocalizedStringResource = "Import a Hum Setup"
-    static let description = IntentDescription("Queues a .hum or hum.json file. A grown-up sees a preview and chooses Merge or Replace in Hum.")
+    static let title: LocalizedStringResource = "Import Hum Boards"
+    static let description = IntentDescription("Gets a Hum file ready to import. A grown-up sees a preview in Hum and chooses to add it to their boards or replace everything.")
 
     // Type identifiers (not UTTypes) so this works on iOS 17 / macOS 14.
-    @Parameter(title: "Setup file", supportedTypeIdentifiers: ["com.dhananjaysuresh.hum-aac.hum", "public.json", "public.zip-archive"])
+    @Parameter(title: "Hum file", supportedTypeIdentifiers: ["com.dhananjaysuresh.hum-aac.hum", "public.json", "public.zip-archive"])
     var file: IntentFile
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let issues = HumConfigLoader.validate(file.data)
         if let error = issues.first(where: { $0.severity == .error }) {
-            throw IntentError.message("This setup has a problem: \(error.message)")
+            throw IntentError.message("This Hum file has a problem: \(error.localizedMessage)")
         }
-        try PendingChanges.enqueue(file.data, name: "From Shortcuts: \(file.filename)")
+        try PendingChanges.enqueue(file.data, name: String(localized: "From Shortcuts: \(file.filename)"))
         return .result(dialog: "Ready. A grown-up will see a preview the next time they open Hum's grown-up settings.")
     }
 }
 
 struct ExportHumSetupIntent: AppIntent {
-    static let title: LocalizedStringResource = "Export Hum Setup"
-    static let description = IntentDescription("Makes a .hum file with all boards, photos and recordings.")
+    static let title: LocalizedStringResource = "Export Hum Boards"
+    static let description = IntentDescription("Makes a Hum file with all boards, photos and recordings.")
 
     func perform() async throws -> some IntentResult & ReturnsValue<IntentFile> {
         let (data, name) = try await MainActor.run { (try IntentSupport.exportAll(), ImportService.exportFileName()) }
@@ -76,14 +76,14 @@ struct HumShortcuts: AppShortcutsProvider {
         AppShortcut(intent: AddTileIntent(), phrases: ["Add a tile to \(.applicationName)"], shortTitle: "Add a Tile", systemImageName: "plus.square")
         AppShortcut(intent: SayPhraseIntent(), phrases: ["Say a phrase with \(.applicationName)"], shortTitle: "Say a Phrase", systemImageName: "speaker.wave.2")
         AppShortcut(intent: OpenBoardIntent(), phrases: ["Open a board in \(.applicationName)"], shortTitle: "Open a Board", systemImageName: "square.grid.2x2")
-        AppShortcut(intent: ExportHumSetupIntent(), phrases: ["Export my \(.applicationName) setup"], shortTitle: "Export Setup", systemImageName: "square.and.arrow.up")
+        AppShortcut(intent: ExportHumSetupIntent(), phrases: ["Export my \(.applicationName) boards"], shortTitle: "Export Boards", systemImageName: "square.and.arrow.up")
     }
 }
 
 enum IntentError: Error, CustomLocalizedStringResourceConvertible {
-    case message(String)
+    case message(LocalizedStringResource)
     var localizedStringResource: LocalizedStringResource {
-        switch self { case .message(let text): return "\(text)" }
+        switch self { case .message(let text): return text }
     }
 }
 

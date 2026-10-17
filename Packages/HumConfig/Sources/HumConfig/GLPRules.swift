@@ -31,11 +31,21 @@ public enum GLPRules {
         return String(kept).split(separator: " ").joined(separator: " ")
     }
 
-    /// Returns the discouraged phrase found in `text`, if any. Matches whole words only.
+    /// Returns the discouraged phrase found in `text`, if any. Matches whole words only. Checks the
+    /// English list and any phrases added with `addDiscouragedPhrases`.
     public static func discouragedPhrase(in text: String) -> String? {
         let padded = " " + normalize(text) + " "
-        return discouragedPhrases.first { padded.contains(" " + $0 + " ") }
+        return (discouragedPhrases + added.read { $0 }).first { padded.contains(" " + $0 + " ") }
     }
+
+    /// Adds the same kinds of phrases in another language ("buen trabajo", "manos quietas"). The app
+    /// calls this once at launch with its translated list (HumConfig itself only has English).
+    public static func addDiscouragedPhrases(_ phrases: [String]) {
+        let cleaned = phrases.map(normalize).filter { !$0.isEmpty }
+        added.write { list in list += cleaned.filter { !list.contains($0) && !discouragedPhrases.contains($0) } }
+    }
+
+    private static let added = Locked<[String]>([])
 
     /// True if `text` is a smaller piece of `gestalt` (a run of its words, but not the whole thing).
     /// Used to catch AI output that split one gestalt into several tiles.

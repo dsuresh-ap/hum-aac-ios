@@ -106,7 +106,7 @@ final class ScreenTourTests: XCTestCase {
         shot(app, "43 history")
         closeSheet(app)
 
-        tapToolbar(app, "setupSharing", label: "Setup & sharing")
+        tapToolbar(app, "setupSharing", label: "Share & sync")
         shot(app, "44 setup and sharing")
         app.swipeUp()
         shot(app, "45 setup and sharing bottom")

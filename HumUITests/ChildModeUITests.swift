@@ -138,11 +138,11 @@ final class ChildModeUITests: XCTestCase {
         finishEditing(app)
         el(app, "tile.let's go").tap()
         el(app, "tile.outside").tap()
-        let strip = app.buttons["Speak all: Let's go! I want to go outside"]
+        let strip = app.buttons["Say them all: Let's go! I want to go outside"]
         XCTAssertTrue(strip.waitForExistence(timeout: 3))
         strip.tap()
-        app.buttons["Clear"].firstMatch.tap()
-        XCTAssertTrue(app.buttons["Speak all: "].waitForExistence(timeout: 3), "Clear empties the strip")
+        app.buttons["Clear the sentence"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["Say them all: "].waitForExistence(timeout: 3), "Clear empties the strip")
     }
 
     /// Scenario: with labels off, tiles show only the picture, and VoiceOver still reads the phrase.

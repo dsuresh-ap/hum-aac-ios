@@ -34,7 +34,7 @@ every change in the test into one step.
 
 | Suite | Scenarios |
 |-------|-----------|
-| `FirstRunUITests` | Empty board gets the chosen size; Back keeps choices; Skip voice; starter card says it's 5 × 4 (HUM-003); cancelling “Import a setup” keeps setup open (HUM-004); starter grows to a big grid and keeps protest tiles on Home; choosing a voice. |
+| `FirstRunUITests` | Empty board gets the chosen size; Back keeps choices; Skip voice; starter card says it's 5 × 4 (HUM-003); cancelling “Import boards” keeps setup open (HUM-004); starter grows to a big grid and keeps protest tiles on Home; choosing a voice. |
 | `ChildModeUITests` | Protest tiles as big as request tiles; 88 pt minimum; 10 fast taps all counted, no warning; folder speaks + opens, Home returns; Home and lock never move; return-Home setting; hidden tile leaves a hole and nothing moves; sentence strip; labels off; VoiceOver labels; two-finger gate hides the lock; a 3.5 s hold opens grown-up mode on iPad too (HUM-044); history box (HUM-021). |
 | `EditorUITests` | Label follows phrase, Save needs words (HUM-018); new tile reaches the child; editing keeps the spot; praise warning; Cancel asks; delete confirms + Undo (HUM-002); menu delete confirms (HUM-008); duplicate; move to folder; folder tile tap edits (HUM-006); Back from a folder; grow grid; bigger tiles re-flow with no dialog or tray, rows never cut tiles off; no jargon warning (HUM-005). |
 | `BoardsUITests` | Make a folder; rename folder renames its tile (HUM-039); duplicate flagged unreachable; delete folder keeps its tile; make a folder Home warns (HUM-040). |

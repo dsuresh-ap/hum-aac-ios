@@ -46,11 +46,11 @@ struct WordFinderView: View {
                     Section {
                         ForEach(related) { row($0) }
                     } header: {
-                        Text("Might be related")
+                        Text("Maybe one of these")
                     }
                 }
                 if results.isEmpty && !WordFinder.normalized(query).isEmpty && searched == query {
-                    Text("Nothing found for “\(query)”.").foregroundStyle(.secondary)
+                    Text("Can't find “\(query)”.").foregroundStyle(.secondary)
                 }
             }
             .navigationTitle(purpose == .child ? "Find" : "Find a tile")
@@ -107,7 +107,7 @@ struct WordFinderView: View {
                        WordFinder.normalized(result.spokenText) != WordFinder.normalized(result.label) {
                         Text("“\(result.spokenText)”").font(big ? .body : .subheadline).foregroundStyle(.secondary)
                     }
-                    Text(result.route == nil ? "\(result.pathText) (not in a folder on Home)" : result.pathText)
+                    Text(result.route == nil ? String(localized: "\(result.pathText) (no way to get here from Home)") : result.pathText)
                         .font(big ? .callout : .caption).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)

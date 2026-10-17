@@ -220,7 +220,7 @@ final class AppModel {
         do {
             pendingImport = try ImportService(model: self).prepare(url: url)
         } catch {
-            importError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            importError = friendlyMessage(for: error)
         }
     }
 
@@ -267,7 +267,7 @@ final class AppModel {
             try? loadStarterBoard()
         case .empty(let rows, let columns):
             if ((try? context.fetchCount(FetchDescriptor<Board>())) ?? 0) == 0 {
-                store.createBoard(name: "Home", rows: rows, columns: columns)
+                store.createBoard(name: String(localized: "Home"), rows: rows, columns: columns)
             }
         }
         settings.hasCompletedSetup = true
@@ -286,9 +286,10 @@ final class AppModel {
         goHome()
     }
 
-    /// The starter board ships as `starter.hum.json` and loads through the normal import path.
+    /// The starter board ships as `starter.hum.json` (and `starter.<language>.hum.json` for languages that
+    /// have their own) and loads through the normal import path.
     func loadStarterBoard() throws {
-        guard let url = Bundle.main.url(forResource: "starter.hum", withExtension: "json") else { return }
+        guard let url = StarterBoard.url else { return }
         let loaded = try HumConfigLoader.load(try Data(contentsOf: url))
         let existing = ConfigBridge.export(boards: store.boards()).document
         let plan = MergePlanner.plan(existing: existing, incoming: loaded.document, mode: .merge)
@@ -532,7 +533,7 @@ final class AppModel {
         }
         if phone, page < pageCount - 1 {
             cells[PhoneLayout.rows - 1][PhoneLayout.columns - 1] = BoardSnapshot.Cell(
-                id: Self.moreCellID(board.id, page: page), label: "More", spokenText: "", function: nil, colorHex: nil,
+                id: Self.moreCellID(board.id, page: page), label: String(localized: "More", comment: "The tile that turns to the next page of a board on iPhone."), spokenText: "", function: nil, colorHex: nil,
                 symbol: "➡️", image: nil, linkedBoardID: nil, linkedBoardExists: false, recordingKey: nil, nextPage: page + 1)
         }
         snapshot = BoardSnapshot(boardID: board.id, name: board.name, rows: rows, columns: columns, isHome: board.isHome,

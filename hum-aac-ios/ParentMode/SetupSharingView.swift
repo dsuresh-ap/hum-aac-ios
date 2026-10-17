@@ -70,10 +70,10 @@ struct SetupSharingView: View {
                 }
 
                 Section {
-                    Button("Import a setup…", systemImage: "square.and.arrow.down") { showImporter = true }
+                    Button("Import boards from a file…", systemImage: "square.and.arrow.down") { showImporter = true }
                         .accessibilityIdentifier("importSetup")
                     #if os(macOS)
-                    Text("You can also drag a .hum file onto this window.")
+                    Text("You can also drag a Hum file onto this window.")
                         .font(.footnote).foregroundStyle(.secondary)
                     #endif
                 } footer: {
@@ -90,15 +90,15 @@ struct SetupSharingView: View {
                 }
 
                 Section {
-                    Button("How to make boards with a coding agent", systemImage: "doc.text") {
+                    Button("Make boards with an AI assistant", systemImage: "doc.text") {
                         openURL(HumLinks.configGuide)
                     }
                 } footer: {
-                    Text("Hum's setup file is an open format. You can write or edit boards in any text editor or with an AI coding agent, then import them here.")
+                    Text("Hum files use an open format, so you (or an AI assistant) can write boards on a computer, then import them here. The guide opens in your web browser.")
                 }
             }
             .formStyle(.grouped)
-            .navigationTitle("Setup & sharing")
+            .navigationTitle("Share & sync")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
@@ -237,9 +237,12 @@ private struct SyncStatusRows: View {
     }
 
     private func describe(_ event: SyncMonitor.EventInfo?, busy: Bool) -> String {
-        if busy { return "Syncing…" }
-        guard let event else { return "Not yet since Hum opened" }
-        let when = event.date.formatted(.relative(presentation: .named))
-        return event.succeeded ? when.prefix(1).uppercased() + when.dropFirst() : "Failed \(when)"
+        if busy { return String(localized: "Syncing…") }
+        guard let event else { return String(localized: "Not yet since Hum opened") }
+        if event.succeeded {
+            // On its own, so it starts with a capital ("Yesterday") in languages that have them.
+            return event.date.formatted(Date.RelativeFormatStyle(presentation: .named, capitalizationContext: .beginningOfSentence))
+        }
+        return String(localized: "Didn't sync \(event.date.formatted(.relative(presentation: .named)))")
     }
 }

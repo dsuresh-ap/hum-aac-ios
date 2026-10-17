@@ -26,12 +26,12 @@ public enum HumPackage {
         do {
             entries = try ZipArchive.read(data)
         } catch {
-            throw HumConfigError.badPackage("It may be damaged or only partly downloaded.")
+            throw HumConfigError.badPackage(.damaged)
         }
         // Accept hum.json at the root, or inside a single top-level folder (zips made by Finder).
         let json = entries.first { $0.path == jsonName }
             ?? entries.first { $0.path.hasSuffix("/" + jsonName) && $0.path.split(separator: "/").count == 2 }
-        guard let json else { throw HumConfigError.badPackage("It has no hum.json inside.") }
+        guard let json else { throw HumConfigError.badPackage(.noConfig) }
 
         let prefix = String(json.path.dropLast(jsonName.count))
         var media: [String: Data] = [:]

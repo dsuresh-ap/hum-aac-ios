@@ -32,7 +32,7 @@ struct SettingsView: View {
                                 settings.rate = v.rate
                                 settings.pitch = v.pitch
                                 voiceChanged()
-                                model.speech.speak("Let's go to the park!")
+                                model.speech.speak(SpeechSamples.tryVoice)
                             }
                         })) {
                         ForEach(VoiceStyle.allCases.filter { $0 != .custom || VoiceStyle.matching(rate: settings.rate, pitch: settings.pitch) == .custom }, id: \.self) {
@@ -76,7 +76,7 @@ struct SettingsView: View {
                     LabeledContent("Volume") {
                         Slider(value: $settings.volume, in: 0.2...1, onEditingChanged: { if !$0 { voiceChanged() } })
                     }
-                    Button("Play a sample", systemImage: "play.circle") { model.speech.speak("Let's go to the park!") }
+                    Button("Play a sample", systemImage: "play.circle") { model.speech.speak(SpeechSamples.tryVoice) }
                 }
 
                 Section {
@@ -86,7 +86,7 @@ struct SettingsView: View {
                         Text("Say both").tag(HumSettings.Retrigger.overlap)
                     }
                     .onChange(of: settings.retrigger) { model.applySpeechSettings() }
-                    Picker("Speak", selection: $settings.activation) {
+                    Picker("Speak when", selection: $settings.activation) {
                         Text("As soon as a finger touches (fastest)").tag(HumSettings.Activation.touchDown)
                         Text("When the finger lifts off").tag(HumSettings.Activation.touchUp)
                     }
@@ -120,12 +120,12 @@ struct SettingsView: View {
                 } header: {
                     Text("Tiles")
                 } footer: {
-                    Text("The sentence strip collects tapped tiles so your child can play them together; it's for later stages of language. The history box shows what was said recently, so you can catch up if you missed it. The word finder looks up a word and lights up the way to its tile, without saying it, so the path is learned. All three are off at first, and each tile always speaks on its own.")
+                    Text("The sentence strip collects tapped tiles so your child can play them together; it's for when your child starts mixing words into new sentences. The history box shows what was said recently, so you can catch up if you missed it. The word finder looks up a word and lights up the way to its tile, without saying it, so the path is learned. All three are off at first, and each tile always speaks on its own.")
                 }
 
                 Section {
                     Toggle("Go back to Home after a tile in a folder speaks", isOn: $settings.returnHomeAfterFolderTap)
-                    LabeledContent("Size for new boards") {
+                    LabeledContent("Tile size for new folders") {
                         HStack(spacing: 8) {
                             Text("\(settings.newBoardColumns) across").monospacedDigit()
                         }
@@ -134,7 +134,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Folders and boards")
                 } footer: {
-                    Text("To change how many tiles an existing board shows, open it in edit mode and tap the grid size at the top right.")
+                    Text("To change the tile size on a board you already have, open it in edit mode and tap the size button at the top right.")
                 }
 
                 Section {
@@ -158,7 +158,7 @@ struct SettingsView: View {
                     }
                     .accessibilityIdentifier("settings.about")
                 } footer: {
-                    Text("Version, privacy policy, help, symbol credits and licence.")
+                    Text("Version, privacy policy, help, symbol credits and license.")
                 }
             }
             .formStyle(.grouped)
@@ -209,18 +209,18 @@ struct SettingsView: View {
             Task { @MainActor in
                 switch status {
                 case .authorized:
-                    personalVoiceStatus = "Personal Voice is allowed. Your voice is now in the list."
+                    personalVoiceStatus = String(localized: "Personal Voice is allowed. Your voice is now in the list.")
                     loadVoices()
                     if let mine = AVSpeechSynthesisVoice.speechVoices().first(where: { $0.voiceTraits.contains(.isPersonalVoice) }) {
                         model.settings.voiceIdentifier = mine.identifier
                         voiceChanged()
                     }
                 case .denied:
-                    personalVoiceStatus = "Personal Voice was not allowed. You can change this in Settings → Accessibility → Personal Voice."
+                    personalVoiceStatus = String(localized: "Personal Voice was not allowed. You can change this in Settings → Accessibility → Personal Voice.")
                 case .unsupported:
-                    personalVoiceStatus = "This device doesn't support Personal Voice."
+                    personalVoiceStatus = String(localized: "This device doesn't support Personal Voice.")
                 default:
-                    personalVoiceStatus = "No Personal Voice yet. Create one in Settings → Accessibility → Personal Voice."
+                    personalVoiceStatus = String(localized: "No Personal Voice yet. Create one in Settings → Accessibility → Personal Voice.")
                 }
             }
         }
@@ -249,7 +249,7 @@ private struct VoiceRow: View {
             Spacer()
             Button {
                 preview.stopSpeaking(at: .immediate)
-                let u = AVSpeechUtterance(string: "Hi! Let's play!")
+                let u = AVSpeechUtterance(string: SpeechSamples.voicePreview)
                 u.voice = voice
                 preview.speak(u)
             } label: {
@@ -262,6 +262,12 @@ private struct VoiceRow: View {
     }
 
     private var qualityName: String { VoiceCatalog.qualityName(voice) }
+}
+
+/// What Hum says to show off a voice. Spoken in the device's language, so they're translated too.
+enum SpeechSamples {
+    static var tryVoice: String { String(localized: "Let's go to the park!", comment: "Spoken to try out a voice or the voice settings.") }
+    static var voicePreview: String { String(localized: "Hi! Let's play!", comment: "Spoken when a parent previews one voice in the list.") }
 }
 
 /// Shown while only robotic "compact" voices are installed: the one-time steps to get natural ones.
@@ -281,7 +287,7 @@ struct NaturalVoicesCard: View {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.Accessibility-Settings.extension") { openURL(url) }
             }
             #else
-            Text("Settings → Accessibility → Read & Speak (Spoken Content on older versions) → Voices → English → pick a voice marked Premium or Enhanced, such as Zoe, Ava or Evan, and tap download. Use Wi-Fi: premium voices are large.")
+            Text("Settings → Accessibility → Read & Speak (Spoken Content on older versions) → Voices → your language → pick a voice marked Premium or Enhanced, such as Zoe, Ava or Evan, and tap download. Use Wi-Fi: premium voices are large.")
                 .font(.callout).foregroundStyle(.secondary)
             #endif
         }

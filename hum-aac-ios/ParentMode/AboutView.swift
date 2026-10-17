@@ -36,7 +36,7 @@ struct AboutView: View {
                     .accessibilityIdentifier("about.privacy")
                 link("Help and support", systemImage: "questionmark.circle", url: HumLinks.support)
                 link("Source code", systemImage: "chevron.left.forwardslash.chevron.right", url: HumLinks.repository)
-                link("Licence (Apache-2.0)", systemImage: "doc.text", url: HumLinks.license)
+                link("License (Apache 2.0)", systemImage: "doc.text", url: HumLinks.license)
             } header: {
                 Text("Links")
             } footer: {
@@ -54,7 +54,7 @@ struct AboutView: View {
                 Text("Apple, iCloud, Apple Intelligence, iPad, iPhone and Mac are trademarks of Apple Inc. Hum is not affiliated with or endorsed by Apple, ARASAAC or Global Symbols.")
                     .font(.footnote).foregroundStyle(.secondary)
             } header: {
-                Text("Licence")
+                Text("License")
             }
         }
         .formStyle(.grouped)
@@ -69,7 +69,7 @@ struct AboutView: View {
         return "\(short) (\(build))"
     }
 
-    private func link(_ title: String, systemImage: String, url: URL) -> some View {
+    private func link(_ title: LocalizedStringKey, systemImage: String, url: URL) -> some View {
         Button {
             openURL(url)
         } label: {

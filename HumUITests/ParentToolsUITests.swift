@@ -78,7 +78,7 @@ final class ParentToolsUITests: XCTestCase {
     @MainActor
     func testExportOpensTheShareSheet() {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
-        tapToolbar(app, "setupSharing", label: "Setup & sharing")
+        tapToolbar(app, "setupSharing", label: "Share & sync")
         el(app, "exportAll").tap()
         // The share sheet runs in another process; its parts still show up here.
         let sheet = app.otherElements["ActivityListView"].firstMatch

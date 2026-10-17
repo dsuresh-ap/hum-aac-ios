@@ -84,7 +84,7 @@ struct BoardManagerView: View {
                 } header: {
                     Text("New folder")
                 } footer: {
-                    Text("Adds a folder tile to \(hostBoard?.name ?? "Home") in its first empty spot, then opens the new folder so you can fill it.")
+                    Text("Adds a folder tile to \(hostBoard?.name ?? String(localized: "Home")) in its first empty spot, then opens the new folder so you can fill it.")
                 }
             }
             .formStyle(.grouped)
@@ -96,7 +96,7 @@ struct BoardManagerView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
-            .confirmationDialog("Delete \(boardToDelete?.name ?? "this folder")?", isPresented: Binding(get: { boardToDelete != nil }, set: { if !$0 { boardToDelete = nil } }), titleVisibility: .visible) {
+            .confirmationDialog(Text(boardToDelete.map { String(localized: "Delete \($0.name)?") } ?? String(localized: "Delete this folder?")), isPresented: Binding(get: { boardToDelete != nil }, set: { if !$0 { boardToDelete = nil } }), titleVisibility: .visible) {
                 Button("Delete folder", role: .destructive) {
                     if let board = boardToDelete {
                         do { try model.store.delete(board) } catch { errorMessage = error.localizedDescription }
@@ -146,7 +146,7 @@ private struct BoardDetailView: View {
                 Button {
                     showGridSize = true
                 } label: {
-                    LabeledContent("Grid size") {
+                    LabeledContent("Tile size") {
                         HStack(spacing: 8) {
                             Image(systemName: "square.grid.2x2")
                             Text("\(board.columns) across").monospacedDigit()
@@ -154,7 +154,7 @@ private struct BoardDetailView: View {
                     }
                 }
             } footer: {
-                Text("Show more or fewer tiles. Tiles always keep their places.")
+                Text("Make the tiles bigger or smaller. Tiles keep their order.")
             }
             Section {
                 if board.isHome {
@@ -210,9 +210,9 @@ struct GridSizePicker: View {
             } maximumValueLabel: {
                 Image(systemName: "square.grid.2x2.fill").font(.title3).accessibilityLabel("Bigger")
             }
-            .accessibilityValue("\(columns) tile\(columns == 1 ? "" : "s") across")
+            .accessibilityValue("\(columns) tiles across")
             .accessibilityIdentifier("tileSize")
-            Text("\(columns) tile\(columns == 1 ? "" : "s") across")
+            Text("\(columns) tiles across")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
