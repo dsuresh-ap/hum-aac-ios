@@ -23,12 +23,12 @@ final class SyncMonitor {
 
         var description: String {
             switch self {
-            case .unknown: return "Checking…"
-            case .available: return "Signed in"
-            case .noAccount: return "Not signed in to iCloud on this device"
-            case .restricted: return "iCloud is restricted on this device (Screen Time or a profile)"
-            case .temporarilyUnavailable: return "iCloud is temporarily unavailable. Check Settings → your name → iCloud."
-            case .failed(let reason): return "Couldn't check iCloud: \(reason)"
+            case .unknown: return String(localized: "Checking…")
+            case .available: return String(localized: "Signed in")
+            case .noAccount: return String(localized: "Not signed in to iCloud on this device")
+            case .restricted: return String(localized: "iCloud is turned off on this device by Screen Time or a device profile")
+            case .temporarilyUnavailable: return String(localized: "iCloud is temporarily unavailable. Check Settings → your name → iCloud.")
+            case .failed(let reason): return String(localized: "Couldn't check iCloud: \(reason)")
             }
         }
     }
@@ -91,14 +91,15 @@ final class SyncMonitor {
     nonisolated static func describe(_ error: Error) -> String {
         guard let ck = error as? CKError else { return error.localizedDescription }
         switch ck.code {
-        case .notAuthenticated: return "Not signed in to iCloud."
-        case .quotaExceeded: return "iCloud storage is full."
-        case .networkUnavailable, .networkFailure: return "No internet connection. Changes will sync when you're back online."
-        case .serviceUnavailable, .requestRateLimited, .zoneBusy: return "iCloud is busy. It will try again by itself."
+        case .notAuthenticated: return String(localized: "Not signed in to iCloud.")
+        case .quotaExceeded: return String(localized: "iCloud storage is full.")
+        case .networkUnavailable, .networkFailure: return String(localized: "No internet connection. Changes will sync when you're back online.")
+        case .serviceUnavailable, .requestRateLimited, .zoneBusy: return String(localized: "iCloud is busy. It will try again by itself.")
         case .badContainer, .missingEntitlement, .permissionFailure:
-            return "This copy of Hum isn't set up for iCloud (\(ck.code.rawValue)). Developers: check the iCloud container and signing."
-        case .partialFailure: return "Some changes didn't sync yet. It will try again by itself."
-        default: return "\(ck.localizedDescription) (code \(ck.code.rawValue))"
+            // Only a build that isn't signed for iCloud gets here, never the App Store app.
+            return String(localized: "This copy of Hum can't use iCloud (error \(ck.code.rawValue)). Your boards are safe on this device.")
+        case .partialFailure: return String(localized: "Some changes didn't sync yet. It will try again by itself.")
+        default: return String(localized: "\(ck.localizedDescription) (error \(ck.code.rawValue))")
         }
     }
 }

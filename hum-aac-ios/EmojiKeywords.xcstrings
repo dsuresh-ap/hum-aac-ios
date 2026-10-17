@@ -1,0 +1,2034 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "emoji_1F3A7" : {
+      "comment" : "Search words for the 🎧 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "headphones, quiet, ear defenders"
+          }
+        }
+      }
+    },
+    "emoji_1F3A8" : {
+      "comment" : "Search words for the 🎨 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "paint, painting, art, color, colour"
+          }
+        }
+      }
+    },
+    "emoji_1F3AE" : {
+      "comment" : "Search words for the 🎮 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "game, games, video game"
+          }
+        }
+      }
+    },
+    "emoji_1F3B5" : {
+      "comment" : "Search words for the 🎵 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "music, song, sing, singing"
+          }
+        }
+      }
+    },
+    "emoji_1F3C0" : {
+      "comment" : "Search words for the 🏀 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "basketball"
+          }
+        }
+      }
+    },
+    "emoji_1F3C3" : {
+      "comment" : "Search words for the 🏃 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "run, running, chase, fast"
+          }
+        }
+      }
+    },
+    "emoji_1F3CA" : {
+      "comment" : "Search words for the 🏊 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "swim, swimming, pool"
+          }
+        }
+      }
+    },
+    "emoji_1F3D6_FE0F" : {
+      "comment" : "Search words for the 🏖️ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "beach, sand"
+          }
+        }
+      }
+    },
+    "emoji_1F3E0" : {
+      "comment" : "Search words for the 🏠 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "home, house"
+          }
+        }
+      }
+    },
+    "emoji_1F3E5" : {
+      "comment" : "Search words for the 🏥 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "doctor, hospital"
+          }
+        }
+      }
+    },
+    "emoji_1F3EB" : {
+      "comment" : "Search words for the 🏫 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "school, class, teacher"
+          }
+        }
+      }
+    },
+    "emoji_1F4A7" : {
+      "comment" : "Search words for the 💧 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "water"
+          }
+        }
+      }
+    },
+    "emoji_1F4DA" : {
+      "comment" : "Search words for the 📚 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "book, books, read, story"
+          }
+        }
+      }
+    },
+    "emoji_1F4F1" : {
+      "comment" : "Search words for the 📱 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "phone, ipad, tablet, video, videos"
+          }
+        }
+      }
+    },
+    "emoji_1F4FA" : {
+      "comment" : "Search words for the 📺 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tv, television, show, cartoon, movie, watch"
+          }
+        }
+      }
+    },
+    "emoji_1F6AA" : {
+      "comment" : "Search words for the 🚪 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "door, out, leave, get out"
+          }
+        }
+      }
+    },
+    "emoji_1F6AB" : {
+      "comment" : "Search words for the 🚫 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "not, never, forbidden"
+          }
+        }
+      }
+    },
+    "emoji_1F6B2" : {
+      "comment" : "Search words for the 🚲 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bike, bicycle"
+          }
+        }
+      }
+    },
+    "emoji_1F6B6" : {
+      "comment" : "Search words for the 🚶 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "walk, walking"
+          }
+        }
+      }
+    },
+    "emoji_1F6BD" : {
+      "comment" : "Search words for the 🚽 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "potty, toilet, bathroom, pee, poop"
+          }
+        }
+      }
+    },
+    "emoji_1F6C1" : {
+      "comment" : "Search words for the 🛁 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bath, bathtub"
+          }
+        }
+      }
+    },
+    "emoji_1F6CF_FE0F" : {
+      "comment" : "Search words for the 🛏️ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bed, bedroom"
+          }
+        }
+      }
+    },
+    "emoji_1F6D2" : {
+      "comment" : "Search words for the 🛒 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "shop, store, shopping, grocery"
+          }
+        }
+      }
+    },
+    "emoji_1F6DD" : {
+      "comment" : "Search words for the 🛝 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "slide, playground"
+          }
+        }
+      }
+    },
+    "emoji_1F9B8" : {
+      "comment" : "Search words for the 🦸 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "superhero, hero"
+          }
+        }
+      }
+    },
+    "emoji_1F9C0" : {
+      "comment" : "Search words for the 🧀 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cheese"
+          }
+        }
+      }
+    },
+    "emoji_1F9C3" : {
+      "comment" : "Search words for the 🧃 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "juice, juice box"
+          }
+        }
+      }
+    },
+    "emoji_1F9D1_200D_1F3EB" : {
+      "comment" : "Search words for the 🧑‍🏫 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "teacher"
+          }
+        }
+      }
+    },
+    "emoji_1F9D2" : {
+      "comment" : "Search words for the 🧒 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "friend, friends, kid, kids"
+          }
+        }
+      }
+    },
+    "emoji_1F9E5" : {
+      "comment" : "Search words for the 🧥 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "coat, jacket"
+          }
+        }
+      }
+    },
+    "emoji_1F9E9" : {
+      "comment" : "Search words for the 🧩 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "puzzle, puzzles"
+          }
+        }
+      }
+    },
+    "emoji_1F9F1" : {
+      "comment" : "Search words for the 🧱 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "blocks, block, lego, build"
+          }
+        }
+      }
+    },
+    "emoji_1F9F8" : {
+      "comment" : "Search words for the 🧸 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "teddy, bear, toy, toys, stuffie"
+          }
+        }
+      }
+    },
+    "emoji_1F9FC" : {
+      "comment" : "Search words for the 🧼 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "wash, wash hands, soap, clean"
+          }
+        }
+      }
+    },
+    "emoji_1F32C_FE0F" : {
+      "comment" : "Search words for the 🌬️ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "breathe, breath, calm, calm down"
+          }
+        }
+      }
+    },
+    "emoji_1F32D" : {
+      "comment" : "Search words for the 🌭 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hot dog, hotdog, sausage"
+          }
+        }
+      }
+    },
+    "emoji_1F33D" : {
+      "comment" : "Search words for the 🌽 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "corn"
+          }
+        }
+      }
+    },
+    "emoji_1F34A" : {
+      "comment" : "Search words for the 🍊 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "orange, oranges, clementine"
+          }
+        }
+      }
+    },
+    "emoji_1F34C" : {
+      "comment" : "Search words for the 🍌 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "banana, bananas"
+          }
+        }
+      }
+    },
+    "emoji_1F34E" : {
+      "comment" : "Search words for the 🍎 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "apple, apples, fruit"
+          }
+        }
+      }
+    },
+    "emoji_1F35A" : {
+      "comment" : "Search words for the 🍚 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rice"
+          }
+        }
+      }
+    },
+    "emoji_1F35D" : {
+      "comment" : "Search words for the 🍝 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pasta, spaghetti, noodles, mac"
+          }
+        }
+      }
+    },
+    "emoji_1F35E" : {
+      "comment" : "Search words for the 🍞 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bread, toast"
+          }
+        }
+      }
+    },
+    "emoji_1F35F" : {
+      "comment" : "Search words for the 🍟 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fries, french fries, chips"
+          }
+        }
+      }
+    },
+    "emoji_1F36A" : {
+      "comment" : "Search words for the 🍪 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cookie, cookies, biscuit, treat"
+          }
+        }
+      }
+    },
+    "emoji_1F36B" : {
+      "comment" : "Search words for the 🍫 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "chocolate, candy"
+          }
+        }
+      }
+    },
+    "emoji_1F36F" : {
+      "comment" : "Search words for the 🍯 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "honey"
+          }
+        }
+      }
+    },
+    "emoji_1F37C" : {
+      "comment" : "Search words for the 🍼 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bottle, baby"
+          }
+        }
+      }
+    },
+    "emoji_1F37D_FE0F" : {
+      "comment" : "Search words for the 🍽️ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "eat, hungry, food, dinner, meal, plate"
+          }
+        }
+      }
+    },
+    "emoji_1F37F" : {
+      "comment" : "Search words for the 🍿 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "popcorn"
+          }
+        }
+      }
+    },
+    "emoji_1F41B" : {
+      "comment" : "Search words for the 🐛 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bug, bugs, caterpillar"
+          }
+        }
+      }
+    },
+    "emoji_1F41D" : {
+      "comment" : "Search words for the 🐝 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bee, bees"
+          }
+        }
+      }
+    },
+    "emoji_1F41F" : {
+      "comment" : "Search words for the 🐟 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fish"
+          }
+        }
+      }
+    },
+    "emoji_1F42F" : {
+      "comment" : "Search words for the 🐯 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tiger"
+          }
+        }
+      }
+    },
+    "emoji_1F43B" : {
+      "comment" : "Search words for the 🐻 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bear"
+          }
+        }
+      }
+    },
+    "emoji_1F44B" : {
+      "comment" : "Search words for the 👋 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bye, goodbye, bye-bye, see you, wave"
+          }
+        }
+      }
+    },
+    "emoji_1F44D" : {
+      "comment" : "Search words for the 👍 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yes, yeah, yep, good, sure, okay"
+          }
+        }
+      }
+    },
+    "emoji_1F45F" : {
+      "comment" : "Search words for the 👟 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "shoes, shoe, socks"
+          }
+        }
+      }
+    },
+    "emoji_1F48A" : {
+      "comment" : "Search words for the 💊 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "medicine"
+          }
+        }
+      }
+    },
+    "emoji_1F58D_FE0F" : {
+      "comment" : "Search words for the 🖍️ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "crayon, crayons, draw, drawing"
+          }
+        }
+      }
+    },
+    "emoji_1F60A" : {
+      "comment" : "Search words for the 😊 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "happy, glad, smile, fun, yay, like"
+          }
+        }
+      }
+    },
+    "emoji_1F60B" : {
+      "comment" : "Search words for the 😋 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yummy, tasty, delicious"
+          }
+        }
+      }
+    },
+    "emoji_1F60E" : {
+      "comment" : "Search words for the 😎 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cool, awesome"
+          }
+        }
+      }
+    },
+    "emoji_1F62E" : {
+      "comment" : "Search words for the 😮 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "uh oh, oh, surprise, wow, whoa, oops"
+          }
+        }
+      }
+    },
+    "emoji_1F64F" : {
+      "comment" : "Search words for the 🙏 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "please, thank you, thanks"
+          }
+        }
+      }
+    },
+    "emoji_1F68C" : {
+      "comment" : "Search words for the 🚌 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bus, school bus"
+          }
+        }
+      }
+    },
+    "emoji_1F91D" : {
+      "comment" : "Search words for the 🤝 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "help, share, turn, my turn, your turn"
+          }
+        }
+      }
+    },
+    "emoji_1F95A" : {
+      "comment" : "Search words for the 🥚 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "egg, eggs"
+          }
+        }
+      }
+    },
+    "emoji_1F95B" : {
+      "comment" : "Search words for the 🥛 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "milk"
+          }
+        }
+      }
+    },
+    "emoji_1F95E" : {
+      "comment" : "Search words for the 🥞 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pancakes, pancake, waffle, waffles"
+          }
+        }
+      }
+    },
+    "emoji_1F96A" : {
+      "comment" : "Search words for the 🥪 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sandwich, lunch"
+          }
+        }
+      }
+    },
+    "emoji_1F98B" : {
+      "comment" : "Search words for the 🦋 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "butterfly"
+          }
+        }
+      }
+    },
+    "emoji_1F198" : {
+      "comment" : "Search words for the 🆘 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "help, help me, emergency"
+          }
+        }
+      }
+    },
+    "emoji_1F308" : {
+      "comment" : "Search words for the 🌈 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rainbow"
+          }
+        }
+      }
+    },
+    "emoji_1F319" : {
+      "comment" : "Search words for the 🌙 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "night, moon, goodnight"
+          }
+        }
+      }
+    },
+    "emoji_1F327_FE0F" : {
+      "comment" : "Search words for the 🌧️ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rain, raining, rainy"
+          }
+        }
+      }
+    },
+    "emoji_1F333" : {
+      "comment" : "Search words for the 🌳 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "outside, park, tree, trees, garden"
+          }
+        }
+      }
+    },
+    "emoji_1F338" : {
+      "comment" : "Search words for the 🌸 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "flower, flowers"
+          }
+        }
+      }
+    },
+    "emoji_1F347" : {
+      "comment" : "Search words for the 🍇 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "grapes, grape"
+          }
+        }
+      }
+    },
+    "emoji_1F349" : {
+      "comment" : "Search words for the 🍉 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "watermelon, melon"
+          }
+        }
+      }
+    },
+    "emoji_1F353" : {
+      "comment" : "Search words for the 🍓 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "strawberry, strawberries, berry, berries"
+          }
+        }
+      }
+    },
+    "emoji_1F354" : {
+      "comment" : "Search words for the 🍔 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "burger, hamburger"
+          }
+        }
+      }
+    },
+    "emoji_1F355" : {
+      "comment" : "Search words for the 🍕 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pizza"
+          }
+        }
+      }
+    },
+    "emoji_1F357" : {
+      "comment" : "Search words for the 🍗 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "chicken, nuggets"
+          }
+        }
+      }
+    },
+    "emoji_1F358" : {
+      "comment" : "Search words for the 🍘 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "crackers, cracker, snack, snacks"
+          }
+        }
+      }
+    },
+    "emoji_1F366" : {
+      "comment" : "Search words for the 🍦 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ice cream, icecream"
+          }
+        }
+      }
+    },
+    "emoji_1F370" : {
+      "comment" : "Search words for the 🍰 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cake, birthday cake"
+          }
+        }
+      }
+    },
+    "emoji_1F381" : {
+      "comment" : "Search words for the 🎁 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "present, gift, surprise"
+          }
+        }
+      }
+    },
+    "emoji_1F388" : {
+      "comment" : "Search words for the 🎈 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "balloon, balloons, party"
+          }
+        }
+      }
+    },
+    "emoji_1F389" : {
+      "comment" : "Search words for the 🎉 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yay, hooray, party, celebrate"
+          }
+        }
+      }
+    },
+    "emoji_1F404" : {
+      "comment" : "Search words for the 🐄 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cow, moo"
+          }
+        }
+      }
+    },
+    "emoji_1F411" : {
+      "comment" : "Search words for the 🐑 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sheep, baa"
+          }
+        }
+      }
+    },
+    "emoji_1F414" : {
+      "comment" : "Search words for the 🐔 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "chicken, hen"
+          }
+        }
+      }
+    },
+    "emoji_1F418" : {
+      "comment" : "Search words for the 🐘 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "elephant"
+          }
+        }
+      }
+    },
+    "emoji_1F426" : {
+      "comment" : "Search words for the 🐦 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bird, birds"
+          }
+        }
+      }
+    },
+    "emoji_1F430" : {
+      "comment" : "Search words for the 🐰 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bunny, rabbit"
+          }
+        }
+      }
+    },
+    "emoji_1F431" : {
+      "comment" : "Search words for the 🐱 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cat, kitty, kitten"
+          }
+        }
+      }
+    },
+    "emoji_1F434" : {
+      "comment" : "Search words for the 🐴 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "horse"
+          }
+        }
+      }
+    },
+    "emoji_1F435" : {
+      "comment" : "Search words for the 🐵 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "monkey"
+          }
+        }
+      }
+    },
+    "emoji_1F436" : {
+      "comment" : "Search words for the 🐶 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dog, puppy, doggy"
+          }
+        }
+      }
+    },
+    "emoji_1F437" : {
+      "comment" : "Search words for the 🐷 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pig, oink"
+          }
+        }
+      }
+    },
+    "emoji_1F438" : {
+      "comment" : "Search words for the 🐸 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "frog"
+          }
+        }
+      }
+    },
+    "emoji_1F440" : {
+      "comment" : "Search words for the 👀 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "look, see, watch, look at"
+          }
+        }
+      }
+    },
+    "emoji_1F442" : {
+      "comment" : "Search words for the 👂 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ears, ear, listen, hear"
+          }
+        }
+      }
+    },
+    "emoji_1F443" : {
+      "comment" : "Search words for the 👃 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nose"
+          }
+        }
+      }
+    },
+    "emoji_1F444" : {
+      "comment" : "Search words for the 👄 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mouth, kiss"
+          }
+        }
+      }
+    },
+    "emoji_1F449" : {
+      "comment" : "Search words for the 👉 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this, that, there, look, point"
+          }
+        }
+      }
+    },
+    "emoji_1F455" : {
+      "comment" : "Search words for the 👕 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "clothes, shirt, dress, get dressed"
+          }
+        }
+      }
+    },
+    "emoji_1F465" : {
+      "comment" : "Search words for the 👥 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "everyone, people, we"
+          }
+        }
+      }
+    },
+    "emoji_1F466" : {
+      "comment" : "Search words for the 👦 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "boy, brother"
+          }
+        }
+      }
+    },
+    "emoji_1F467" : {
+      "comment" : "Search words for the 👧 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "girl, sister"
+          }
+        }
+      }
+    },
+    "emoji_1F468" : {
+      "comment" : "Search words for the 👨 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dad, daddy, papa"
+          }
+        }
+      }
+    },
+    "emoji_1F469" : {
+      "comment" : "Search words for the 👩 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mom, mommy, mama, mum, mummy"
+          }
+        }
+      }
+    },
+    "emoji_1F474" : {
+      "comment" : "Search words for the 👴 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "grandpa, papa, grandad, pop"
+          }
+        }
+      }
+    },
+    "emoji_1F475" : {
+      "comment" : "Search words for the 👵 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "grandma, nana, granny, gran"
+          }
+        }
+      }
+    },
+    "emoji_1F476" : {
+      "comment" : "Search words for the 👶 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "baby, sister, brother"
+          }
+        }
+      }
+    },
+    "emoji_1F483" : {
+      "comment" : "Search words for the 💃 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dance, dancing"
+          }
+        }
+      }
+    },
+    "emoji_1F487" : {
+      "comment" : "Search words for the 💇 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hair, haircut, comb"
+          }
+        }
+      }
+    },
+    "emoji_1F501" : {
+      "comment" : "Search words for the 🔁 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "again, more, another, repeat, one more"
+          }
+        }
+      }
+    },
+    "emoji_1F504" : {
+      "comment" : "Search words for the 🔄 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "spin, swing, round"
+          }
+        }
+      }
+    },
+    "emoji_1F507" : {
+      "comment" : "Search words for the 🔇 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "too loud, loud, quiet, noise, noisy"
+          }
+        }
+      }
+    },
+    "emoji_1F590_FE0F" : {
+      "comment" : "Search words for the 🖐️ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hand, hands, high five"
+          }
+        }
+      }
+    },
+    "emoji_1F602" : {
+      "comment" : "Search words for the 😂 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "funny, silly, laugh, joke, haha"
+          }
+        }
+      }
+    },
+    "emoji_1F615" : {
+      "comment" : "Search words for the 😕 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "confused, don't know, dunno"
+          }
+        }
+      }
+    },
+    "emoji_1F620" : {
+      "comment" : "Search words for the 😠 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mad, angry, cross, grumpy"
+          }
+        }
+      }
+    },
+    "emoji_1F622" : {
+      "comment" : "Search words for the 😢 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sad, cry, crying, upset"
+          }
+        }
+      }
+    },
+    "emoji_1F624" : {
+      "comment" : "Search words for the 😤 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "frustrated, annoyed"
+          }
+        }
+      }
+    },
+    "emoji_1F628" : {
+      "comment" : "Search words for the 😨 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "scared, afraid, scary, frightened, worried"
+          }
+        }
+      }
+    },
+    "emoji_1F634" : {
+      "comment" : "Search words for the 😴 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tired, sleepy, sleep, nap, bed, bedtime"
+          }
+        }
+      }
+    },
+    "emoji_1F642" : {
+      "comment" : "Search words for the 🙂 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "okay, ok, fine, alright"
+          }
+        }
+      }
+    },
+    "emoji_1F645" : {
+      "comment" : "Search words for the 🙅 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "no, nope, don't, not"
+          }
+        }
+      }
+    },
+    "emoji_1F648" : {
+      "comment" : "Search words for the 🙈 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hide, hide and seek, peekaboo, boo"
+          }
+        }
+      }
+    },
+    "emoji_1F680" : {
+      "comment" : "Search words for the 🚀 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rocket, space, infinity, beyond, blast off"
+          }
+        }
+      }
+    },
+    "emoji_1F682" : {
+      "comment" : "Search words for the 🚂 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "train, trains, choo choo, all aboard"
+          }
+        }
+      }
+    },
+    "emoji_1F697" : {
+      "comment" : "Search words for the 🚗 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "car, cars, drive, ride"
+          }
+        }
+      }
+    },
+    "emoji_1F912" : {
+      "comment" : "Search words for the 🤒 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sick, ill, hurts, hurt, ouch, pain"
+          }
+        }
+      }
+    },
+    "emoji_1F914" : {
+      "comment" : "Search words for the 🤔 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "think, wonder, hmm, why, what"
+          }
+        }
+      }
+    },
+    "emoji_1F917" : {
+      "comment" : "Search words for the 🤗 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hi, hello, hey, hug"
+          }
+        }
+      }
+    },
+    "emoji_1F922" : {
+      "comment" : "Search words for the 🤢 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yucky, yuck, gross, icky"
+          }
+        }
+      }
+    },
+    "emoji_1F938" : {
+      "comment" : "Search words for the 🤸 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "jump, jumping, trampoline, tumble"
+          }
+        }
+      }
+    },
+    "emoji_1F954" : {
+      "comment" : "Search words for the 🥔 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "potato"
+          }
+        }
+      }
+    },
+    "emoji_1F955" : {
+      "comment" : "Search words for the 🥕 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "carrot, carrots, vegetable, veggies"
+          }
+        }
+      }
+    },
+    "emoji_1F963" : {
+      "comment" : "Search words for the 🥣 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cereal, breakfast, bowl, oatmeal"
+          }
+        }
+      }
+    },
+    "emoji_1F964" : {
+      "comment" : "Search words for the 🥤 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "drink, thirsty, soda, cup"
+          }
+        }
+      }
+    },
+    "emoji_1F966" : {
+      "comment" : "Search words for the 🥦 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "broccoli"
+          }
+        }
+      }
+    },
+    "emoji_1F968" : {
+      "comment" : "Search words for the 🥨 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pretzel, pretzels"
+          }
+        }
+      }
+    },
+    "emoji_1F970" : {
+      "comment" : "Search words for the 🥰 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "love, hug, cuddle, snuggle"
+          }
+        }
+      }
+    },
+    "emoji_1F971" : {
+      "comment" : "Search words for the 🥱 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bored, boring"
+          }
+        }
+      }
+    },
+    "emoji_1F981" : {
+      "comment" : "Search words for the 🦁 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lion, roar"
+          }
+        }
+      }
+    },
+    "emoji_1F986" : {
+      "comment" : "Search words for the 🦆 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "duck, ducks, quack"
+          }
+        }
+      }
+    },
+    "emoji_1F988" : {
+      "comment" : "Search words for the 🦈 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "shark"
+          }
+        }
+      }
+    },
+    "emoji_1F992" : {
+      "comment" : "Search words for the 🦒 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "giraffe"
+          }
+        }
+      }
+    },
+    "emoji_1F996" : {
+      "comment" : "Search words for the 🦖 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dinosaur, dino, t-rex"
+          }
+        }
+      }
+    },
+    "emoji_1FA79" : {
+      "comment" : "Search words for the 🩹 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "boo boo, owie, bandaid, band-aid"
+          }
+        }
+      }
+    },
+    "emoji_1FA81" : {
+      "comment" : "Search words for the 🪁 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kite"
+          }
+        }
+      }
+    },
+    "emoji_1FAA5" : {
+      "comment" : "Search words for the 🪥 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "teeth, brush teeth, toothbrush"
+          }
+        }
+      }
+    },
+    "emoji_1FAC2" : {
+      "comment" : "Search words for the 🫂 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hug, hugs, squeeze, hold"
+          }
+        }
+      }
+    },
+    "emoji_1FAE7" : {
+      "comment" : "Search words for the 🫧 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bubbles, bubble"
+          }
+        }
+      }
+    },
+    "emoji_1FAF6" : {
+      "comment" : "Search words for the 🫶 emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "together, us, family"
+          }
+        }
+      }
+    },
+    "emoji_2B50" : {
+      "comment" : "Search words for the ⭐ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "star, stars"
+          }
+        }
+      }
+    },
+    "emoji_23F0" : {
+      "comment" : "Search words for the ⏰ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "time, later, soon, now, wait"
+          }
+        }
+      }
+    },
+    "emoji_23F8_FE0F" : {
+      "comment" : "Search words for the ⏸️ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "break, pause, rest, need a break"
+          }
+        }
+      }
+    },
+    "emoji_26BD" : {
+      "comment" : "Search words for the ⚽ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ball, soccer, kick"
+          }
+        }
+      }
+    },
+    "emoji_270B" : {
+      "comment" : "Search words for the ✋ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "stop, wait, no thank you, enough"
+          }
+        }
+      }
+    },
+    "emoji_2600_FE0F" : {
+      "comment" : "Search words for the ☀️ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sun, sunny, hot, day"
+          }
+        }
+      }
+    },
+    "emoji_2705" : {
+      "comment" : "Search words for the ✅ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "all done, done, finished, finish, the end"
+          }
+        }
+      }
+    },
+    "emoji_2708_FE0F" : {
+      "comment" : "Search words for the ✈️ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "airplane, plane, fly, flying"
+          }
+        }
+      }
+    },
+    "emoji_2744_FE0F" : {
+      "comment" : "Search words for the ❄️ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "snow, cold, winter"
+          }
+        }
+      }
+    },
+    "emoji_2753" : {
+      "comment" : "Search words for the ❓ emoji in the tile picker, separated by commas. Use everyday words a parent would type, including words children use. Don't translate word for word if another word fits better.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "question, ask, what's that"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

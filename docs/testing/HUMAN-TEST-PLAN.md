@@ -79,13 +79,13 @@ in Files / iCloud Drive / AirDrop.
 
 | # | Steps | Expected |
 |---|-------|----------|
-| 5.1 | First run → Import a setup → Cancel the file picker, then Cancel the import preview too. | You're back on “How do you want to start?” each time; no blank board was made (HUM-004). |
-| 5.2 | First run → Import a setup → pick `Express2-v2.hum`. | The file's Home becomes the child's Home, with its pictures (HUM-001, HUM-037). |
-| 5.3 | Setup & sharing → Export all boards… → Save to Files; Export “Home” only… → AirDrop to another device and Messages. | The share sheet opens (HUM-049) with a file named “Hum setup <date>”; AirDrop opens it in Hum on the other device; “Preparing your boards…” shows if it takes a while (HUM-042). |
+| 5.1 | First run → Import boards → Cancel the file picker, then Cancel the import preview too. | You're back on “How do you want to start?” each time; no blank board was made (HUM-004). |
+| 5.2 | First run → Import boards → pick `Express2-v2.hum`. | The file's Home becomes the child's Home, with its pictures (HUM-001, HUM-037). |
+| 5.3 | Share & sync → Export all boards… → Save to Files; Export “Home” only… → AirDrop to another device and Messages. | The share sheet opens (HUM-049) with a file named “Hum boards <date>”; AirDrop opens it in Hum on the other device; “Preparing your boards…” shows if it takes a while (HUM-042). |
 | 5.4 | On the other device: tap the `.hum` in Files / AirDrop / Mail → “Open in Hum”. | Hum opens; if the child is using it, the preview waits until grown-up mode. |
-| 5.5 | Import the same file twice with Merge. | Second time: “0 new tiles…” and nothing duplicated. |
+| 5.5 | Import the same file twice with “Add to my boards”. | Second time: “0 new tiles…” and nothing duplicated. |
 | 5.6 | Import `Express2-v2.hum`; time the “Preparing pictures…” bar, then look at the board right away. | Every picture shows as soon as the import closes (HUM-037). Write down how long the import took on the oldest supported iPad. |
-| 5.7 | Merge `Express2-v2.hum` into the starter board. | A banner says it's in a folder called “Express2-v2” on Home, with Open; a folder tile is in Home's first empty spot; only one board is called Home (HUM-001, HUM-027). |
+| 5.7 | Import `Express2-v2.hum` with “Add to my boards” into the starter board. | A banner says it's in a folder called “Express2-v2” on Home, with Open; a folder tile is in Home's first empty spot; only one board is called Home (HUM-001, HUM-027). |
 | 5.7 | Mac: drag a `.hum` onto the window in grown-up mode; in child mode. | Preview opens in grown-up mode only. |
 | 5.8 | Import a `.obz` from CoughDrop (if supported in this build). | Boards, links and pictures come through, or a friendly “not supported yet”. |
 | 5.9 | Background Hum in the middle of a big import; kill it mid-import and relaunch. | No crash, no half-imported mess, or a clear way to retry. |
@@ -95,7 +95,7 @@ in Files / iCloud Drive / AirDrop.
 
 | # | Steps | Expected |
 |---|-------|----------|
-| 6.1 | Device A: Setup & sharing → Sync with iCloud on. Device B: same. | Plain status rows; no developer wording (HUM-023). Boards appear on B. |
+| 6.1 | Device A: Share & sync → Sync with iCloud on. Device B: same. | Plain status rows; no developer wording (HUM-023). Boards appear on B. |
 | 6.2 | Add a tile on A while the child taps on B. | B's board changes only after ~2 s without touches; nothing moves under a finger. |
 | 6.3 | Both devices offline: add a different tile to the same empty spot on each, then go online. | One keeps the spot, the other waits in “needs a spot”. No tile is lost or moved. |
 | 6.4 | Edit the same tile's words on both devices offline. | Last edit wins; position unchanged. |
@@ -120,7 +120,7 @@ in Files / iCloud Drive / AirDrop.
 | # | Steps | Expected |
 |---|-------|----------|
 | 8.1 | Shortcuts: “Add a tile to Hum” while the child uses Hum. | Nothing changes for the child; the preview appears next time grown-up mode opens. |
-| 8.2 | “Import a Hum config”, “Export Hum setup”. | Same preview rule; export produces a file. |
+| 8.2 | “Import Hum Boards”, “Export Hum Boards”. | Same preview rule; export produces a file. |
 | 8.3 | Queue three changes, then open grown-up mode. | They appear one at a time; Cancel on one moves to the next. |
 
 ## 9. Mac
@@ -166,4 +166,4 @@ These were fixed in code (2026-10-12) but can only be confirmed on hardware.
 | HUM-048 | With headphones, play long and short phrases (“I need a break.”, “All done”) with a natural voice and the basic one: no static or hiss at the end. |
 | HUM-050 | Turn an iPhone sideways on a big board: every tile shows its picture beside the label and keeps its spot; turning back restores the history box. |
 | HUM-051 | Edit a big board with the iPhone sideways: tiles don't overlap; scroll to reach the bottom rows; drag a tile to a spot off screen (the board scrolls while dragging). |
-| HUM-045 | On a 13" iPad, Settings, the tile editor, Home & folders and Setup & sharing open page-sized. |
+| HUM-045 | On a 13" iPad, Settings, the tile editor, Home & folders and Share & sync open page-sized. |

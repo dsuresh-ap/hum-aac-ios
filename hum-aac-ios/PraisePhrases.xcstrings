@@ -1,0 +1,294 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "be good" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "be good"
+          }
+        }
+      }
+    },
+    "calm body" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "calm body"
+          }
+        }
+      }
+    },
+    "earn a" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "earn a"
+          }
+        }
+      }
+    },
+    "eyes on me" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "eyes on me"
+          }
+        }
+      }
+    },
+    "first work" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "first work"
+          }
+        }
+      }
+    },
+    "good boy" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "good boy"
+          }
+        }
+      }
+    },
+    "good girl" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "good girl"
+          }
+        }
+      }
+    },
+    "good job" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "good job"
+          }
+        }
+      }
+    },
+    "good work" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "good work"
+          }
+        }
+      }
+    },
+    "great job" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "great job"
+          }
+        }
+      }
+    },
+    "hands down" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hands down"
+          }
+        }
+      }
+    },
+    "high five for" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "high five for"
+          }
+        }
+      }
+    },
+    "look at me" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "look at me"
+          }
+        }
+      }
+    },
+    "nice hands" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nice hands"
+          }
+        }
+      }
+    },
+    "nice work" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nice work"
+          }
+        }
+      }
+    },
+    "quiet hands" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "quiet hands"
+          }
+        }
+      }
+    },
+    "reward" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "reward"
+          }
+        }
+      }
+    },
+    "say please" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "say please"
+          }
+        }
+      }
+    },
+    "sit nicely" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sit nicely"
+          }
+        }
+      }
+    },
+    "sticker chart" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sticker chart"
+          }
+        }
+      }
+    },
+    "token" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "token"
+          }
+        }
+      }
+    },
+    "use your words" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "use your words"
+          }
+        }
+      }
+    },
+    "well done" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "well done"
+          }
+        }
+      }
+    },
+    "you earned" : {
+      "comment" : "A praise, reward or compliance phrase Hum warns about (tiles are the child's own voice, not a way to manage the child). Give the usual ways adults say it in your language, separated by commas. Lowercase, no punctuation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "you earned"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -69,15 +69,12 @@ struct GridSizeSheet: View {
     }
 
     private var footer: String {
-        var text = ""
-        if moving > 0 {
-            text += "\(moving) tile\(moving == 1 ? "" : "s") move so every tile keeps its place in the order (left to right, top to bottom). Your child may need time to find them again."
-        } else {
-            text += "No tile moves."
-        }
+        var text = moving > 0
+            ? String(localized: "\(moving) tiles move so every tile keeps its place in the order (left to right, top to bottom). Your child may need time to find them again.")
+            : String(localized: "No tiles move.")
         // The grid is shared by every device. iPhone shows boards wider than 4 tiles as pages.
         if AppModel.isPhone && columns > PhoneLayout.columns {
-            text += " On iPhone, boards more than \(PhoneLayout.columns) tiles across are shown as pages."
+            text += " " + String(localized: "On iPhone, boards more than \(PhoneLayout.columns) tiles across are shown as pages.")
         }
         return text
     }
@@ -176,10 +173,10 @@ private struct ScreenPreview: View {
     }
 
     private func accessibilitySummary(layout: GridMetrics.Layout) -> String {
-        var text = "\(columns) tiles across, \(rows) rows."
+        var text = String(localized: "\(columns) tiles across.") + " " + String(localized: "\(rows) rows.")
         if layout.scrolls, area != .zero {
             let visible = GridMetrics.visibleRows(in: area, rows: rows, columns: columns, spacing: Theme.gridSpacing)
-            text += " \(visible) rows fit on the screen; the rest scroll."
+            text += " " + String(localized: "\(visible) rows fit on the screen. The rest are reached by scrolling.")
         }
         return text
     }

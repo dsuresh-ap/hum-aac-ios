@@ -47,8 +47,8 @@ enum SymbolLibrary {
 
         var errorDescription: String? {
             switch self {
-            case .offline: return "Couldn't reach the symbol library. Check your internet connection and try again."
-            case .failed: return "The symbol library didn't answer. Try again in a moment."
+            case .offline: return String(localized: "Couldn't reach the symbol library. Check your internet connection and try again.")
+            case .failed: return String(localized: "The symbol library didn't answer. Try again in a moment.")
             }
         }
     }
@@ -67,10 +67,19 @@ enum SymbolLibrary {
 
     // MARK: Search
 
-    /// Symbols for a word or short phrase, best match first.
+    /// Symbols for a word or short phrase, best match first. Searches in the device's language; when that
+    /// finds nothing, tries English too (a parent may type an English word, and some sets are English only).
     static func search(_ text: String, in source: Source) async throws -> [Symbol] {
         let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty, let url = searchURL(query, source: source) else { return [] }
+        guard !query.isEmpty else { return [] }
+        let wanted = language(for: source), english = language(for: source, code: "en")
+        let found = try await search(query, in: source, language: wanted)
+        guard found.isEmpty, wanted != english else { return found }
+        return try await search(query, in: source, language: english)
+    }
+
+    private static func search(_ query: String, in source: Source, language: String) async throws -> [Symbol] {
+        guard let url = searchURL(query, source: source, language: language) else { return [] }
         let (data, response) = try await fetch(url)
         // ARASAAC answers 404 when nothing matches.
         if (response as? HTTPURLResponse)?.statusCode == 404 { return [] }
@@ -80,27 +89,31 @@ enum SymbolLibrary {
         }
     }
 
-    static func searchURL(_ query: String, source: Source) -> URL? {
+    static func searchURL(_ query: String, source: Source, language: String) -> URL? {
         switch source {
         case .arasaac:
             guard let word = query.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/"))) else { return nil }
-            return URL(string: "https://api.arasaac.org/v1/pictograms/\(arasaacLanguage)/search/\(word)")
+            return URL(string: "https://api.arasaac.org/v1/pictograms/\(language)/search/\(word)")
         case .mulberry:
             var parts = URLComponents(string: "https://globalsymbols.com/api/v1/labels/search")
             parts?.queryItems = [.init(name: "query", value: query), .init(name: "symbolset", value: "mulberry"),
-                                 .init(name: "language", value: "eng"), .init(name: "limit", value: "60")]
+                                 .init(name: "language", value: language), .init(name: "limit", value: "60")]
             return parts?.url
+        }
+    }
+
+    /// The language code each service wants: ARASAAC takes two letters ("es"), Global Symbols three ("spa").
+    static func language(for source: Source, code: String? = nil) -> String {
+        let code = code ?? Locale.current.language.languageCode?.identifier ?? "en"
+        switch source {
+        case .arasaac: return arasaacLanguages.contains(code) ? code : "en"
+        case .mulberry: return Locale.LanguageCode(code).identifier(.alpha3) ?? "eng"
         }
     }
 
     /// ARASAAC languages Hum asks for; anything else searches in English.
     static let arasaacLanguages: Set<String> = ["en", "es", "fr", "de", "it", "pt", "ca", "eu", "gl", "nl", "pl", "ro",
                                                 "ru", "ar", "zh", "bg", "hr", "el", "he", "hu", "sk", "sv", "uk"]
-
-    static var arasaacLanguage: String {
-        let code = Locale.current.language.languageCode?.identifier ?? "en"
-        return arasaacLanguages.contains(code) ? code : "en"
-    }
 
     /// ARASAAC: `[{ "_id": 11461, "keywords": [{ "keyword": "juice" }], "violence": false }]`.
     static func parse(_ data: Data) throws -> [Symbol] {

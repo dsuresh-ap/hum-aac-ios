@@ -24,8 +24,28 @@ public struct ProposedTile: Sendable, Equatable {
 
 public struct ProposalCheckResult: Sendable, Equatable {
     public var tiles: [ProposedTile]
-    /// Plain-language notes for the parent about what the checks changed.
-    public var notes: [String]
+    /// Notes for the parent about what the checks changed.
+    public var notes: [ProposalNote]
+}
+
+/// What the checks changed, for the parent. The app shows these in its own language; `text` is the
+/// English version (for the command-line tool and tests).
+public enum ProposalNote: Sendable, Hashable {
+    /// A tile was left out because `word` is praise or an instruction.
+    case leftOutPraise(phrase: String, word: String)
+    /// A fragment of a parent's phrase was put back together.
+    case keptWhole(phrase: String)
+    /// The phrase is already on the boards.
+    case alreadyOnBoards(phrase: String)
+
+    public var text: String {
+        switch self {
+        case .leftOutPraise(let phrase, let word):
+            return "Left out “\(phrase)” because “\(word)” is praise or an instruction, not the child's voice."
+        case .keptWhole(let phrase): return "Kept “\(phrase)” whole instead of splitting it."
+        case .alreadyOnBoards(let phrase): return "“\(phrase)” is already on your boards."
+        }
+    }
 }
 
 /// Code-level GLP rules for AI output. The model is told these rules too, but **code checks win**:
@@ -34,7 +54,7 @@ public enum ProposalChecker {
     public static let maxLabelWords = 4
 
     public static func check(_ proposal: [ProposedTile], parentPhrases: [String], existing: HumDocument) -> ProposalCheckResult {
-        var notes: [String] = []
+        var notes: [ProposalNote] = []
         var tiles: [ProposedTile] = []
         let phrases = parentPhrases.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
 
@@ -45,12 +65,12 @@ public enum ProposalChecker {
 
             // 1. No praise, reward or compliance phrases.
             if let bad = GLPRules.discouragedPhrase(in: tile.spokenText) ?? GLPRules.discouragedPhrase(in: tile.label) {
-                notes.append("Left out “\(tile.spokenText)” because “\(bad)” is praise or an instruction, not the child's voice.")
+                notes.append(.leftOutPraise(phrase: tile.spokenText, word: bad))
                 continue
             }
             // 2. A fragment of a parent's gestalt becomes the whole gestalt again.
             if let whole = phrases.first(where: { GLPRules.isFragment(tile.spokenText, of: $0) }) {
-                notes.append("Kept “\(whole)” whole instead of splitting it.")
+                notes.append(.keptWhole(phrase: whole))
                 tile.spokenText = whole
             }
             // 3. Short labels.
@@ -73,7 +93,7 @@ public enum ProposalChecker {
             } else if !tiles.isEmpty {
                 // Silent for repaired splits (they collapse into one), noted for real duplicates of existing tiles.
                 if existing.boards.contains(where: { $0.tiles.contains { GLPRules.normalize($0.spokenText) == key } }) {
-                    notes.append("“\(tile.spokenText)” is already on your boards.")
+                    notes.append(.alreadyOnBoards(phrase: tile.spokenText))
                 }
             }
         }

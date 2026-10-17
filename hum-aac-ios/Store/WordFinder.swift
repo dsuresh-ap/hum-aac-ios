@@ -6,7 +6,7 @@ import NaturalLanguage
 
 /// Finds tiles and boards by their words, and shows the way to them from Home.
 ///
-/// Exact matches come first. "Might be related" matches use Apple's on-device word meanings
+/// Exact matches come first. Related matches ("Maybe one of these") use Apple's on-device word meanings
 /// (NaturalLanguage), so "drink" can find "juice". Nothing leaves the device.
 nonisolated struct WordFinder: Sendable {
     /// One step on the way: on `boardID`, press `tileID`.

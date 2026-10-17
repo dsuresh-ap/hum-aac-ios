@@ -20,11 +20,13 @@ hum-aac-ios/
 │  ├─ Store/                     BoardStore (all mutations, undo, motor-plan rules), ImportService
 │  ├─ Audio/                     AudioEngine, VoiceSampler (render node), SpeechRenderer, ClipCache, LatencyProbe
 │  ├─ ChildMode/                 BoardGridView, TileView, HomeButton, EditGate
-│  ├─ ParentMode/                Edit grid, TileEditor sheet, BoardManager, Settings, Setup & Sharing, DevLatency
+│  ├─ ParentMode/                Edit grid, TileEditor sheet, BoardManager, Settings, Share & Sync, DevLatency
 │  ├─ Onboarding/                First-run flow
 │  ├─ AI/                        (M5) FoundationModels helpers, @Generable types, GLP rule checks
 │  ├─ Intents/                   (M4) App Intents + pending-change queue
-│  ├─ Resources/                 starter.hum.json (copied from examples/), Localizable.xcstrings
+│  ├─ Resources/                 starter.hum.json (copied from examples/), starter.<language>.hum.json
+│  ├─ *.xcstrings                String Catalogs (Localizable, InfoPlist, AppShortcuts, EmojiKeywords,
+│  │                             PraisePhrases); see docs/LOCALIZATION.md
 │  └─ PrivacyInfo.xcprivacy
 ├─ HumTests/  HumUITests/
 ├─ Packages/HumConfig/           dependency-free Swift package (library + `hum-config` CLI), builds on macOS AND Linux

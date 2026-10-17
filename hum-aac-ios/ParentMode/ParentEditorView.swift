@@ -69,7 +69,7 @@ struct ParentEditorView: View {
                 }
             }
             .background(Theme.background)
-            .navigationTitle(board?.name ?? "Boards")
+            .navigationTitle(board?.name ?? String(localized: "Boards"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -137,7 +137,7 @@ struct ParentEditorView: View {
     private func addNew(folder: Bool) {
         guard let board else { return }
         guard let spot = model.store.firstEmptySpot(on: board) else {
-            errorMessage = "\(board.name) is full. Make the grid bigger (the size at the top right) or hide a tile you don't need."
+            errorMessage = String(localized: "\(board.name) is full. Make the tiles smaller (the size button at the top right) or hide a tile you don't need.")
             return
         }
         editor = TileEditorRequest(kind: .new(boardID: board.id, row: spot.row, column: spot.column), startsAsFolder: folder,
@@ -227,9 +227,9 @@ struct ParentEditorView: View {
             Button {
                 showSharing = true
             } label: {
-                Label("Setup & sharing", systemImage: "square.and.arrow.up.on.square")
+                Label("Share & sync", systemImage: "square.and.arrow.up.on.square")
             }
-            .help("Import, export and share your boards")
+            .help("Copy your boards to another device, or keep your devices in sync")
             .accessibilityIdentifier("setupSharing")
 
             #if os(macOS)
@@ -433,7 +433,8 @@ private struct EditGrid: View {
         let placed = model.store.moveToBoard(tile, folder)
         withAnimation {
             notice = EditNotice(
-                text: placed ? "Moved “\(tile.label)” into \(folder.name)." : "Moved “\(tile.label)” into \(folder.name). It's full, so it waits for a spot there.",
+                text: placed ? String(localized: "Moved “\(tile.label)” into \(folder.name).")
+                    : String(localized: "Moved “\(tile.label)” into \(folder.name). That folder is full, so the tile waits below it for a spot."),
                 folderID: folder.id)
         }
     }
@@ -469,13 +470,13 @@ private struct EditGrid: View {
                         if !targets.isEmpty {
                             Menu("Move to folder", systemImage: "folder.badge.gearshape") {
                                 ForEach(targets) { folder in
-                                    Button(folder.isHome ? "\(folder.name) (Home)" : folder.name) { moveIntoFolder(tile, folder) }
+                                    Button(folder.isHome ? String(localized: "\(folder.name) (Home)") : folder.name) { moveIntoFolder(tile, folder) }
                                 }
                             }
                         }
                         Button("Duplicate", systemImage: "plus.square.on.square") {
                             if model.store.duplicate(tile)?.row == nil {
-                                errorMessage = "\(board.name) is full, so the copy is waiting below the board for a spot."
+                                errorMessage = String(localized: "\(board.name) is full, so the copy is waiting below the board for a spot.")
                             }
                         }
                         Button(tile.isHidden ? "Show tile" : "Hide tile", systemImage: tile.isHidden ? "eye" : "eye.slash") {
@@ -484,7 +485,7 @@ private struct EditGrid: View {
                         Divider()
                         Button("Delete tile", systemImage: "trash", role: .destructive) { confirmDelete = tile }
                     }
-                    .accessibilityHint("Double-tap to edit. Drag to move.")
+                    .accessibilityHint("Opens the tile so you can change it. You can also drag it to a new spot.")
             } else {
                 EmptySlot(row: row, column: column, roomy: roomy, add: { folder in add(row: row, column: column, folder: folder) })
             }
@@ -495,7 +496,7 @@ private struct EditGrid: View {
             if phone {
                 // Only the phone layout changes; iPad and Mac keep their spots.
                 if !model.store.movePhone(dragged, to: PhoneLayout.Spot(page: page, row: row, column: column), on: board) {
-                    errorMessage = "\(board.name) is full on bigger screens. Make its grid bigger on an iPad or Mac first."
+                    errorMessage = String(localized: "\(board.name) is full on iPad and Mac. Make its tiles smaller there first.")
                 }
             } else {
                 model.store.move(dragged, to: row, column: column, on: board)
@@ -512,7 +513,7 @@ private struct EditGrid: View {
             return
         }
         guard let bigSpot = model.store.firstEmptySpot(on: board) else {
-            errorMessage = "\(board.name) is full on bigger screens. Make its grid bigger on an iPad or Mac first."
+            errorMessage = String(localized: "\(board.name) is full on iPad and Mac. Make its tiles smaller there first.")
             return
         }
         editor = TileEditorRequest(kind: .new(boardID: board.id, row: bigSpot.row, column: bigSpot.column), startsAsFolder: folder,
@@ -581,6 +582,13 @@ struct EditTileCard: View {
 
     private var ink: Color { Theme.tileInk(function: tile.function, hex: tile.colorHex) }
 
+    /// What VoiceOver reads for the tile in edit mode.
+    private var accessibilityText: String {
+        if tile.modelContext == nil || tile.isDeleted { return "" }
+        return tile.isHidden ? String(localized: "\(tile.label). Says: \(tile.spokenText). Hidden")
+            : String(localized: "\(tile.label). Says: \(tile.spokenText)")
+    }
+
     var body: some View {
         // A tile deleted by an import or a synced change can be drawn once more before its board
         // updates; reading its picture then would crash SwiftData.
@@ -603,7 +611,7 @@ struct EditTileCard: View {
         }
         .contentShape(.rect(cornerRadius: Theme.tileCorner, style: .continuous))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(tile.modelContext == nil || tile.isDeleted ? "" : "\(tile.label). Says: \(tile.spokenText)\(tile.isHidden ? ". Hidden" : "")")
+        .accessibilityLabel(accessibilityText)
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier(tile.modelContext == nil || tile.isDeleted ? "" : "editTile.\(tile.label)")
         .accessibilityActions {
@@ -795,7 +803,8 @@ private struct EditBand: View {
                 .font(.callout.weight(.semibold))
             }
             .buttonStyle(.bordered)
-            .accessibilityLabel("Tile size: \(board.columns) across. Change")
+            .accessibilityLabel("Tile size: \(board.columns) across")
+            .accessibilityHint("Makes the tiles on this board bigger or smaller")
             .accessibilityIdentifier("gridSize")
         }
         .padding(.horizontal, Theme.gridPadding + 4)
@@ -833,9 +842,7 @@ private struct UnplacedTray: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(board.unplacedTiles.count == 1
-                 ? "1 tile needs a spot. Drag it onto the board."
-                 : "\(board.unplacedTiles.count) tiles need a spot. Drag each one onto the board.")
+            Text("\(board.unplacedTiles.count) tiles need a spot. Drag each one onto the board.")
                 .font(.callout.weight(.semibold))
             ScrollView(.horizontal) {
                 HStack(spacing: Theme.gridSpacing) {

@@ -37,7 +37,7 @@ struct ChildBoardView: View {
                     .padding(padding)
             } else {
                 ContentUnavailableView("No board yet", systemImage: "square.grid.3x3",
-                                       description: Text("A parent can add a board in edit mode."))
+                                       description: Text("A grown-up can add one in grown-up settings."))
             }
         }
         .background(Theme.background)
@@ -214,7 +214,7 @@ private struct FindingPill: View {
             .background(Color.accentColor.opacity(0.25), in: .capsule)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Stop finding \(target)")
+        .accessibilityLabel("Stop showing the way to \(target)")
         .accessibilityIdentifier("stopFinding")
     }
 }
@@ -296,7 +296,7 @@ private struct SentenceStrip: View {
                 .background(Theme.chrome, in: .rect(cornerRadius: 14))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Speak all: " + model.strip.map(\.spokenText).joined(separator: " "))
+            .accessibilityLabel("Say them all: \(model.strip.map(\.spokenText).joined(separator: " "))")
 
             Button {
                 model.clearStrip()
@@ -306,7 +306,7 @@ private struct SentenceStrip: View {
                     .frame(width: 52, height: 52)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Clear")
+            .accessibilityLabel("Clear the sentence")
         }
         .padding(.horizontal, Theme.gridPadding)
         .padding(.bottom, 4)
@@ -334,7 +334,7 @@ private struct HistoryBox: View {
                 .foregroundStyle(Theme.ink.opacity(0.45))
                 .accessibilityHidden(true)
             if recent.isEmpty {
-                Text("What your child says will show here.")
+                Text("What's said will show here.")
                     .font(.system(.callout, design: .rounded))
                     .foregroundStyle(Theme.ink.opacity(0.45))
                 Spacer()

@@ -23,13 +23,13 @@ final class BoardStore {
     var undoManager: UndoManager? { context.undoManager }
 
     /// Runs `body` as one undo step named `name` ("Undo Add Tile") and saves.
-    func change(_ name: String, _ body: () throws -> Void) rethrows {
+    func change(_ name: LocalizedStringResource, _ body: () throws -> Void) rethrows {
         undoManager?.beginUndoGrouping()
         defer {
             // Save *inside* the group: SwiftData records undo steps when it processes changes, so a
             // save after closing the group would put this change into some other undo step.
             try? context.save()
-            undoManager?.setActionName(name)
+            undoManager?.setActionName(String(localized: name))
             undoManager?.endUndoGrouping()
         }
         try body()
@@ -41,7 +41,7 @@ final class BoardStore {
     ///
     /// Undo makes *new* objects with the old IDs. SwiftData's older undo steps still point at the deleted
     /// ones and would crash, so a change like this (not an undo or redo of one) forgets the older steps.
-    func change(_ name: String, undo: @escaping @MainActor (BoardStore) -> Void, _ body: () throws -> Void) rethrows {
+    func change(_ name: LocalizedStringResource, undo: @escaping @MainActor (BoardStore) -> Void, _ body: () throws -> Void) rethrows {
         guard let undoManager else {
             try body()
             try? context.save()
@@ -54,7 +54,7 @@ final class BoardStore {
             try? context.save()  // while registration is off, so SwiftData records nothing
             undoManager.enableUndoRegistration()
             undoManager.registerUndo(withTarget: self) { store in MainActor.assumeIsolated { undo(store) } }
-            undoManager.setActionName(name)
+            undoManager.setActionName(String(localized: name))
             undoManager.endUndoGrouping()
         }
         try body()
@@ -66,7 +66,7 @@ final class BoardStore {
     /// `redo` does the change again. Pictures and recordings are kept only for `mediaOf` (they can be big).
     /// Like any `change(_:undo:_:)`, it forgets older undo steps: SwiftData's own records of them don't
     /// survive this one on iOS 26 and earlier (a redo took an untouched tile off its board).
-    func change(_ name: String, restoring tileIDs: Set<UUID>, boards boardIDs: Set<UUID>, mediaOf: Set<UUID> = [],
+    func change(_ name: LocalizedStringResource, restoring tileIDs: Set<UUID>, boards boardIDs: Set<UUID>, mediaOf: Set<UUID> = [],
                 redo: @escaping @MainActor (BoardStore) -> Void, _ body: () throws -> Void) rethrows {
         let before = Snapshot(tiles: allTiles().filter { tileIDs.contains($0.id) }.map { TileState($0, keepMedia: mediaOf.contains($0.id)) },
                               boards: boards().filter { boardIDs.contains($0.id) }.map(BoardState.init))
@@ -376,7 +376,7 @@ final class BoardStore {
     /// "snack" → "Snack": a folder title from a tile label.
     static func folderName(from label: String) -> String {
         let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let first = trimmed.first else { return "New folder" }
+        guard let first = trimmed.first else { return String(localized: "New folder") }
         return first.uppercased() + trimmed.dropFirst()
     }
 
@@ -414,7 +414,7 @@ final class BoardStore {
     /// Copies a board with new IDs. Tiles keep the same positions as the original.
     @discardableResult
     func duplicate(_ board: Board) -> Board {
-        let copy = Board(name: board.name + " copy", rows: board.rows, columns: board.columns)
+        let copy = Board(name: String(localized: "\(board.name) copy", comment: "The name of a copied board."), rows: board.rows, columns: board.columns)
         change("Duplicate Board") {
             context.insert(copy)
             for source in board.tiles ?? [] {
@@ -692,12 +692,15 @@ enum StoreError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .slotTaken: return "That spot already has a tile."
-        case .cannotDeleteHome: return "This is the Home board. Choose another Home board first, then delete this one."
-        case .tooSmall: return "A board needs at least 2 spots."
+        case .slotTaken: return String(localized: "That spot already has a tile.")
+        case .cannotDeleteHome: return String(localized: "This is the Home board. Choose another Home board first, then delete this one.")
+        case .tooSmall: return String(localized: "A board needs at least 2 spots.")
         case .wouldCutOff(let labels):
-            let names = labels.prefix(3).map { "'\($0)'" }.joined(separator: ", ")
-            return "The grid can't get smaller yet: \(names)\(labels.count > 3 ? " and others" : "") would not fit. Move or remove those tiles first, so nothing moves by itself."
+            let names = labels.prefix(3).map { String(localized: "“\($0)”", comment: "Words in quotes.") }
+            if labels.count > 3 {
+                return String(localized: "The board can't get smaller yet: \(names.formatted(.list(type: .and))) and others wouldn't fit. Move or remove those tiles first, so nothing moves by itself.")
+            }
+            return String(localized: "The board can't get smaller yet: \(names.formatted(.list(type: .and))) wouldn't fit. Move or remove those tiles first, so nothing moves by itself.")
         }
     }
 }

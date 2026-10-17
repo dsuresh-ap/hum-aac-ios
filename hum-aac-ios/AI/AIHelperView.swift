@@ -11,7 +11,16 @@ struct AIHelperView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
 
-    enum Feature: String, CaseIterable { case describe = "Describe your child", capture = "Paste their phrases" }
+    enum Feature: CaseIterable {
+        case describe, capture
+
+        var title: String {
+            switch self {
+            case .describe: String(localized: "Describe your child")
+            case .capture: String(localized: "Paste their phrases")
+            }
+        }
+    }
     enum Field: Hashable { case describe, phrases, context }
 
     @State private var feature: Feature = .describe
@@ -88,13 +97,13 @@ struct AIHelperView: View {
     private var askSection: some View {
         Section {
             Picker("What would you like to do?", selection: $feature) {
-                ForEach(Feature.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                ForEach(Feature.allCases, id: \.self) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
             switch feature {
             case .describe:
-                TextField("e.g. My child loves trains and says “all aboard!” when she wants to go.", text: $describeText, axis: .vertical)
+                TextField("e.g. My child loves trains and says “all aboard!” when they want to go.", text: $describeText, axis: .vertical)
                     .lineLimit(3...8)
                     .focused($focus, equals: .describe)
             case .capture:
@@ -140,7 +149,7 @@ struct AIHelperView: View {
         } footer: {
             Text(feature == .describe
                  ? "Put the phrases your child really says in quotes, so they're kept exactly."
-                 : "Each line becomes one tile, kept whole. No AI needed for this? Use Add → Paste phrases.")
+                 : "Each line becomes one tile, kept whole. Don't need suggestions? Use Add → Paste phrases instead.")
         }
     }
 
@@ -157,8 +166,7 @@ struct AIHelperView: View {
                 Button {
                     add(proposal)
                 } label: {
-                    Label(selected.isEmpty ? "Choose tiles to add" : "Add \(selected.count) tile\(selected.count == 1 ? "" : "s")",
-                          systemImage: "plus.circle.fill")
+                    Label(selected.isEmpty ? "Choose tiles to add" : "Add \(selected.count) tiles", systemImage: "plus.circle.fill")
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(selected.isEmpty)
@@ -182,7 +190,7 @@ struct AIHelperView: View {
                 }
             }
             if settings.aiUsePrivateCloud {
-                Text("This sends your text request to Apple's Private Cloud Compute. Apple does not store it.")
+                Text("Your words are sent to Apple's Private Cloud Compute servers. Apple doesn't keep them.")
                     .font(.footnote).foregroundStyle(.secondary)
                 quotaStatus
             }
@@ -204,9 +212,7 @@ struct AIHelperView: View {
     private var quotaStatus: some View {
         if let quota = AIHelper.quotaInfo(), quota.level != .fine {
             VStack(alignment: .leading, spacing: 6) {
-                Label(quota.level == .reached
-                      ? "Today's Private Cloud Compute requests are used up\(quota.resetDate.map { ". They refresh \($0.formatted(.relative(presentation: .named)))" } ?? ""). \"On this device\" still works."
-                      : "You're close to today's Private Cloud Compute limit.",
+                Label(Self.quotaText(quota),
                       systemImage: quota.level == .reached ? "gauge.with.dots.needle.100percent" : "gauge.with.dots.needle.67percent")
                     .font(.footnote)
                 if quota.canShowOptions {
@@ -217,11 +223,19 @@ struct AIHelperView: View {
         }
     }
 
+    private static func quotaText(_ quota: AIHelper.QuotaInfo) -> String {
+        guard quota.level == .reached else { return String(localized: "You're close to today's Private Cloud Compute limit.") }
+        if let reset = quota.resetDate {
+            return String(localized: "Today's Private Cloud Compute requests are used up. They refresh \(reset.formatted(.relative(presentation: .named))). “On this device” still works.")
+        }
+        return String(localized: "Today's Private Cloud Compute requests are used up. “On this device” still works.")
+    }
+
     // MARK: Actions
 
     private var mode: AIHelper.Mode { model.settings.aiUsePrivateCloud ? .privateCloud : .onDevice }
 
-    private var targetName: String { model.editingBoardID.flatMap(model.fetchBoard)?.name ?? "Home" }
+    private var targetName: String { model.editingBoardID.flatMap(model.fetchBoard)?.name ?? String(localized: "Home") }
 
     private var inputIsEmpty: Bool {
         feature == .describe ? describeText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -257,10 +271,10 @@ struct AIHelperView: View {
     private func add(_ proposal: AIHelper.Proposal) {
         let chosen = proposal.tiles.indices.filter(selected.contains).map { proposal.tiles[$0] }
         do {
-            try ImportService(model: model).addSuggested(chosen, targetBoardID: model.editingBoardID, source: "Suggestions from the AI helper")
+            try ImportService(model: model).addSuggested(chosen, targetBoardID: model.editingBoardID, source: String(localized: "Suggestions from the AI helper"))
             dismiss()
         } catch {
-            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            errorMessage = friendlyMessage(for: error)
         }
     }
 }

@@ -29,6 +29,8 @@ public enum MergePlanner {
         /// Set when the file's own Home became a folder on your Home (a merge into a setup that has one).
         public var homeFolderName: String?
 
+        public init() {}
+
         /// Plain-language sentence for the preview, e.g. "3 new tiles, 2 changed tiles, 0 removed. No tiles will move."
         public var sentence: String {
             var parts: [String] = []

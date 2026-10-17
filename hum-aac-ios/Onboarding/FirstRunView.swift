@@ -50,9 +50,9 @@ struct FirstRunView: View {
             ViewThatFits(in: .horizontal) {
                 ForEach([200, 140, 100] as [CGFloat], id: \.self) { size in
                     HStack(spacing: 14) {
-                        SampleKey(symbol: "🚀", label: "Let's go!", function: .request, size: size)
-                        SampleKey(symbol: "🙅", label: "No thank you", function: .protest, size: size)
-                        SampleKey(symbol: "👀", label: "Look at that!", function: .comment, size: size)
+                        SampleKey(symbol: "🚀", label: String(localized: "Let's go!"), function: .request, size: size)
+                        SampleKey(symbol: "🙅", label: String(localized: "No thank you"), function: .protest, size: size)
+                        SampleKey(symbol: "👀", label: String(localized: "Look at that!"), function: .comment, size: size)
                     }
                 }
             }
@@ -196,14 +196,14 @@ struct FirstRunView: View {
             growHomeToChosenSize()
         }
         .accessibilityIdentifier("firstRun.starter")
-        choice("Empty board", "A blank \(rows) × \(columns) board to fill with your child's own phrases.", "square.dashed") {
+        choice("Empty board", String(localized: "A blank \(rows) × \(columns) board to fill with your child's own phrases."), "square.dashed") {
             useChosenSizeForNewFolders()
             model.finishFirstRun(.empty(rows: rows, columns: columns))
         }
         .accessibilityIdentifier("firstRun.empty")
         // Setup finishes only once the import does: cancelling comes back here, and the file's own
         // Home becomes Home because nothing was made before it (BUGS.md, HUM-004).
-        choice("Import a setup", "A Hum file from another device, or one made with a coding agent.", "square.and.arrow.down") {
+        choice("Import boards", String(localized: "A Hum file from another device, or boards someone made for your child."), "square.and.arrow.down") {
             useChosenSizeForNewFolders()
             onImport()
         }
@@ -229,10 +229,10 @@ struct FirstRunView: View {
     /// The starter board has its own 5 × 4 size. A smaller choice is used for new folders instead,
     /// and the card says so, rather than squeezing the starter's tiles away (BUGS.md, HUM-003).
     private var starterDetail: String {
-        let phrases = "18 whole phrases like \"Let's go!\", \"All done\" and \"Too loud\". Replace the pictures with real photos later."
-        guard rows < 5 || columns < 4, rows * columns < 20 else { return phrases }
-        return "A 5 × 4 board with " + phrases.prefix(1).lowercased() + phrases.dropFirst()
-            + " New folders use your \(rows) × \(columns) size."
+        guard rows < 5 || columns < 4, rows * columns < 20 else {
+            return String(localized: "18 whole phrases like “Let's go!”, “All done” and “Too loud”. Replace the pictures with real photos later.")
+        }
+        return String(localized: "A 5 × 4 board with 18 whole phrases like “Let's go!”, “All done” and “Too loud”. Replace the pictures with real photos later. New folders use your \(rows) × \(columns) size.")
     }
 
     private func useChosenSizeForNewFolders() {
@@ -242,7 +242,7 @@ struct FirstRunView: View {
 
     // MARK: Helpers
 
-    private func choice(_ title: String, _ detail: String, _ icon: String, action: @escaping () -> Void) -> some View {
+    private func choice(_ title: LocalizedStringKey, _ detail: String, _ icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 16) {
                 Image(systemName: icon).font(.title).frame(width: 44)
@@ -260,7 +260,7 @@ struct FirstRunView: View {
         .buttonStyle(.plain)
     }
 
-    private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
+    private func primaryButton(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title).font(.title3.weight(.semibold)).frame(minWidth: 160).padding(.vertical, 6)
         }
@@ -270,7 +270,7 @@ struct FirstRunView: View {
 
     private func play(_ voice: AVSpeechSynthesisVoice) {
         preview.stopSpeaking(at: .immediate)
-        let u = AVSpeechUtterance(string: "Let's go to the park!")
+        let u = AVSpeechUtterance(string: SpeechSamples.tryVoice)
         u.voice = voice
         preview.speak(u)
     }

@@ -10,7 +10,16 @@ import AppKit
 /// Choose a tile's picture: an emoji (offline: suggestions from the tile's words, AAC-focused
 /// categories, search, any emoji from the keyboard) or an AAC symbol from the online library.
 struct EmojiPickerView: View {
-    enum Source: String, CaseIterable { case emoji = "Emoji", symbols = "Symbols" }
+    enum Source: String, CaseIterable {
+        case emoji, symbols
+
+        var title: String {
+            switch self {
+            case .emoji: String(localized: "Emoji")
+            case .symbols: String(localized: "Symbols", comment: "AAC picture symbols from an online library, like ARASAAC.")
+            }
+        }
+    }
 
     @Binding var selection: String
     let label: String
@@ -33,7 +42,7 @@ struct EmojiPickerView: View {
             VStack(spacing: 0) {
                 if onSymbol != nil {
                     Picker("Picture", selection: $source) {
-                        ForEach(Source.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        ForEach(Source.allCases, id: \.self) { Text($0.title).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
@@ -70,9 +79,9 @@ struct EmojiPickerView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     if search.isEmpty {
-                        if !suggested.isEmpty { group("Suggested for this tile", suggested) }
+                        if !suggested.isEmpty { group(String(localized: "Suggested for this tile"), suggested) }
                         ForEach(EmojiSuggester.categories) { category in
-                            group(category.name, category.entries.map(\.emoji))
+                            group(category.localizedName, category.entries.map(\.emoji))
                         }
                     } else {
                         let found = EmojiSuggester.search(search)
@@ -80,7 +89,7 @@ struct EmojiPickerView: View {
                             Text("No match. Try another word, or type any emoji below.")
                                 .foregroundStyle(.secondary)
                         } else {
-                            group("Matches", found)
+                            group(String(localized: "Matches"), found)
                         }
                     }
                     anyEmoji
@@ -103,7 +112,6 @@ struct EmojiPickerView: View {
                                         in: .rect(cornerRadius: 10))
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(keywords(for: item))
                 }
             }
         }
@@ -132,10 +140,6 @@ struct EmojiPickerView: View {
             Text("Tap the field, then the 🌐 or 😀 key on the keyboard.").font(.footnote).foregroundStyle(.secondary)
             #endif
         }
-    }
-
-    private func keywords(for emoji: String) -> String {
-        EmojiSuggester.categories.flatMap(\.entries).first { $0.emoji == emoji }?.keywords.first ?? emoji
     }
 
     private func choose(_ emoji: String) {
@@ -209,8 +213,11 @@ private struct SymbolSearchView: View {
                     }
                 }
             }
-            Text("Searching sends only your search word to \(source.name). The symbol you pick is saved in the tile, so it works offline. \(source.credit)")
-                .font(.caption2).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Searching sends only your search word to \(source.name). The symbol you pick is saved in the tile, so it works offline.")
+                Text(source.credit)
+            }
+            .font(.caption2).foregroundStyle(.secondary)
         }
         .padding()
         .task {

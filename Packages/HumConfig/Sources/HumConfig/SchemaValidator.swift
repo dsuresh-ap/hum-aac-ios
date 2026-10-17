@@ -171,80 +171,48 @@ private struct RawIssue {
         let field = pointer.last ?? "file"
         let owner = Self.describeOwner(of: pointer, root: root)
 
-        let message: String
+        let problem: ConfigProblem
         switch (field, kind) {
-        case ("spokenText", .missing), ("spokenText", .tooShort), ("spokenText", .pattern):
-            message = "\(owner) has no words to say."
-        case ("label", .tooShort), ("label", .pattern):
-            message = "\(owner) has an empty label."
-        case ("name", .missing), ("name", .tooShort), ("name", .pattern):
-            message = "\(owner) has no name."
-        case ("id", .missing):
-            message = "\(owner) is missing its ID. Every board and tile needs a UUID."
-        case (_, .uuid):
-            message = "\(owner): '\(field)' is not a valid ID. It should be a UUID like 3F2504E0-4F89-11D3-9A0C-0305E82C3301."
-        case ("row", .missing), ("column", .missing):
-            message = "\(owner) has no place on the grid (it needs both 'row' and 'column')."
-        case ("formatVersion", .missing):
-            message = "The file has no 'formatVersion'. Add \"formatVersion\": 1 at the top."
-        case (_, .missing):
-            message = "\(owner) is missing '\(field)'."
-        case (_, .type(let expected)):
-            message = "\(owner): '\(field)' should be \(Self.article(expected.joined(separator: " or ")))."
-        case (_, .enumeration(let options)):
-            message = "\(owner): '\(field)' must be one of: \(options.joined(separator: ", "))."
-        case (_, .constant(let c)):
-            message = "\(owner): '\(field)' must be \(Self.literal(c))."
-        case (_, .tooShort(let n)):
-            message = "\(owner): '\(field)' must have at least \(n) character\(n == 1 ? "" : "s")."
-        case (_, .tooLong(let n)):
-            message = "\(owner): '\(field)' is too long (at most \(n) characters)."
-        case ("color", .pattern):
-            message = "\(owner): 'color' should look like #A1B2C3."
-        case (_, .pattern):
-            message = "\(owner): '\(field)' has the wrong format."
+        case ("spokenText", .missing), ("spokenText", .tooShort), ("spokenText", .pattern): problem = .noWords(owner)
+        case ("label", .tooShort), ("label", .pattern): problem = .emptyLabel(owner)
+        case ("name", .missing), ("name", .tooShort), ("name", .pattern): problem = .noName(owner)
+        case ("id", .missing): problem = .missingID(owner)
+        case (_, .uuid): problem = .invalidID(owner, field: field)
+        case ("row", .missing), ("column", .missing): problem = .noPlace(owner)
+        case ("formatVersion", .missing): problem = .noFormatVersion
+        case (_, .missing): problem = .missingField(owner, field: field)
+        case (_, .type(let expected)): problem = .wrongType(owner, field: field, expected: expected)
+        case (_, .enumeration(let options)): problem = .notOneOf(owner, field: field, options: options)
+        case (_, .constant(let c)): problem = .mustBe(owner, field: field, value: Self.literal(c))
+        case (_, .tooShort(let n)): problem = .tooShort(owner, field: field, min: n)
+        case (_, .tooLong(let n)): problem = .tooLong(owner, field: field, max: n)
+        case ("color", .pattern): problem = .badColor(owner)
+        case (_, .pattern): problem = .wrongFormat(owner, field: field)
         case (_, .range(let min, let max)):
-            let lo = min.map { Self.literal(.number($0)) } ?? "…"
-            let hi = max.map { Self.literal(.number($0)) } ?? "…"
-            message = "\(owner): '\(field)' must be between \(lo) and \(hi)."
-        case (_, .tooFewItems(let n)):
-            message = "\(owner): '\(field)' needs at least \(n) item\(n == 1 ? "" : "s")."
-        case (_, .tooManyItems(let n)):
-            message = "\(owner): '\(field)' can have at most \(n) items."
-        case (_, .notAllowed):
-            message = "\(owner): '\(field)' is not allowed here."
+            problem = .outOfRange(owner, field: field, min: min.map { Self.literal(.number($0)) } ?? "…",
+                                  max: max.map { Self.literal(.number($0)) } ?? "…")
+        case (_, .tooFewItems(let n)): problem = .tooFewItems(owner, field: field, min: n)
+        case (_, .tooManyItems(let n)): problem = .tooManyItems(owner, field: field, max: n)
+        case (_, .notAllowed): problem = .notAllowed(owner, field: field)
         }
-        return ValidationIssue(.error, message, path: path)
+        return ValidationIssue(.error, problem, path: path)
     }
 
-    /// Turns a JSON pointer into words, e.g. ["boards","0","tiles","2","spokenText"] → "Tile 'snack'".
-    static func describeOwner(of pointer: [String], root: JSONValue) -> String {
+    /// Turns a JSON pointer into the board or tile it's about, e.g. ["boards","0","tiles","2","spokenText"] → tile "snack".
+    static func describeOwner(of pointer: [String], root: JSONValue) -> ConfigSubject {
         if pointer.count >= 4, pointer[0] == "boards", pointer[2] == "tiles",
            let b = Int(pointer[1]), let t = Int(pointer[3]) {
             let tile = root["boards"]?[b]?["tiles"]?[t]
             let name = tile?["label"]?.stringValue ?? tile?["spokenText"]?.stringValue
-            if let name, !name.trimmingCharacters(in: .whitespaces).isEmpty { return "Tile '\(name)'" }
-            let boardName = root["boards"]?[b]?["name"]?.stringValue ?? "board \(b + 1)"
-            return "Tile \(t + 1) on '\(boardName)'"
+            if let name, !name.trimmingCharacters(in: .whitespaces).isEmpty { return .tile(name) }
+            return .tileNumber(t + 1, boardName: root["boards"]?[b]?["name"]?.stringValue, boardNumber: b + 1)
         }
         if pointer.count >= 2, pointer[0] == "boards", let b = Int(pointer[1]) {
-            if let name = root["boards"]?[b]?["name"]?.stringValue, !name.isEmpty { return "Board '\(name)'" }
-            return "Board \(b + 1)"
+            if let name = root["boards"]?[b]?["name"]?.stringValue, !name.isEmpty { return .board(name) }
+            return .boardNumber(b + 1)
         }
-        if pointer.first == "settings" { return "Settings" }
-        return "The file"
-    }
-
-    static func article(_ type: String) -> String {
-        switch type {
-        case "integer": return "a whole number"
-        case "number": return "a number"
-        case "string": return "text"
-        case "boolean": return "true or false"
-        case "array": return "a list"
-        case "object": return "an object"
-        default: return type
-        }
+        if pointer.first == "settings" { return .settings }
+        return .file
     }
 
     static func literal(_ v: JSONValue) -> String {

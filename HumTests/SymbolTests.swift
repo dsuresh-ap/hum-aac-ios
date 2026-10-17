@@ -115,3 +115,15 @@ extension Trait where Self == ConditionTrait {
                  "WebKit doesn't start reliably in the CI simulator")
     }
 }
+
+@Suite("Symbol search languages")
+struct SymbolLanguageTests {
+    @Test func eachServiceGetsItsOwnLanguageCode() {
+        #expect(SymbolLibrary.language(for: .arasaac, code: "es") == "es")
+        #expect(SymbolLibrary.language(for: .arasaac, code: "cy") == "en", "ARASAAC has no Welsh: English")
+        #expect(SymbolLibrary.language(for: .mulberry, code: "es") == "spa")
+        #expect(SymbolLibrary.language(for: .mulberry, code: "en") == "eng")
+        let url = SymbolLibrary.searchURL("zumo", source: .mulberry, language: "spa")
+        #expect(url?.query?.contains("language=spa") == true)
+    }
+}
