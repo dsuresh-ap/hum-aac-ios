@@ -227,17 +227,23 @@ final class WhatsThisSession {
     /// The picture taken, shown above its words. Never saved.
     private(set) var photo: CGImage?
     @ObservationIgnored let camera: any WhatsThisCameraDevice
+    /// Set by Close. The camera stays off after it, even if a start was still on its way.
+    @ObservationIgnored private var closed = false
 
     init(camera: any WhatsThisCameraDevice) {
         self.camera = camera
     }
 
     func start(_ model: AppModel) async {
+        guard !closed else { return }
         if model.usesFakeCamera {
             step = .live
             return
         }
-        step = await camera.start() ? .live : .noCamera
+        let started = await camera.start()
+        // Closed while the camera was starting: turn it off again.
+        guard !closed else { return camera.stop() }
+        step = started ? .live : .noCamera
     }
 
     func snap(_ model: AppModel) async {
@@ -273,6 +279,7 @@ final class WhatsThisSession {
 
     /// The screen closed.
     func close() {
+        closed = true
         camera.stop()
     }
 }

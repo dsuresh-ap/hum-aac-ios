@@ -202,6 +202,19 @@ struct WhatsThisSessionTests {
         session.close()
         #expect(!camera.isRunning)
     }
+
+    /// The screen can close before its start has run (SwiftUI starts `.task` work a moment after the
+    /// screen appears). Close still wins: the camera never comes on after it, and nothing starts it again.
+    @Test func closeBeforeTheCameraStartsWins() async {
+        let (model, camera, session) = setUp()
+        let starting = Task { await session.start(model) }
+        session.close()
+        await starting.value
+        #expect(!camera.isRunning)
+        await session.retake(model)
+        await session.start(model)
+        #expect(!camera.isRunning)
+    }
 }
 
 // MARK: Fakes
