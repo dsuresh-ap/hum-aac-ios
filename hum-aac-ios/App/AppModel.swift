@@ -67,6 +67,8 @@ final class AppModel {
     let history: SpeechHistory
     /// iCloud sync status for the parent (Setup & sharing).
     let sync = SyncMonitor()
+    /// Guesses what's in a new tile photo (Vision, on this device). UI tests swap in a fake.
+    @ObservationIgnored var objectClassifier: any ObjectClassifying = VisionObjectClassifier()
 
     private(set) var snapshot: BoardSnapshot?
     private(set) var currentBoardID: UUID?

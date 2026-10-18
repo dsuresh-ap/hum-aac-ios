@@ -62,6 +62,9 @@ final class SpeechHistory {
     /// The most recent entries, newest first.
     func recent(_ n: Int) -> [Entry] { Array(entries.suffix(n).reversed()) }
 
+    /// The most recent entries, oldest first, so they read like a sentence being built.
+    func latest(_ n: Int) -> [Entry] { Array(entries.suffix(n)) }
+
     func clear() {
         entries.removeAll()
         scheduleSave()

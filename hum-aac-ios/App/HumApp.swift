@@ -6,6 +6,7 @@ import HumConfig
 import SwiftData
 import UniformTypeIdentifiers
 import AppIntents
+import os
 
 @main
 struct HumApp: App {
@@ -22,6 +23,9 @@ struct HumApp: App {
             container: Persistence.makeContainer(inMemory: testing, iCloud: !testing && DeviceSettings(defaults: defaults).iCloudSyncEnabled),
             settings: DeviceSettings(defaults: defaults),
             history: SpeechHistory(fileURL: testing ? nil : SpeechHistory.defaultURL))
+        if testing && ProcessInfo.processInfo.arguments.contains("-fakeObjectNames") {
+            model.objectClassifier = UITestObjectClassifier()
+        }
         _model = State(initialValue: model)
         // Shortcuts and Siri actions use this same model (Intents/ChildIntents.swift).
         AppDependencyManager.shared.add(dependency: model)
@@ -133,6 +137,21 @@ struct HumFileDrop: ViewModifier {
     }
 }
 #endif
+
+/// Stands in for Vision in UI tests (-uiTesting -fakeObjectNames): the first photo is a dog, the next has
+/// long names, then they take turns.
+nonisolated final class UITestObjectClassifier: ObjectClassifying {
+    private let calls = OSAllocatedUnfairLock(initialState: 0)
+
+    func classify(_ imageData: Data) async -> [ObjectGuess] {
+        let call = calls.withLock { count in
+            defer { count += 1 }
+            return count
+        }
+        let names = call.isMultiple(of: 2) ? ["animal", "dog", "food_bowl", "leash"] : ["balloon_hotair", "jack_o_lantern", "play_card"]
+        return names.map { ObjectGuess(identifier: $0, confidence: 0.9) }
+    }
+}
 
 /// Small, deterministic setups for UI tests and screenshots. Only reachable with -uiTesting.
 @MainActor
