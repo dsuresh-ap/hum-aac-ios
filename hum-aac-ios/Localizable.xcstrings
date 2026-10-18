@@ -6201,6 +6201,47 @@
         }
       }
     },
+    "All boards" : {
+      "comment" : "A choice: send every board.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los tableros"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous les tableaux"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Tafeln"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas as pranchas"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutte le tabelle"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有沟通板"
+          }
+        }
+      }
+    },
     "Animals" : {
       "comment" : "Emoji picker heading.",
       "localizations" : {
@@ -17189,6 +17230,47 @@
         }
       }
     },
+    "Only “%@”" : {
+      "comment" : "A choice: send just this board. The argument is the board's name.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo «%@»"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seulement « %@ »"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur „%@“"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Só “%@”"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo «%@»"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅“%@”"
+          }
+        }
+      }
+    },
     "Open" : {
       "comment" : "Opens a folder (or the boards an import just added).",
       "localizations" : {
@@ -21316,6 +21398,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "发送你的所有沟通板、照片和设置。不经过互联网。"
+          }
+        }
+      }
+    },
+    "Sends “%@” with its photos and recordings. Nothing goes through the internet." : {
+      "comment" : "Footer when sending one board. The argument is the board's name.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía «%@» con sus fotos y grabaciones. Nada pasa por internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoie « %@ » avec ses photos et enregistrements. Rien ne passe par Internet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sendet „%@“ mit seinen Fotos und Aufnahmen. Nichts geht über das Internet."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envia “%@” com suas fotos e gravações. Nada passa pela internet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia «%@» con le sue foto e registrazioni. Niente passa da internet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送“%@”及其照片和录音。不经过互联网。"
           }
         }
       }
@@ -27638,6 +27761,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "卡片说的话"
+          }
+        }
+      }
+    },
+    "What to send" : {
+      "comment" : "A picker on the Send to a nearby device screen: all boards, or one board.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué enviar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quoi envoyer"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was senden"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que enviar"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa inviare"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送内容"
           }
         }
       }

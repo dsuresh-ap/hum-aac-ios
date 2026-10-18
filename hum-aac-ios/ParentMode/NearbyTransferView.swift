@@ -10,11 +10,21 @@ struct NearbySendView: View {
     @State private var transfer = NearbyTransfer(role: .send, transport: NetworkTransport())
     @State private var preparing = true
     @State private var prepareError: String?
+    /// The board to send on its own, or nil for all boards.
+    @State private var onlyBoardID: UUID?
 
     var body: some View {
         Form {
             Section {
                 Text("On the other device, open Hum, go to Share & sync, and tap “Receive from a nearby device”.")
+                // Like "Export “Home” only…": the board being edited can go on its own.
+                if let board = editingBoard {
+                    Picker("What to send", selection: $onlyBoardID) {
+                        Text("All boards").tag(UUID?.none)
+                        Text("Only “\(board.name)”").tag(UUID?.some(board.id))
+                    }
+                    .disabled(!canChoose && !preparing)
+                }
             }
 
             if preparing || prepareError != nil || transfer.state != .looking {
@@ -38,15 +48,22 @@ struct NearbySendView: View {
             } header: {
                 Text("Nearby devices")
             } footer: {
-                Text("Sends all your boards, photos and settings. Nothing goes through the internet.")
+                if let board = editingBoard, onlyBoardID == board.id {
+                    Text("Sends “\(board.name)” with its photos and recordings. Nothing goes through the internet.")
+                } else {
+                    Text("Sends all your boards, photos and settings. Nothing goes through the internet.")
+                }
             }
         }
         .formStyle(.grouped)
         .navigationTitle("Send to a nearby device")
         .onAppear { transfer.start() }
         .onDisappear { transfer.stop() }
-        .task { await prepareFile() }
+        // Made again when the choice changes.
+        .task(id: onlyBoardID) { await prepareFile() }
     }
+
+    private var editingBoard: Board? { model.editingBoardID.flatMap(model.fetchBoard) }
 
     @ViewBuilder private var status: some View {
         if let prepareError {
@@ -89,26 +106,32 @@ struct NearbySendView: View {
     }
 
     private var canChoose: Bool {
-        guard transfer.hasFile else { return false }
+        guard transfer.hasFile, !preparing else { return false }
         switch transfer.state {
         case .looking, .declined, .sent, .failed: return true
         default: return false
         }
     }
 
-    /// Makes the whole setup's `.hum` file in the background while devices are found.
+    /// Makes the `.hum` file (all boards, or one) in the background while devices are found.
     private func prepareFile() async {
-        guard !transfer.hasFile else { return }
         preparing = true
-        defer { preparing = false }
-        let (document, media) = ImportService(model: model).exportContents()
+        prepareError = nil
+        let boardID = onlyBoardID
+        let name = boardID.flatMap(model.fetchBoard)?.name
+        let (document, media) = ImportService(model: model).exportContents(boardID: boardID)
         do {
             let data = try await Task.detached(priority: .userInitiated) { try HumPackage.write(document, media: media) }.value
-            try transfer.setFile(data, name: ImportService.exportFileName())
+            // The parent changed their mind while this was being made: the newer one wins.
+            guard !Task.isCancelled else { return }
+            defer { preparing = false }
+            try transfer.setFile(data, name: ImportService.exportFileName(boardName: name))
         } catch let error as NearbyTransferError {
             prepareError = error.message
+            preparing = false
         } catch {
             prepareError = error.localizedDescription
+            preparing = false
         }
     }
 }
