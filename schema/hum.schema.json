@@ -87,7 +87,7 @@
           "description": "Grid row, counting from 0 at the top. Never change this for an existing tile unless the parent asked to move it.",
           "type": "integer",
           "minimum": 0,
-          "maximum": 7
+          "maximum": 19
         },
         "column": {
           "description": "Grid column, counting from 0 at the left. Never change this for an existing tile unless the parent asked to move it.",

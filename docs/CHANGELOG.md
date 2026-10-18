@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased: fixes
+
+- Setups with a tall board (a tile below row 8) open again. Their exports, backups and transfers were
+  refused on import before.
+
 ## Unreleased: send boards to your other devices
 
 - **Send with AirDrop…** in Share & sync opens the share sheet with your boards already in it: no
