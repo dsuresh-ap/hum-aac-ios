@@ -13,6 +13,8 @@ struct SettingsView: View {
     @State private var personalVoiceStatus = ""
     /// The voice list starts short (the best few, plus the one in use), so the other settings are close.
     @State private var showAllVoices = false
+    /// The parent turned on "What's this?" but Hum may not use the camera.
+    @State private var cameraDenied = false
 
     var body: some View {
         @Bindable var settings = model.settings
@@ -123,6 +125,8 @@ struct SettingsView: View {
                     Text("The sentence strip collects tapped tiles so your child can play them together; it's for when your child starts mixing words into new sentences. The history box shows what was said recently, so you can catch up if you missed it. The word finder looks up a word and lights up the way to its tile, without saying it, so the path is learned. All three are off at first, and each tile always speaks on its own.")
                 }
 
+                whatsThisSection
+
                 Section {
                     Toggle("Go back to Home after a tile in a folder speaks", isOn: $settings.returnHomeAfterFolderTap)
                     LabeledContent("Tile size for new folders") {
@@ -186,6 +190,52 @@ struct SettingsView: View {
     private var currentVoiceID: String { model.speech.voice.identifier }
 
     /// The best 5 voices and the one in use, or all of them.
+    /// "What's this?" camera for the child. Turning it on asks for the camera now, in grown-up settings,
+    /// so the child never sees a permission prompt.
+    private var whatsThisSection: some View {
+        let availability = model.whatsThisAvailability
+        return Section {
+            Toggle("“What's this?” camera", isOn: Binding(
+                get: { model.settings.whatsThisCamera && availability == .available },
+                set: { turnOnWhatsThis($0) }))
+                .disabled(availability != .available)
+                .accessibilityIdentifier("whatsThisToggle")
+            switch availability {
+            case .notInEnglish:
+                Text("Only in English for now. The words come from Apple's picture recognition on this device, which knows English words.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            case .noCamera:
+                Text("This device has no camera.").font(.footnote).foregroundStyle(.secondary)
+            case .available:
+                if cameraDenied {
+                    #if os(macOS)
+                    Text("Hum isn't allowed to use the camera. You can allow it in System Settings → Privacy & Security → Camera.")
+                        .font(.footnote).foregroundStyle(.orange)
+                    #else
+                    Text("Hum isn't allowed to use the camera. You can allow it in Settings → Privacy & Security → Camera.")
+                        .font(.footnote).foregroundStyle(.orange)
+                    #endif
+                }
+            }
+        } header: {
+            Text("What's this?")
+        } footer: {
+            Text("Adds a camera button at the top of your child's board. Your child points it at something, and Hum shows up to three words for it. A word speaks only when your child taps it. The guesses are made on this device and can be wrong. Pictures aren't kept.")
+        }
+    }
+
+    private func turnOnWhatsThis(_ on: Bool) {
+        guard on else {
+            model.settings.whatsThisCamera = false
+            return
+        }
+        Task {
+            let allowed = model.usesFakeCamera ? true : await WhatsThisCamera.requestCamera()
+            cameraDenied = !allowed
+            model.settings.whatsThisCamera = allowed
+        }
+    }
+
     private var shownVoices: [AVSpeechSynthesisVoice] {
         if showAllVoices { return voices }
         let top = Array(voices.prefix(5))

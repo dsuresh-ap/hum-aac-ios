@@ -12,6 +12,18 @@
 - **Safer file imports.** Hum refuses a file that would unpack to more than 600 MB or more than 20 000
   files before opening it, so a broken or hostile file can't make Hum run out of memory.
 
+## Unreleased: "What's this?" camera
+
+- **"What's this?" camera for the child** (Settings → What's this?, off at first). A small camera button
+  sits by the word finder and the lock, in the top bar, so no tile moves. The child takes a picture and
+  Hum shows up to three words as big buttons. A word speaks only when the child taps it, and goes into
+  history like a tile. No words: a calm "Try again". Close is where Home is.
+- Turning it on asks for the camera then, in grown-up settings, so the child never sees a permission
+  prompt. English only for now (the words come from Apple's on-device picture recognition). Works with
+  the FaceTime camera on a Mac too. Pictures are never saved.
+- **Tile photos get name ideas**: after you add a photo to a tile, Hum suggests up to three names from
+  the picture, on the device. Tap one to fill in the label.
+
 ## Unreleased: word finder
 
 - **Find in the editor** (magnifier in the toolbar, ⌘F on the Mac). Type a word to find tiles and

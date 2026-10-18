@@ -16,6 +16,9 @@ Hum is a free, open-source AAC (communication) app. We built it to collect nothi
 - **Boards, tiles, photos and recordings** are stored in the app on your device.
 - **Camera and microphone** are used only when you take a photo for a tile or record a phrase in your
   own voice. The photo or recording stays on the device (or in your own iCloud, if you turn on sync).
+- **The "What's this?" camera** (off until you turn it on) lets your child take a picture so Hum can
+  guess words for it. The guessing happens on the device, and the picture is thrown away when the camera
+  closes: it is never saved, synced or put in history.
 - **The history box** (what was said recently) stays on the device. It is never synced or exported.
   You can clear it in Settings.
 - **Settings** (voice, display, lock) stay on the device.

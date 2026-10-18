@@ -26,6 +26,9 @@ struct HumApp: App {
         if testing && ProcessInfo.processInfo.arguments.contains("-fakeObjectNames") {
             model.objectClassifier = UITestObjectClassifier()
         }
+        if testing && ProcessInfo.processInfo.arguments.contains("-fakeCamera") {
+            model.usesFakeCamera = true
+        }
         _model = State(initialValue: model)
         // Shortcuts and Siri actions use this same model (Intents/ChildIntents.swift).
         AppDependencyManager.shared.add(dependency: model)
@@ -50,6 +53,8 @@ struct HumApp: App {
                         if args.contains("-demoPendingImport") { UITestFixtures.queueImport(model) }
                         if args.contains("-startInParent") { model.mode = .parent }
                         if args.contains("-darkMode") { model.settings.appearance = .dark }
+                        if args.contains("-whatsThisCamera") { model.settings.whatsThisCamera = true }
+                        if args.contains("-showHistory") { model.settings.showHistory = true }
                         if args.contains("-demoFolder") { UITestFixtures.addFoodFolder(model) }
                         if args.contains("-wideHome") { UITestFixtures.widenHome(model) }
                         if args.contains("-tallHome") { UITestFixtures.lengthenHome(model) }
@@ -139,7 +144,7 @@ struct HumFileDrop: ViewModifier {
 #endif
 
 /// Stands in for Vision in UI tests (-uiTesting -fakeObjectNames): the first photo is a dog, the next has
-/// long names, then they take turns.
+/// long names, the third has nothing Hum can name, then they take turns.
 nonisolated final class UITestObjectClassifier: ObjectClassifying {
     private let calls = OSAllocatedUnfairLock(initialState: 0)
 
@@ -148,7 +153,7 @@ nonisolated final class UITestObjectClassifier: ObjectClassifying {
             defer { count += 1 }
             return count
         }
-        let names = call.isMultiple(of: 2) ? ["animal", "dog", "food_bowl", "leash"] : ["balloon_hotair", "jack_o_lantern", "play_card"]
+        let names = [["animal", "dog", "food_bowl", "leash"], ["balloon_hotair", "jack_o_lantern", "play_card"], []][call % 3]
         return names.map { ObjectGuess(identifier: $0, confidence: 0.9) }
     }
 }

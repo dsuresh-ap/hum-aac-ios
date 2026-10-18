@@ -21,6 +21,7 @@ struct ChildBoardView: View {
     /// Tighter margins on iPhone so 4 columns stay close to the 88 pt minimum tile width.
     private var padding: CGFloat { sizeClass == .compact ? 8 : Theme.gridPadding }
     @State private var showFinder = false
+    @State private var showCamera = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -44,6 +45,11 @@ struct ChildBoardView: View {
         .sheet(isPresented: $showFinder) {
             WordFinderView(purpose: .child) { model.startFinding($0) }
         }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $showCamera) { WhatsThisView() }
+        #else
+        .sheet(isPresented: $showCamera) { WhatsThisView() }
+        #endif
         #if os(iOS)
         // The lock sits near the top edge, where iPadOS holds touches back for its own swipes, so the
         // 3-second hold started late and parents let go too early (BUGS.md, HUM-044). Hum's touches go
@@ -81,8 +87,12 @@ struct ChildBoardView: View {
                     FindingPill(target: target, showsTarget: sizeClass != .compact) { model.stopFinding() }
                 }
             }
-            // The finder sits right next to the lock (their touch areas meet but don't overlap).
+            // The finder sits right next to the lock (their touch areas meet but don't overlap). The
+            // "What's this?" camera goes on the far side of the finder, so the finder and lock never move.
             HStack(spacing: 0) {
+                if model.showsWhatsThisButton {
+                    WhatsThisButton { showCamera = true }
+                }
                 if model.settings.showWordFinder {
                     FinderButton { showFinder = true }
                 }
