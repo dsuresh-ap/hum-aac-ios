@@ -10,6 +10,10 @@
   the second one does. You can send all boards or only the one you're editing. The boards arrive in the usual
   import preview (Merge or Replace), so nothing changes until you choose. Local network only, never the
   internet; a device can only be found while its Receive screen is open. Works between iPad, iPhone and Mac.
+- **Nothing left lying around.** Files made while sharing, receiving or recording are deleted as soon as
+  they're done (and at the next launch if Hum was closed in the middle). Hum keeps the 3 newest
+  "Replace everything" backups instead of 10, and Share & sync shows how many there are with a
+  **Delete backups** button.
 - **Safer file imports.** Hum refuses a file that would unpack to more than 600 MB or more than 20 000
   files before opening it, so a broken or hostile file can't make Hum run out of memory.
 

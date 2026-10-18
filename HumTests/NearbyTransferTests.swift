@@ -586,6 +586,58 @@ struct NearbyTransferTests {
         #expect(pair.sender.state == .idle && pair.sender.peers.isEmpty && !pair.sender.codeWasWrong)
     }
 
+    // MARK: Nothing is left on disk
+
+    /// Starts receiving a big file and returns the folder it's being written to.
+    func receiveHalfway(_ pair: Pair) throws -> URL {
+        try offer(pair, file: Data(count: 1_000_000))
+        accept(pair)
+        pair.network.run(limit: 6)
+        let folder = try #require(pair.receiver.receivingFolder)
+        #expect(FileManager.default.fileExists(atPath: folder.path))
+        return folder
+    }
+
+    @Test func aFinishedTransferLeavesNoFile() throws {
+        let pair = makePair { _, _ in }
+        let folder = try receiveHalfway(pair)
+        pair.network.run()
+        #expect(pair.receiver.state == .received)
+        #expect(!FileManager.default.fileExists(atPath: folder.path))
+    }
+
+    @Test func everyOtherEndingLeavesNoFile() async throws {
+        // Cancel here, cancel there, a broken file, a lost connection, a stall, and closing the screen.
+        let endings: [(String, (Pair) async throws -> Void)] = [
+            ("receiver cancels", { pair in pair.receiver.cancel(); pair.network.run() }),
+            ("sender cancels", { pair in pair.sender.cancel(); pair.network.run() }),
+            ("connection lost", { pair in pair.senderTransport.channels.last?.close(); pair.network.run() }),
+            ("screen closed", { pair in pair.receiver.stop(); pair.network.run() }),
+            ("stalled", { pair in
+                pair.receiver.idleTimeout = .milliseconds(30)
+                try await self.eventually(pair, runNetwork: false) { if case .failed = pair.receiver.state { true } else { false } }
+            }),
+        ]
+        for (name, end) in endings {
+            let pair = makePair { _, _ in }
+            let folder = try receiveHalfway(pair)
+            try await end(pair)
+            #expect(pair.receiver.receivingFolder == nil, "\(name)")
+            #expect(!FileManager.default.fileExists(atPath: folder.path), "\(name): file left behind")
+        }
+    }
+
+    @Test func aChangedFileLeavesNoFile() throws {
+        let pair = makePair { _, _ in }
+        try offer(pair, file: Data(count: 100))
+        try pair.sender.setFile(Data(count: 200_000), name: "x.hum")  // more than offered
+        accept(pair)
+        let folder = try #require(pair.receiver.receivingFolder)
+        pair.network.run()
+        #expect(pair.receiver.state == .failed(.unreadable))
+        #expect(!FileManager.default.fileExists(atPath: folder.path))
+    }
+
     // MARK: The sender's code (second review, finding A)
 
     @Test func aStrangersOfferNeedsTheSendersCode() throws {

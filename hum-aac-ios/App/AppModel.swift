@@ -269,6 +269,10 @@ final class AppModel {
         goHome()
         // Pictures saved as SVG (older builds, or synced from another device) become JPEGs.
         Task { await ImportService.renderImportedSVGs(self) }
+        // Files an earlier run left in the temporary folder, and backups beyond the ones kept. Off the
+        // main actor; anything this run makes from now on is newer than `started` and stays.
+        let started = Date.now
+        Task.detached(priority: .utility) { HumTemporaryFiles.cleanUpAtLaunch(startedAt: started) }
     }
 
     /// Finishes first-run setup with the parent's choice.

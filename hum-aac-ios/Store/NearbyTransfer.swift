@@ -82,6 +82,8 @@ final class NearbyTransfer {
     private var keys: (code: String, senderCode: String)?
     private var offer: NearbyOffer?
     private var incoming: IncomingFile?
+    /// Receiver: where the arriving file is being written, while it is (tests check it's cleaned up).
+    var receivingFolder: URL? { incoming?.folder }
     private var sentBytes = 0
     private var phaseStarted = ContinuousClock.now
     private var linkOpened = ContinuousClock.now
@@ -97,7 +99,6 @@ final class NearbyTransfer {
     /// Starts being found (receiver) or looking (sender).
     func start() {
         guard state == .idle else { return }
-        IncomingFile.removeLeftovers()
         state = .looking
         switch role {
         case .send: transport.browse()
@@ -432,7 +433,8 @@ final class NearbyTransfer {
 /// against the size and SHA-256 the sender promised.
 @MainActor
 final class IncomingFile {
-    private static let folderPrefix = "Nearby-"
+    /// Its own folder in the temporary directory (see `HumTemporaryFiles`).
+    let folder: URL
     private let url: URL
     private let handle: FileHandle
     private let expected: Int
@@ -441,28 +443,13 @@ final class IncomingFile {
 
     init(expected: Int) throws {
         self.expected = expected
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(Self.folderPrefix + UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        folder = try HumTemporaryFiles.makeFolder(prefix: HumTemporaryFiles.nearbyPrefix)
         url = folder.appendingPathComponent("received.hum")
-        // Unreadable while the device is locked (iOS).
-        guard FileManager.default.createFile(atPath: url.path, contents: nil,
-                                             attributes: [.protectionKey: FileProtectionType.complete]) else {
+        guard FileManager.default.createFile(atPath: url.path, contents: nil) else {
+            try? FileManager.default.removeItem(at: folder)
             throw NearbyTransferError.unreadable
         }
         handle = try FileHandle(forWritingTo: url)
-    }
-
-    private static var cleanedUp = false
-
-    /// Partial files from a transfer that never finished (Hum was closed in the middle). Once per launch.
-    static func removeLeftovers() {
-        guard !cleanedUp else { return }
-        cleanedUp = true
-        let temporary = FileManager.default.temporaryDirectory
-        let items = (try? FileManager.default.contentsOfDirectory(at: temporary, includingPropertiesForKeys: nil)) ?? []
-        for item in items where item.lastPathComponent.hasPrefix(folderPrefix) {
-            try? FileManager.default.removeItem(at: item)
-        }
     }
 
     var fraction: Double { Double(count) / Double(expected) }
@@ -485,7 +472,7 @@ final class IncomingFile {
 
     func discard() {
         try? handle.close()
-        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+        try? FileManager.default.removeItem(at: folder)
     }
 }
 

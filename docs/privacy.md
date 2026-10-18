@@ -22,6 +22,11 @@ Hum is a free, open-source AAC (communication) app. We built it to collect nothi
 - **The history box** (what was said recently) stays on the device. It is never synced or exported.
   You can clear it in Settings.
 - **Settings** (voice, display, lock) stay on the device.
+- **Backups:** before "Replace everything", Hum saves a backup of your boards on the device and keeps
+  the 3 newest. You can delete them in Share & sync → Delete backups.
+- **Temporary files** made while sharing, receiving from a nearby device or recording are deleted as
+  soon as they're done, and any left behind (if Hum was closed in the middle) are deleted the next
+  time Hum opens.
 
 ## Features that use the network (all off until a grown-up uses them)
 
