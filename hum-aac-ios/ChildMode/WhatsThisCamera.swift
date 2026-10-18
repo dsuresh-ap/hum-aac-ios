@@ -393,7 +393,9 @@ nonisolated final class CameraController: NSObject, @unchecked Sendable {
     }
 }
 
-extension CameraController: AVCapturePhotoCaptureDelegate {
+/// Nonisolated like the class: the camera calls this off the main thread. (Xcode 26 treats a plain
+/// extension as main-actor and refuses it.)
+nonisolated extension CameraController: AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         let data = error == nil ? photo.fileDataRepresentation() : nil
         queue.async {
