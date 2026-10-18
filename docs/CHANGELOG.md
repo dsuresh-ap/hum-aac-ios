@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased: send boards to your other devices
+
+- **Send with AirDrop…** in Share & sync opens the share sheet with your boards already in it: no
+  separate export step. On the other device, Hum opens the file in its import preview.
+- **Send to / Receive from a nearby device.** Open Receive on one device and Send on the other, pick the
+  device, check that both show the same six-digit code, and tap Accept. The boards arrive in the usual
+  import preview (Merge or Replace), so nothing changes until you choose. Local network only, never the
+  internet; a device can only be found while its Receive screen is open. Works between iPad, iPhone and Mac.
+
 ## Unreleased: word finder
 
 - **Find in the editor** (magnifier in the toolbar, ⌘F on the Mac). Type a word to find tiles and

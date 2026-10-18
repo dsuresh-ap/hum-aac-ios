@@ -253,6 +253,30 @@ AVAudioEngine (started once, kept running while foreground)
 - Every picture is flattened onto white before JPEG encoding (symbol PNGs are transparent; JPEG would
   turn the background black).
 
+## 8c. Nearby transfer (local, parent-started device-to-device) — added 2026-10-18 at the owner's request
+
+- **Send with AirDrop…** (Share & sync) is a `ShareLink` holding the setup as a `.hum` file that is made
+  only when a destination asks for it. AirDrop is Apple's; Hum adds no network code for it. On arrival,
+  "Open in Hum" ends in `AppModel.requestImport` like any file.
+- **Send to / Receive from a nearby device** sends the `.hum` file straight to Hum on another iPad,
+  iPhone or Mac. Network framework only: Bonjour (`_hum-setup._tcp`) on the local network plus
+  peer-to-peer Wi-Fi (`includePeerToPeer`). No internet, no servers, no accounts. MultipeerConnectivity
+  isn't used: it is deprecated in the iOS/macOS 27 SDKs.
+- Parent mode only (Share & sync is behind the grown-up lock); child mode never touches it. A device can
+  be found only while its **Receive** screen is open and Hum is in the foreground; leaving the screen
+  stops the listener (and the browser on the sender).
+- Each transfer starts with an X25519 key exchange (CryptoKit). The sender commits to its key (sends a
+  hash) before it sees the receiver's, then both derive ChaChaPoly keys and a **six-digit code** shown
+  on both screens. The receiver sees the sender's name, the file name and size, and the code, and must
+  tap **Accept**. Every frame after the handshake is sealed with a counter nonce (no replay, reorder or
+  tampering); the file is also checked against its size and SHA-256. Limits: 500 MB per file, 128 KB per
+  frame, 1 KB per offer. A device that connects but makes no offer is dropped after 20 s.
+- The received bytes go to `AppModel.requestImport(data:fileName:)`, the same validator, preview and
+  Merge/Replace as every import. Nothing changes until the parent chooses.
+- Needs `NSLocalNetworkUsageDescription` and `NSBonjourServices`, and on macOS the sandbox's incoming
+  connections (server) entitlement for the listener. Code: `Store/NearbyProtocol.swift`,
+  `Store/NearbyTransfer.swift`, `Store/NetworkTransport.swift`, `ParentMode/NearbyTransferView.swift`.
+
 ## 9. Privacy manifest
 
 `PrivacyInfo.xcprivacy`: `NSPrivacyTracking = false`, no tracking domains, no collected data types.

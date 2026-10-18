@@ -1,0 +1,535 @@
+// Copyright 2026 The Hum Authors
+// SPDX-License-Identifier: Apache-2.0
+
+import Foundation
+import Testing
+import HumConfig
+@testable import Hum
+
+/// The wire format of a nearby transfer: frames, messages, offers and the key exchange.
+@MainActor
+@Suite("Nearby transfer: wire format")
+struct NearbyWireTests {
+    @Test func framesSurviveAnySplit() throws {
+        let payloads = [Data("one".utf8), Data(repeating: 7, count: 70_000), Data([1])]
+        let stream = payloads.map(NearbyFrames.frame).reduce(Data(), +)
+
+        var whole = NearbyFrames()
+        #expect(try whole.append(stream) == payloads)
+
+        var byteByByte = NearbyFrames()
+        var got: [Data] = []
+        for byte in stream { got += try byteByByte.append(Data([byte])) }
+        #expect(got == payloads)
+    }
+
+    @Test func framesRejectEmptyAndTooBig() throws {
+        var empty = NearbyFrames()
+        #expect(throws: NearbyTransferError.badData) { try empty.append(Data([0, 0, 0, 0])) }
+
+        var tooBig = NearbyFrames()
+        let length = UInt32(NearbyFrames.maxFrameBytes + 1)
+        let header = Data([UInt8(length >> 24), UInt8(length >> 16 & 0xFF), UInt8(length >> 8 & 0xFF), UInt8(length & 0xFF)])
+        #expect(throws: NearbyTransferError.badData) { try tooBig.append(header) }
+
+        var biggest = NearbyFrames()
+        #expect(try biggest.append(NearbyFrames.frame(Data(count: NearbyFrames.maxFrameBytes))).count == 1)
+    }
+
+    @Test func messagesRoundTrip() throws {
+        let offer = NearbyOffer(fileName: "Hum boards 2026-10-18.hum", byteCount: 1234, senderName: "Kitchen iPad")
+        let messages: [NearbyMessage] = [.offer(offer), .accept, .decline, .chunk(Data([1, 2, 3])),
+                                         .done(digest: Data(count: 32)), .gotIt, .cancel]
+        for message in messages {
+            #expect(try NearbyMessage.decode(message.encoded()) == message)
+        }
+    }
+
+    @Test func messagesRejectWhatHumNeverSends() {
+        #expect(throws: NearbyTransferError.badData) { try NearbyMessage.decode(Data()) }
+        #expect(throws: NearbyTransferError.badData) { try NearbyMessage.decode(Data([99])) }
+        #expect(throws: NearbyTransferError.badData) { try NearbyMessage.decode(Data([2, 0])) }
+        #expect(throws: NearbyTransferError.badData) { try NearbyMessage.decode(Data([4])) }
+        #expect(throws: NearbyTransferError.badData) { try NearbyMessage.decode(Data([4]) + Data(count: NearbyMessage.chunkBytes + 1)) }
+        #expect(throws: NearbyTransferError.badData) { try NearbyMessage.decode(Data([5]) + Data(count: 31)) }
+    }
+
+    @Test func offerLimits() throws {
+        func encode(_ offer: NearbyOffer) throws -> Data { try JSONEncoder().encode(offer) }
+        let ok = NearbyOffer(fileName: "a.hum", byteCount: 10, senderName: "Mac")
+        #expect(try NearbyOffer.decode(encode(ok)) == ok)
+
+        var big = ok
+        big.byteCount = NearbyOffer.maxFileBytes + 1
+        #expect(throws: NearbyTransferError.tooBig) { try NearbyOffer.decode(encode(big)) }
+
+        var empty = ok
+        empty.byteCount = 0
+        #expect(throws: NearbyTransferError.badData) { try NearbyOffer.decode(encode(empty)) }
+
+        var future = ok
+        future.version = 2
+        #expect(throws: NearbyTransferError.badData) { try NearbyOffer.decode(encode(future)) }
+
+        var long = ok
+        long.senderName = String(repeating: "x", count: NearbyOffer.maxOfferBytes)
+        #expect(throws: NearbyTransferError.badData) { try NearbyOffer.decode(encode(long)) }
+
+        #expect(throws: NearbyTransferError.badData) { try NearbyOffer.decode(Data("not json".utf8)) }
+    }
+
+    @Test func receivedNamesAreMadeSafe() {
+        #expect(NearbyOffer.safeFileName("../../etc/passwd") == "passwd.hum")
+        #expect(NearbyOffer.safeFileName(".hidden.hum") == "hidden.hum")
+        #expect(NearbyOffer.safeFileName("a/b:c.HUM") == "b-c.hum")
+        #expect(NearbyOffer.safeFileName("") == "Hum boards.hum")
+        #expect(NearbyOffer.safeFileName(String(repeating: "y", count: 300)).count == 84)
+        #expect(NearbyOffer.safeDeviceName("  ") == "Another device")
+        #expect(NearbyOffer.safeDeviceName("Line\nbreak") == "Line-break")
+    }
+
+    @Test func handshakeGivesBothSidesTheSameCodeAndKeys() throws {
+        let sender = NearbyHandshake(isSender: true)
+        let receiver = NearbyHandshake(isSender: false)
+        let senderHello = sender.hello()
+        let (reveal, senderKeys) = try sender.finishAsSender(receiverHello: receiver.hello())
+        var receiverKeys = try receiver.finishAsReceiver(senderHello: senderHello, reveal: reveal)
+        var sealer = senderKeys.sealer
+        #expect(senderKeys.code == receiverKeys.code)
+        #expect(senderKeys.code.count == 6 && senderKeys.code.allSatisfy(\.isNumber))
+
+        let first = try sealer.seal(Data("hello".utf8))
+        let second = try sealer.seal(Data("again".utf8))
+        #expect(try receiverKeys.opener.open(first) == Data("hello".utf8))
+        // A frame can't be replayed or skipped.
+        var replay = receiverKeys.opener
+        #expect(throws: NearbyTransferError.badData) { try replay.open(first) }
+        #expect(try receiverKeys.opener.open(second) == Data("again".utf8))
+
+        // Changed on the way: rejected.
+        var tampered = try sealer.seal(Data("third".utf8))
+        tampered[0] ^= 1
+        #expect(throws: NearbyTransferError.badData) { try receiverKeys.opener.open(tampered) }
+    }
+
+    @Test func handshakeRejectsAKeyThatDoesntMatchTheCommitment() throws {
+        let sender = NearbyHandshake(isSender: true)
+        let impostor = NearbyHandshake(isSender: true)
+        let receiver = NearbyHandshake(isSender: false)
+        let (reveal, _) = try impostor.finishAsSender(receiverHello: receiver.hello())
+        #expect(throws: NearbyTransferError.badData) { try receiver.finishAsReceiver(senderHello: sender.hello(), reveal: reveal) }
+        #expect(throws: NearbyTransferError.badData) { try sender.finishAsSender(receiverHello: Data("HUM2".utf8) + Data(count: 32)) }
+    }
+
+    @Test func twoTransfersGetDifferentCodes() throws {
+        func code() throws -> String {
+            let sender = NearbyHandshake(isSender: true)
+            return try sender.finishAsSender(receiverHello: NearbyHandshake(isSender: false).hello()).keys.code
+        }
+        // Equal by chance once in a million; three in a row means the code isn't random.
+        let codes = try [code(), code(), code()]
+        #expect(Set(codes).count > 1)
+    }
+}
+
+/// A sender and a receiver talking through an in-memory network.
+@MainActor
+@Suite("Nearby transfer: sending and receiving")
+struct NearbyTransferTests {
+    final class Received {
+        var files: [(data: Data, name: String)] = []
+    }
+
+    struct Pair {
+        let network: FakeNetwork
+        let sender: NearbyTransfer
+        let receiver: NearbyTransfer
+        let senderTransport: FakeTransport
+        let receiverTransport: FakeTransport
+    }
+
+    func makePair(deliver: @escaping (Data, String) -> Void) -> Pair {
+        let network = FakeNetwork()
+        let senderTransport = FakeTransport(name: "Mac", network: network)
+        let receiverTransport = FakeTransport(name: "Kitchen iPad", network: network)
+        let pair = Pair(network: network, sender: NearbyTransfer(role: .send, transport: senderTransport),
+                        receiver: NearbyTransfer(role: .receive, transport: receiverTransport, deliver: deliver),
+                        senderTransport: senderTransport, receiverTransport: receiverTransport)
+        pair.receiver.start()
+        pair.sender.start()
+        network.run()
+        return pair
+    }
+
+    /// Asks the receiver; returns the code both screens show.
+    @discardableResult
+    func offer(_ pair: Pair, file: Data) throws -> String? {
+        try pair.sender.setFile(file, name: "Hum boards 2026-10-18.hum")
+        guard let peer = pair.sender.peers.first else { return nil }
+        pair.sender.send(to: peer)
+        pair.network.run()
+        guard case .waitingForAnswer(_, let code) = pair.sender.state else { return nil }
+        return code
+    }
+
+    @Test func aWholeSetupArrivesInTheImportPreviewUntouched() throws {
+        let from = makeModel()
+        let to = makeModel(starter: false)
+        let file = try ImportService(model: from).exportData()
+        let pair = makePair { data, name in to.requestImport(data: data, fileName: name) }
+
+        #expect(pair.sender.peers.map(\.name) == ["Kitchen iPad"])
+        let code = try #require(try offer(pair, file: file))
+        guard case .asking(let offer, let shown) = pair.receiver.state else {
+            Issue.record("receiver should be asking, is \(pair.receiver.state)")
+            return
+        }
+        #expect(shown == code)
+        #expect(offer.senderName == "Mac")
+        #expect(offer.fileName == "Hum boards 2026-10-18.hum")
+        #expect(offer.byteCount == file.count)
+        #expect(to.pendingImport == nil, "nothing arrives before Accept")
+
+        pair.receiver.accept()
+        pair.network.run()
+        #expect(pair.sender.state == .sent)
+        #expect(pair.receiver.state == .received)
+        #expect(!pair.receiverTransport.isAdvertising, "can't be found once the file is in")
+
+        // The normal preview: nothing has changed until the parent chooses Merge or Replace.
+        let pending = try #require(to.pendingImport)
+        #expect(pending.fileName == "Hum boards 2026-10-18.hum")
+        #expect(to.store.boards().isEmpty)
+        #expect(Set(pending.loaded.document.boards.map(\.id)) == Set(from.store.boards().map(\.id)))
+    }
+
+    @Test func anInvalidFileIsRejectedByTheValidator() throws {
+        let to = makeModel(starter: false)
+        let pair = makePair { data, name in to.requestImport(data: data, fileName: name) }
+        try offer(pair, file: Data("this is not a Hum file".utf8))
+        pair.receiver.accept()
+        pair.network.run()
+        #expect(pair.receiver.state == .received)
+        #expect(to.pendingImport == nil)
+        #expect(to.importError != nil)
+        #expect(to.store.boards().isEmpty)
+    }
+
+    @Test func aBigFileGoesInPieces() throws {
+        let received = Received()
+        let pair = makePair { received.files.append(($0, $1)) }
+        let file = Data((0..<300_000).map { UInt8($0 % 251) })
+        try offer(pair, file: file)
+        pair.receiver.accept()
+        pair.network.run()
+        #expect(received.files.count == 1)
+        #expect(received.files.first?.data == file)
+        // 300 KB in 64 KB pieces.
+        #expect(pair.senderTransport.channels.first?.sentFrames ?? 0 >= 5)
+    }
+
+    @Test func declining() throws {
+        let received = Received()
+        let pair = makePair { received.files.append(($0, $1)) }
+        try offer(pair, file: Data(count: 100))
+        pair.receiver.decline()
+        pair.network.run()
+        #expect(pair.sender.state == .declined)
+        #expect(pair.receiver.state == .looking)
+        #expect(pair.receiverTransport.isAdvertising, "still waiting for the right sender")
+        #expect(received.files.isEmpty)
+
+        // The parent can try again.
+        try offer(pair, file: Data(count: 100))
+        #expect({ if case .asking = pair.receiver.state { true } else { false } }())
+    }
+
+    @Test func senderCancelsWhileTheOtherDeviceIsAsking() throws {
+        let pair = makePair { _, _ in }
+        try offer(pair, file: Data(count: 100))
+        pair.sender.cancel()
+        pair.network.run()
+        #expect(pair.sender.state == .looking)
+        #expect(pair.receiver.state == .looking)
+    }
+
+    @Test func receiverCancelsHalfway() throws {
+        let received = Received()
+        let pair = makePair { received.files.append(($0, $1)) }
+        try offer(pair, file: Data(count: 1_000_000))
+        pair.receiver.accept()
+        pair.network.run(limit: 12)
+        #expect({ if case .transferring = pair.receiver.state { true } else { false } }())
+        pair.receiver.cancel()
+        pair.network.run()
+        #expect(pair.sender.state == .failed(.stopped))
+        #expect(pair.receiver.state == .looking)
+        #expect(received.files.isEmpty)
+    }
+
+    @Test func closingTheScreenStopsDiscovery() throws {
+        let pair = makePair { _, _ in }
+        #expect(pair.receiverTransport.isAdvertising && pair.senderTransport.isBrowsing)
+        pair.receiver.stop()
+        pair.network.run()
+        #expect(!pair.receiverTransport.isAdvertising)
+        #expect(pair.sender.peers.isEmpty)
+        pair.sender.stop()
+        #expect(!pair.senderTransport.isBrowsing)
+    }
+
+    @Test func moreBytesThanOfferedAreRefused() throws {
+        let received = Received()
+        let pair = makePair { received.files.append(($0, $1)) }
+        try offer(pair, file: Data(count: 100))
+        // The sender's file changes after the offer: the receiver must not take more than it agreed to.
+        try pair.sender.setFile(Data(count: 200_000), name: "x.hum")
+        pair.receiver.accept()
+        pair.network.run()
+        #expect(pair.receiver.state == .failed(.unreadable))
+        #expect(received.files.isEmpty)
+    }
+
+    @Test func bytesChangedOnTheWayAreRefused() throws {
+        let received = Received()
+        let pair = makePair { received.files.append(($0, $1)) }
+        try offer(pair, file: Data(count: 100_000))
+        // Flip a bit in every sealed piece of the file.
+        for channel in pair.senderTransport.channels {
+            channel.tamper = { data in
+                guard data.count > 1000 else { return data }
+                var data = data
+                data[data.count - 1] ^= 1
+                return data
+            }
+        }
+        pair.receiver.accept()
+        pair.network.run()
+        #expect(pair.receiver.state == .failed(.badData))
+        #expect(received.files.isEmpty)
+        #expect({ if case .failed = pair.sender.state { true } else { false } }())
+    }
+
+    @Test func aSecondSenderIsTurnedAwayWhileTheFirstIsAsked() throws {
+        let pair = makePair { _, _ in }
+        try offer(pair, file: Data(count: 100))
+        let other = NearbyTransfer(role: .send, transport: FakeTransport(name: "Phone", network: pair.network))
+        other.start()
+        pair.network.run()
+        try other.setFile(Data(count: 100), name: "y.hum")
+        other.send(to: try #require(other.peers.first))
+        pair.network.run()
+        #expect(other.state == .failed(.couldNotConnect))
+        #expect({ if case .asking(let offer, _) = pair.receiver.state { offer.senderName == "Mac" } else { false } }())
+    }
+
+    @Test func aDeviceThatNeverOffersIsLetGo() async throws {
+        let pair = makePair { _, _ in }
+        pair.receiver.offerTimeout = .milliseconds(20)
+        // Something connects and says nothing.
+        let silent = pair.senderTransport.connect(to: try #require(pair.sender.peers.first))
+        silent.start()
+        pair.network.run()
+        // Busy at first; once the silent one is let go, a real sender gets through.
+        var asking = false
+        for _ in 0..<100 where !asking {
+            try await Task.sleep(for: .milliseconds(20))
+            pair.network.run()
+            try offer(pair, file: Data(count: 100))
+            asking = { if case .asking = pair.receiver.state { true } else { false } }()
+        }
+        #expect(asking)
+    }
+}
+
+// MARK: Fakes
+
+/// Delivers everything later, in order, when a test calls `run`, like a real network but repeatable.
+@MainActor
+final class FakeNetwork {
+    private var queue: [() -> Void] = []
+    var transports: [FakeTransport] = []
+
+    func later(_ work: @escaping () -> Void) { queue.append(work) }
+
+    func run(limit: Int = 100_000) {
+        var steps = 0
+        while !queue.isEmpty && steps < limit {
+            queue.removeFirst()()
+            steps += 1
+        }
+    }
+
+    /// Tells every browsing device who is advertising now.
+    func announce() {
+        let peers = transports.filter(\.isAdvertising).map { NearbyPeer(id: $0.localName, name: $0.localName) }
+        for transport in transports where transport.isBrowsing {
+            later { transport.onEvent?(.peers(peers)) }
+        }
+    }
+}
+
+@MainActor
+final class FakeTransport: NearbyTransport {
+    var onEvent: ((NearbyTransportEvent) -> Void)?
+    let localName: String
+    let network: FakeNetwork
+    private(set) var isAdvertising = false
+    private(set) var isBrowsing = false
+    /// Channels this device opened.
+    private(set) var channels: [FakeChannel] = []
+
+    init(name: String, network: FakeNetwork) {
+        localName = name
+        self.network = network
+        network.transports.append(self)
+    }
+
+    func advertise() {
+        isAdvertising = true
+        network.announce()
+    }
+
+    func browse() {
+        isBrowsing = true
+        network.announce()
+    }
+
+    func connect(to peer: NearbyPeer) -> NearbyChannel {
+        let mine = FakeChannel(network: network)
+        let theirs = FakeChannel(network: network)
+        mine.other = theirs
+        theirs.other = mine
+        channels.append(mine)
+        if let receiver = network.transports.first(where: { $0.isAdvertising && $0.localName == peer.id }) {
+            network.later { receiver.onEvent?(.incoming(theirs)) }
+        } else {
+            mine.other = nil
+        }
+        return mine
+    }
+
+    func stop() {
+        isAdvertising = false
+        isBrowsing = false
+        network.announce()
+    }
+}
+
+@MainActor
+final class FakeChannel: NearbyChannel {
+    var onEvent: ((NearbyChannelEvent) -> Void)?
+    var other: FakeChannel?
+    /// Changes bytes on the way out, to test what the other side does with them.
+    var tamper: ((Data) -> Data)?
+    private(set) var sentFrames = 0
+    private let network: FakeNetwork
+    private var started = false
+    private var closed = false
+    private var waiting: [Data] = []
+
+    init(network: FakeNetwork) { self.network = network }
+
+    func start() {
+        started = true
+        network.later { [self] in
+            guard !closed else { return }
+            if other == nil { return remoteClosed() }
+            onEvent?(.ready)
+            for data in waiting { onEvent?(.received(data)) }
+            waiting = []
+        }
+    }
+
+    func send(_ data: Data, completion: @escaping (Bool) -> Void) {
+        guard !closed, let other else {
+            network.later { completion(false) }
+            return
+        }
+        sentFrames += 1
+        let bytes = tamper?(data) ?? data
+        network.later {
+            other.arrive(bytes)
+            completion(true)
+        }
+    }
+
+    func close() {
+        guard !closed else { return }
+        closed = true
+        onEvent = nil
+        if let other { network.later { other.remoteClosed() } }
+    }
+
+    private func arrive(_ data: Data) {
+        guard !closed else { return }
+        if started { onEvent?(.received(data)) } else { waiting.append(data) }
+    }
+
+    private func remoteClosed() {
+        guard !closed else { return }
+        closed = true
+        let onEvent = self.onEvent
+        self.onEvent = nil
+        onEvent?(.closed)
+    }
+}
+
+/// The real Network framework transport, sender and receiver in one app, over Bonjour and TCP.
+/// Off by default (it needs the local network): run with HUM_LIVE_NEARBY=1
+/// (`TEST_RUNNER_HUM_LIVE_NEARBY=1` through xcodebuild).
+@MainActor
+@Suite("Nearby transfer: real network", .enabled(if: ProcessInfo.processInfo.environment["HUM_LIVE_NEARBY"] == "1"))
+struct NearbyLiveTests {
+    @Test(.timeLimit(.minutes(1))) func sendsOverTheLocalNetwork() async throws {
+        let received = NearbyTransferTests.Received()
+        let receiver = NearbyTransfer(role: .receive, transport: NetworkTransport()) { received.files.append(($0, $1)) }
+        let sender = NearbyTransfer(role: .send, transport: NetworkTransport())
+        defer {
+            receiver.stop()
+            sender.stop()
+        }
+        let file = Data((0..<1_500_000).map { UInt8($0 % 253) })
+        try sender.setFile(file, name: "Live.hum")
+        receiver.start()
+        sender.start()
+
+        try await waitUntil { sender.peers.contains { $0.name == receiver.localName } }
+        sender.send(to: try #require(sender.peers.first { $0.name == receiver.localName }))
+        try await waitUntil { if case .asking = receiver.state { true } else { false } }
+        guard case .asking(_, let receiverCode) = receiver.state, case .waitingForAnswer(_, let senderCode) = sender.state else {
+            Issue.record("receiver \(receiver.state), sender \(sender.state)")
+            return
+        }
+        #expect(receiverCode == senderCode)
+
+        receiver.accept()
+        try await waitUntil { sender.state == .sent && received.files.count == 1 }
+        #expect(received.files.first?.data == file)
+        #expect(received.files.first?.name == "Live.hum")
+        #expect(receiver.state == .received)
+    }
+
+    /// Sends a small setup to Hum on another device or simulator whose Receive screen is open, named by
+    /// HUM_LIVE_NEARBY_PEER. A person taps Accept there within 90 seconds.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["HUM_LIVE_NEARBY_PEER"] != nil), .timeLimit(.minutes(2)))
+    func sendsToAnotherDevice() async throws {
+        let name = try #require(ProcessInfo.processInfo.environment["HUM_LIVE_NEARBY_PEER"])
+        let sender = NearbyTransfer(role: .send, transport: NetworkTransport())
+        defer { sender.stop() }
+        try sender.setFile(try ImportService(model: makeModel()).exportData(), name: "Live starter.hum")
+        sender.start()
+        try await waitUntil { sender.peers.contains { $0.name == name } }
+        sender.send(to: try #require(sender.peers.first { $0.name == name }))
+        try await waitUntil { if case .waitingForAnswer = sender.state { true } else { false } }
+        print("Nearby live: \(sender.state)")
+        try await waitUntil(seconds: 90) { sender.state == .sent }
+    }
+
+    private func waitUntil(seconds: Int = 20, _ condition: () -> Bool) async throws {
+        for _ in 0..<(seconds * 20) where !condition() {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(condition())
+    }
+}

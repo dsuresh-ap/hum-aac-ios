@@ -224,6 +224,15 @@ final class AppModel {
         }
     }
 
+    /// A file sent from a nearby device (Share & sync → Receive). Same checks and preview as any file.
+    func requestImport(data: Data, fileName: String) {
+        do {
+            pendingImport = try ImportService(model: self).prepare(data: data, fileName: fileName)
+        } catch {
+            importError = friendlyMessage(for: error)
+        }
+    }
+
     /// Last time the child touched a tile. Snapshot refreshes from outside wait for a quiet moment.
     @ObservationIgnored private var lastTouch = Date.distantPast
     @ObservationIgnored private var pendingRefresh: Task<Void, Never>?

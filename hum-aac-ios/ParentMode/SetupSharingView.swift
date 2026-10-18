@@ -5,7 +5,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import HumConfig
 
-/// Export, import, and (later) iCloud sync and the AI helper.
+/// Sending to other devices, export, import, iCloud sync and the AI helper.
 struct SetupSharingView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -29,6 +29,31 @@ struct SetupSharingView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    // Made only when a destination asks for it, so it opens at once.
+                    ShareLink(item: HumSetupExport(model: model),
+                              preview: SharePreview(Text("Hum boards"), image: Image(systemName: "square.grid.3x3.fill"))) {
+                        Label("Send with AirDrop…", systemImage: "square.and.arrow.up")
+                    }
+                    .accessibilityIdentifier("sendAirDrop")
+                    NavigationLink {
+                        NearbySendView()
+                    } label: {
+                        Label("Send to a nearby device", systemImage: "dot.radiowaves.up.forward")
+                    }
+                    .accessibilityIdentifier("sendNearby")
+                    NavigationLink {
+                        NearbyReceiveView()
+                    } label: {
+                        Label("Receive from a nearby device", systemImage: "square.and.arrow.down")
+                    }
+                    .accessibilityIdentifier("receiveNearby")
+                } header: {
+                    Text("Send to your other devices")
+                } footer: {
+                    Text("Sends all your boards to an iPad, iPhone or Mac near you. To send without AirDrop, first open “Receive from a nearby device” in Hum on the other device. Nothing goes through the internet.")
+                }
+
                 Section {
                     Button("Export all boards…", systemImage: "square.and.arrow.up") { export(boardID: nil) }
                         .accessibilityIdentifier("exportAll")
@@ -189,6 +214,26 @@ struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
 #endif
+
+/// The whole setup as a `.hum` file for the share sheet (AirDrop, Messages…). The file is made only when
+/// a destination asks for it.
+nonisolated struct HumSetupExport: Transferable {
+    let model: AppModel
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(exportedContentType: .humPackage) { export in
+            let (document, media, name) = await MainActor.run {
+                let (document, media) = ImportService(model: export.model).exportContents()
+                return (document, media, ImportService.exportFileName())
+            }
+            let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Export-\(UUID().uuidString)", isDirectory: true)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let url = folder.appendingPathComponent(name)
+            try HumPackage.write(document, media: media).write(to: url, options: .atomic)
+            return SentTransferredFile(url)
+        }
+    }
+}
 
 /// Wraps `.hum` bytes for `fileExporter` (Mac).
 nonisolated struct HumFileDocument: FileDocument {
