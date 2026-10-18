@@ -57,6 +57,22 @@ final class WhatsThisUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Said: hot air balloon. Say it again."].exists)
     }
 
+    /// Scenario: the child taps the shutter twice fast. Only one picture is taken: its words show, and
+    /// "Try again" never flashes. (A second picture would get the fake's second set, "hot air balloon".)
+    @MainActor
+    func testDoubleTapTakesOnePicture() {
+        let app = launchHum(["-skipFirstRun", "-fakeCamera", "-fakeObjectNames", "-whatsThisCamera"])
+        let button = el(app, "whatsThis")
+        XCTAssertTrue(button.waitForExistence(timeout: 5))
+        button.tap()
+        let shutter = el(app, "whatsThis.shutter")
+        XCTAssertTrue(shutter.waitForExistence(timeout: 3))
+        shutter.doubleTap()
+        XCTAssertTrue(app.buttons["dog"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Try again"].exists)
+        XCTAssertFalse(app.buttons["hot air balloon"].waitForExistence(timeout: 1), "Only one picture was taken")
+    }
+
     private func keepScreenshot(_ app: XCUIApplication, _ name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name

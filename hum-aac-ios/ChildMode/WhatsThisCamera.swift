@@ -198,7 +198,7 @@ struct WhatsThisView: View {
     }
 
     private func retakeButton(big: Bool) -> some View {
-        Button { retake() } label: {
+        Button { Task { await retake() } } label: {
             Label("Take another", systemImage: "camera.fill")
                 .font(.system(big ? .title2 : .title3, design: .rounded, weight: .semibold))
                 .foregroundStyle(Theme.ink)
@@ -221,24 +221,34 @@ struct WhatsThisView: View {
     }
 
     private func snap() async {
+        // Children tap again and again: only the first tap takes a picture. The shutter goes away now,
+        // before the picture is taken, so a second tap can't start another one.
+        guard step == .live else { return }
+        step = .looking
         model.noteTouch()
-        let raw = model.usesFakeCamera ? FakeCameraPreview.pictureData() : await camera.capture()
+        let raw = model.usesFakeCamera ? await FakeCameraPreview.takePicture() : await camera.capture()
+        // The camera rests while the picture and its words are showing ("Take another" starts it again).
+        camera.stop()
         guard let raw, let data = ImageProcessing.tileImageData(from: raw) else {
             step = .noWords
             return
         }
         photo = PlatformImage.thumbnail(data, maxPixels: 1024)
-        step = .looking
         let words = await ObjectNamer.names(for: data, using: model.objectClassifier)
         // Ready before the child taps, so a word speaks as fast as a tile.
         model.speech.prepare(words)
         step = words.isEmpty ? .noWords : .words(words)
     }
 
-    private func retake() {
+    private func retake() async {
+        switch step {
+        case .words, .noWords: break
+        default: return
+        }
         model.noteTouch()
         photo = nil
-        step = .live
+        step = .starting
+        await startCamera()
     }
 }
 
@@ -287,6 +297,12 @@ private struct FakeCameraPreview: View {
         LinearGradient(colors: [.teal, .indigo], startPoint: .top, endPoint: .bottom)
             .ignoresSafeArea()
             .accessibilityHidden(true)
+    }
+
+    /// Takes a moment, like a real camera, so a second tap can land while it works.
+    static func takePicture() async -> Data? {
+        try? await Task.sleep(for: .milliseconds(400))
+        return pictureData()
     }
 
     static func pictureData() -> Data? {
