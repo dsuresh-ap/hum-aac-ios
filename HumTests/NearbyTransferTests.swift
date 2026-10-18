@@ -812,7 +812,7 @@ final class FakeChannel: NearbyChannel {
     private(set) var sentFrames = 0
     private let network: FakeNetwork
     private var started = false
-    private var closed = false
+    private(set) var closed = false
     private var waiting: [Data] = []
 
     init(network: FakeNetwork) { self.network = network }

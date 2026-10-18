@@ -84,6 +84,8 @@ final class NearbyTransfer {
     private var incoming: IncomingFile?
     /// Receiver: where the arriving file is being written, while it is (tests check it's cleaned up).
     var receivingFolder: URL? { incoming?.folder }
+    /// Where arriving files get their folder (tests use their own).
+    var temporaryDirectory = HumTemporaryFiles.directory
     private var sentBytes = 0
     private var phaseStarted = ContinuousClock.now
     private var linkOpened = ContinuousClock.now
@@ -193,7 +195,7 @@ final class NearbyTransfer {
         }
         codeWasWrong = false
         do {
-            incoming = try IncomingFile(expected: offer.byteCount)
+            incoming = try IncomingFile(expected: offer.byteCount, in: temporaryDirectory)
         } catch {
             failLink(.unreadable)
             return false
@@ -441,9 +443,9 @@ final class IncomingFile {
     private var hasher = SHA256()
     private var count = 0
 
-    init(expected: Int) throws {
+    init(expected: Int, in directory: URL = HumTemporaryFiles.directory) throws {
         self.expected = expected
-        folder = try HumTemporaryFiles.makeFolder(prefix: HumTemporaryFiles.nearbyPrefix)
+        folder = try HumTemporaryFiles.makeFolder(prefix: HumTemporaryFiles.nearbyPrefix, in: directory)
         url = folder.appendingPathComponent("received.hum")
         guard FileManager.default.createFile(atPath: url.path, contents: nil) else {
             try? FileManager.default.removeItem(at: folder)
