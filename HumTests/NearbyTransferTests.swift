@@ -397,8 +397,7 @@ struct NearbyTransferTests {
         pair.receiver.personTimeout = .milliseconds(40)
         try offer(pair, file: Data(count: 100))
         #expect({ if case .asking = pair.receiver.state { true } else { false } }())
-        try await Task.sleep(for: .milliseconds(250))
-        pair.network.run()
+        try await eventually(pair) { pair.receiver.state == .looking && pair.sender.state == .declined }
         #expect(pair.receiver.state == .looking)
         #expect(pair.sender.state == .declined)
     }
@@ -409,8 +408,7 @@ struct NearbyTransferTests {
         try pair.sender.setFile(Data(count: 100), name: "x.hum")
         pair.sender.send(to: try #require(pair.sender.peers.first))
         pair.network.run()
-        try await Task.sleep(for: .milliseconds(250))
-        pair.network.run()
+        try await eventually(pair) { pair.receiver.state == .looking && pair.sender.state == .declined }
         #expect(pair.receiver.state == .looking)
         #expect(pair.sender.state == .declined)
     }
@@ -423,9 +421,19 @@ struct NearbyTransferTests {
         pair.receiver.accept()
         pair.network.run(limit: 5)
         // Nothing more arrives on either side.
-        try await Task.sleep(for: .milliseconds(250))
+        try await eventually(pair, runNetwork: false) {
+            pair.receiver.state == .failed(.lostConnection) && pair.sender.state == .failed(.lostConnection)
+        }
         #expect(pair.receiver.state == .failed(.lostConnection))
         #expect(pair.sender.state == .failed(.lostConnection))
+    }
+
+    /// Waits (up to 5 s, the main actor is busy when tests run in parallel) for the timers to act.
+    func eventually(_ pair: Pair, runNetwork: Bool = true, _ condition: () -> Bool) async throws {
+        for _ in 0..<250 where !condition() {
+            try await Task.sleep(for: .milliseconds(20))
+            if runNetwork { pair.network.run() }
+        }
     }
 
     @Test func afterADeclineOthersWaitABit() throws {
