@@ -25,17 +25,30 @@ struct SetupSharingView: View {
     @State private var showAI = false
     /// True while the export file is being made (a big setup takes a few seconds).
     @State private var preparingExport = false
+    /// Making the file for "Send with AirDrop…", so it can be cancelled.
+    @State private var airDropTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    // Made only when a destination asks for it, so it opens at once.
-                    ShareLink(item: HumSetupExport(model: model),
-                              preview: SharePreview(Text("Hum boards"), image: Image(systemName: "square.grid.3x3.fill"))) {
-                        Label("Send with AirDrop…", systemImage: "square.and.arrow.up")
+                    Button("Send with AirDrop…", systemImage: "square.and.arrow.up", action: sendWithAirDrop)
+                        .disabled(airDropTask != nil)
+                        .accessibilityIdentifier("sendAirDrop")
+                    if airDropTask != nil {
+                        HStack(spacing: 8) {
+                            ProgressView().controlSize(.small)
+                            Text("Preparing your boards…").foregroundStyle(.secondary)
+                                .accessibilityIdentifier("airDropPreparing")
+                            Spacer()
+                            Button("Cancel", role: .cancel) {
+                                airDropTask?.cancel()
+                                airDropTask = nil
+                            }
+                            .buttonStyle(.borderless)  // its own button, not the whole row
+                            .accessibilityIdentifier("airDropCancel")
+                        }
                     }
-                    .accessibilityIdentifier("sendAirDrop")
                     NavigationLink {
                         NearbySendView()
                     } label: {
@@ -157,6 +170,33 @@ struct SetupSharingView: View {
         .onDisappear { model.importHostedBySheet = false }
     }
 
+    /// Shows "Preparing your boards…" at once, makes the file without freezing the screen, then opens the
+    /// share sheet (iOS) or AirDrop itself (Mac).
+    private func sendWithAirDrop() {
+        guard airDropTask == nil else { return }
+        airDropTask = Task {
+            defer { airDropTask = nil }
+            do {
+                let data = try await ImportService(model: model).exportPackage()
+                let file = try await SharedFile.write(data, name: ImportService.exportFileName())
+                guard !Task.isCancelled else { return file.remove() }
+                #if os(iOS)
+                sharedCopy = file
+                shareFile = file
+                #else
+                if let airDrop = NSSharingService(named: .sendViaAirDrop), airDrop.canPerform(withItems: [file.url]) {
+                    airDrop.perform(withItems: [file.url])
+                } else {
+                    errorMessage = String(localized: "AirDrop isn't available on this Mac. Check that Wi-Fi and Bluetooth are on, or use Export instead.")
+                }
+                #endif
+            } catch is CancellationError {
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     /// Reads the boards here, then zips them in the background with "Preparing your boards…" showing.
     private func export(boardID: UUID?, name: String? = nil) {
         guard !preparingExport else { return }
@@ -183,10 +223,9 @@ struct SetupSharingView: View {
     }
 }
 
-#if os(iOS)
 /// An export written to a temporary folder for the share sheet, under its real name
 /// ("Hum setup 2026-10-12.hum"), so AirDrop and Messages show that name and Hum opens it on arrival.
-struct SharedFile: Identifiable {
+nonisolated struct SharedFile: Identifiable, Sendable {
     let url: URL
     var id: URL { url }
 
@@ -197,11 +236,18 @@ struct SharedFile: Identifiable {
         try data.write(to: url, options: .atomic)
     }
 
+    /// Writes it off the main actor (a big setup takes a moment).
+    static func write(_ data: Data, name: String) async throws -> SharedFile {
+        try await Task.detached(priority: .userInitiated) { try SharedFile(data: data, name: name) }.value
+    }
+
     /// Deletes the temporary copy once the share sheet has closed.
     func remove() {
         try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
     }
 }
+
+#if os(iOS)
 
 /// The system share sheet for one file.
 struct ShareSheet: UIViewControllerRepresentable {
@@ -214,26 +260,6 @@ struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
 #endif
-
-/// The whole setup as a `.hum` file for the share sheet (AirDrop, Messages…). The file is made only when
-/// a destination asks for it.
-nonisolated struct HumSetupExport: Transferable {
-    let model: AppModel
-
-    static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(exportedContentType: .humPackage) { export in
-            let (document, media, name) = await MainActor.run {
-                let (document, media) = ImportService(model: export.model).exportContents()
-                return (document, media, ImportService.exportFileName())
-            }
-            let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Export-\(UUID().uuidString)", isDirectory: true)
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            let url = folder.appendingPathComponent(name)
-            try HumPackage.write(document, media: media).write(to: url, options: .atomic)
-            return SentTransferredFile(url)
-        }
-    }
-}
 
 /// Wraps `.hum` bytes for `fileExporter` (Mac).
 nonisolated struct HumFileDocument: FileDocument {

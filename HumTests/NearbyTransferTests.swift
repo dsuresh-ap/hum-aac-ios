@@ -40,7 +40,7 @@ struct NearbyWireTests {
     @Test func messagesRoundTrip() throws {
         let offer = NearbyOffer(fileName: "Hum boards 2026-10-18.hum", byteCount: 1234, senderName: "Kitchen iPad")
         let messages: [NearbyMessage] = [.offer(offer), .accept, .decline, .chunk(Data([1, 2, 3])),
-                                         .done(digest: Data(count: 32)), .gotIt, .cancel]
+                                         .done(digest: Data(count: 32)), .gotIt, .cancel(.timedOut), .cancel(.leftFront)]
         for message in messages {
             #expect(try NearbyMessage.decode(message.encoded()) == message)
         }
@@ -53,6 +53,7 @@ struct NearbyWireTests {
         #expect(throws: NearbyTransferError.badData) { try NearbyMessage.decode(Data([4])) }
         #expect(throws: NearbyTransferError.badData) { try NearbyMessage.decode(Data([4]) + Data(count: NearbyMessage.chunkBytes + 1)) }
         #expect(throws: NearbyTransferError.badData) { try NearbyMessage.decode(Data([5]) + Data(count: 31)) }
+        #expect(throws: NearbyTransferError.badData) { try NearbyMessage.decode(Data([7])) }  // a stop without a reason
     }
 
     @Test func offerLimits() throws {
@@ -248,7 +249,7 @@ struct NearbyTransferTests {
         pair.receiver.decline()
         pair.network.run()
         #expect(pair.sender.state == .declined)
-        #expect(pair.receiver.state == .declined)
+        #expect(pair.receiver.state == .failed(.youDeclined))
         #expect(!pair.receiverTransport.isAdvertising, "can't be found until the parent starts again")
         #expect(received.files.isEmpty)
 
@@ -266,7 +267,7 @@ struct NearbyTransferTests {
         pair.sender.cancel()
         pair.network.run()
         #expect(pair.sender.state == .looking)
-        #expect(pair.receiver.state == .failed(.stopped))
+        #expect(pair.receiver.state == .failed(.otherCancelled))
         #expect(!pair.receiverTransport.isAdvertising)
     }
 
@@ -279,8 +280,8 @@ struct NearbyTransferTests {
         #expect({ if case .transferring = pair.receiver.state { true } else { false } }())
         pair.receiver.cancel()
         pair.network.run()
-        #expect(pair.sender.state == .failed(.stopped))
-        #expect(pair.receiver.state == .declined)
+        #expect(pair.sender.state == .failed(.otherCancelled))
+        #expect(pair.receiver.state == .failed(.youCancelled))
         #expect(!pair.receiverTransport.isAdvertising)
         #expect(received.files.isEmpty)
     }
@@ -410,9 +411,9 @@ struct NearbyTransferTests {
         pair.receiver.personTimeout = .milliseconds(40)
         try offer(pair, file: Data(count: 100))
         #expect({ if case .asking = pair.receiver.state { true } else { false } }())
-        try await eventually(pair) { pair.receiver.state == .failed(.timedOut) && pair.sender.state == .declined }
+        try await eventually(pair) { pair.receiver.state == .failed(.timedOut) && pair.sender.state == .failed(.otherTimedOut) }
         #expect(pair.receiver.state == .failed(.timedOut))
-        #expect(pair.sender.state == .declined)
+        #expect(pair.sender.state == .failed(.otherTimedOut))
         #expect(!pair.receiverTransport.isAdvertising, "stops listening until the parent starts again")
     }
 
@@ -422,9 +423,9 @@ struct NearbyTransferTests {
         try pair.sender.setFile(Data(count: 100), name: "x.hum")
         pair.sender.send(to: try #require(pair.sender.peers.first))
         pair.network.run()
-        try await eventually(pair) { pair.receiver.state == .failed(.timedOut) && pair.sender.state == .declined }
+        try await eventually(pair) { pair.receiver.state == .failed(.timedOut) && pair.sender.state == .failed(.otherTimedOut) }
         #expect(pair.receiver.state == .failed(.timedOut))
-        #expect(pair.sender.state == .declined)
+        #expect(pair.sender.state == .failed(.otherTimedOut))
         #expect(!pair.receiverTransport.isAdvertising, "stops listening until the parent starts again")
     }
 
@@ -460,7 +461,129 @@ struct NearbyTransferTests {
         pair.network.run()
         #expect(pair.sender.peers.isEmpty, "it has gone from every list")
         #expect(try offer(pair, file: Data(count: 100)) == nil)
-        #expect(pair.receiver.state == .declined)
+        #expect(pair.receiver.state == .failed(.youDeclined))
+    }
+
+    // MARK: Every ending says why, and leads somewhere
+
+    /// A six-digit code that is certainly not `code`.
+    func differentCode(_ code: String) -> String {
+        String(code.map { Character(String((($0.wholeNumberValue ?? 0) + 1) % 10)) })
+    }
+
+    /// Connects and gets the receiver to show its code (the sender is typing it).
+    func pairUp(_ pair: Pair) throws {
+        try pair.sender.setFile(Data(count: 100), name: "x.hum")
+        pair.sender.send(to: try #require(pair.sender.peers.first))
+        pair.network.run()
+    }
+
+    @Test func cancelWhileTheCodeShowsOnTheReceiver() throws {
+        let pair = makePair { _, _ in }
+        try pairUp(pair)
+        pair.receiver.cancel()
+        pair.network.run()
+        #expect(pair.receiver.state == .failed(.youCancelled))
+        #expect(pair.sender.state == .failed(.otherCancelled))
+    }
+
+    @Test func cancelWhileTypingOnTheSender() throws {
+        let pair = makePair { _, _ in }
+        try pairUp(pair)
+        pair.sender.cancel()
+        pair.network.run()
+        #expect(pair.sender.state == .looking)
+        #expect(pair.receiver.state == .failed(.otherCancelled))
+    }
+
+    @Test func theSenderGoingToTheBackground() throws {
+        let pair = makePair { _, _ in }
+        try pairUp(pair)
+        pair.sender.leave()
+        pair.network.run()
+        #expect(pair.sender.state == .failed(.leftFront))
+        #expect(pair.receiver.state == .failed(.otherLeftFront))
+    }
+
+    @Test func theReceiverGoingToTheBackground() throws {
+        let pair = makePair { _, _ in }
+        try offer(pair, file: Data(count: 100))
+        pair.receiver.leave()
+        pair.network.run()
+        #expect(pair.receiver.state == .failed(.leftFront))
+        #expect(pair.sender.state == .failed(.otherLeftFront))
+        #expect(!pair.receiverTransport.isAdvertising)
+    }
+
+    @Test func theNetworkGoingAway() throws {
+        let pair = makePair { _, _ in }
+        try offer(pair, file: Data(count: 100))
+        // The receiver's end of the connection disappears without a word.
+        pair.senderTransport.channels.last?.other?.close()
+        pair.network.run()
+        #expect(pair.sender.state == .failed(.lostConnection))
+    }
+
+    @Test func aWrongCodeIsNotAnEnding() throws {
+        // Typing the wrong code on either side keeps the try going, with the field cleared.
+        let pair = makePair { _, _ in }
+        try pairUp(pair)
+        guard case .pairing(let code) = pair.receiver.state else {
+            Issue.record("receiver should show a code, is \(pair.receiver.state)")
+            return
+        }
+        #expect(!pair.sender.confirm(code: differentCode(code)))
+        #expect({ if case .confirming = pair.sender.state { true } else { false } }())
+        #expect(pair.sender.confirm(code: code))
+        pair.network.run()
+        guard case .waitingForAnswer(_, let senderCode) = pair.sender.state else { return }
+        #expect(!pair.receiver.accept(code: differentCode(senderCode)))
+        pair.network.run()
+        #expect({ if case .asking = pair.receiver.state { true } else { false } }())
+        #expect({ if case .waitingForAnswer = pair.sender.state { true } else { false } }())
+    }
+
+    @Test func tryAgainAfterAnEndingFindsTheDeviceAgain() throws {
+        let pair = makePair { _, _ in }
+        try offer(pair, file: Data(count: 100))
+        pair.receiver.decline()
+        pair.network.run()
+        #expect(pair.sender.peers.isEmpty)
+
+        // "Receive again" on the other device: it shows up in the list again by itself.
+        pair.receiver.restart()
+        pair.network.run()
+        #expect(pair.sender.peers.map(\.name) == ["Kitchen iPad"])
+
+        // "Try again" here clears what happened and looks afresh.
+        pair.sender.restart()
+        pair.network.run()
+        #expect(pair.sender.state == .looking)
+        #expect(pair.sender.peers.map(\.name) == ["Kitchen iPad"])
+        #expect(try offer(pair, file: Data(count: 100)) != nil)
+        #expect({ if case .asking = pair.receiver.state { true } else { false } }())
+    }
+
+    @Test func everyTryStartsClean() throws {
+        let pair = makePair { _, _ in }
+        try pairUp(pair)
+        guard case .pairing(let code) = pair.receiver.state else { return }
+        #expect(!pair.sender.confirm(code: differentCode(code)))
+        let first = pair.sender.attempt
+        #expect(pair.sender.codeWasWrong)
+
+        pair.sender.cancel()
+        pair.network.run()
+        pair.receiver.restart()
+        pair.network.run()
+        try pairUp(pair)
+        #expect(pair.sender.attempt == first + 1, "a new attempt: code fields are rebuilt empty")
+        #expect(!pair.sender.codeWasWrong, "no old error")
+        #expect({ if case .confirming = pair.sender.state { true } else { false } }())
+
+        // Leaving the screen and coming back starts from nothing too.
+        pair.sender.stop()
+        #expect(pair.sender.state == .idle && pair.sender.peers.isEmpty && !pair.sender.codeWasWrong)
     }
 
     // MARK: The sender's code (second review, finding A)

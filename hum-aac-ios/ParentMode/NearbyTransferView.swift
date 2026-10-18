@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import SwiftUI
-import HumConfig
 
 /// Share & sync → Send to a nearby device. Lists devices that have their Receive screen open.
 struct NearbySendView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var transfer = NearbyTransfer(role: .send, transport: NetworkTransport())
     @State private var preparing = true
     @State private var prepareError: String?
@@ -57,8 +58,13 @@ struct NearbySendView: View {
         }
         .formStyle(.grouped)
         .navigationTitle("Send to a nearby device")
-        .onAppear { transfer.start() }
+        // Every visit starts clean: no old status, code or device.
+        .onAppear { transfer.restart() }
         .onDisappear { transfer.stop() }
+        // A code or question on the other screen can't wait while Hum is in the background.
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { transfer.leave() }
+        }
         // Made again when the choice changes.
         .task(id: onlyBoardID) { await prepareFile() }
     }
@@ -72,8 +78,10 @@ struct NearbySendView: View {
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small)
                 Text("Preparing your boards…").foregroundStyle(.secondary)
+                Spacer()
+                Button("Cancel", role: .cancel) { dismiss() }
+                    .buttonStyle(.borderless)  // its own button, not the whole row
             }
-            .accessibilityElement(children: .combine)
         }
         switch transfer.state {
         case .connecting(let peer):
@@ -88,6 +96,7 @@ struct NearbySendView: View {
             // boards is sent until it matches.
             CodeEntry(prompt: "Type the code shown on “\(peer.name)”.", note: "Nothing is sent until the code matches.",
                       actionTitle: "Send", actionImage: "paperplane", wrong: transfer.codeWasWrong) { transfer.confirm(code: $0) }
+                .id(transfer.attempt)  // an empty field for every try
             Button("Cancel", role: .cancel) { transfer.cancel() }
         case .waitingForAnswer(let peer, let code):
             VStack(alignment: .leading, spacing: 8) {
@@ -103,12 +112,23 @@ struct NearbySendView: View {
         case .sent:
             Label("Sent. On the other device, choose how to add the boards.", systemImage: "checkmark.circle")
         case .declined:
-            Label("The other device didn't accept.", systemImage: "xmark.circle")
+            ending(String(localized: "Decline was tapped on the other device."), systemImage: "xmark.circle")
         case .failed(let error):
-            Label(error.message, systemImage: "exclamationmark.triangle")
+            ending(error.message, systemImage: "exclamationmark.triangle")
         case .idle, .looking, .pairing, .asking, .received:
             EmptyView()
         }
+    }
+
+    /// What happened, what to do next, and a way forward: the other device has stopped listening.
+    @ViewBuilder private func ending(_ message: String, systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(message, systemImage: systemImage)
+            Text("To try again, tap “Receive again” on the other device (or open “Receive from a nearby device”), then pick it below.")
+                .font(.footnote).foregroundStyle(.secondary)
+        }
+        Button("Try again", systemImage: "arrow.clockwise") { transfer.restart() }
+            .accessibilityIdentifier("nearbyTryAgain")
     }
 
     private var canChoose: Bool {
@@ -125,13 +145,14 @@ struct NearbySendView: View {
         prepareError = nil
         let boardID = onlyBoardID
         let name = boardID.flatMap(model.fetchBoard)?.name
-        let (document, media) = ImportService(model: model).exportContents(boardID: boardID)
         do {
-            let data = try await Task.detached(priority: .userInitiated) { try HumPackage.write(document, media: media) }.value
+            let data = try await ImportService(model: model).exportPackage(boardID: boardID)
             // The parent changed their mind while this was being made: the newer one wins.
             guard !Task.isCancelled else { return }
             defer { preparing = false }
             try transfer.setFile(data, name: ImportService.exportFileName(boardName: name))
+        } catch is CancellationError {
+            return
         } catch let error as NearbyTransferError {
             prepareError = error.message
             preparing = false
@@ -190,7 +211,7 @@ struct NearbyReceiveView: View {
             transfer.stop()
             paused = true
         case .pairing, .asking:
-            transfer.cancel()
+            transfer.leave()
         default:
             break
         }
@@ -226,6 +247,7 @@ struct NearbyReceiveView: View {
             CodeEntry(prompt: "Type the code shown on “\(offer.senderName)”.",
                       note: "Accept only if you're sending this from your own device right now.",
                       actionTitle: "Accept", actionImage: "checkmark", wrong: transfer.codeWasWrong) { transfer.accept(code: $0) }
+                .id(transfer.attempt)  // an empty field for every try
                 .accessibilityIdentifier("acceptNearby")
             Button("Decline", systemImage: "xmark", role: .destructive) { transfer.decline() }
         case .transferring(let fraction):
@@ -233,21 +255,20 @@ struct NearbyReceiveView: View {
             Button("Cancel", role: .cancel) { transfer.cancel() }
         case .received:
             Label("Received. Choose how to add the boards.", systemImage: "checkmark.circle")
-            Button("Receive another") { restart(transfer) }
-        case .declined:
-            Label("Stopped. Other devices can't find this one now.", systemImage: "xmark.circle")
-            Button("Receive again") { restart(transfer) }
+            Button("Receive another") { transfer.restart() }
         case .failed(let error):
+            // Not listening any more: say why, and one clear way to start again.
             Label(error.message, systemImage: "exclamationmark.triangle")
-            Button("Try again") { restart(transfer) }
-        case .connecting, .confirming, .waitingForAnswer, .sent:
+            Button {
+                transfer.restart()
+            } label: {
+                Label("Receive again", systemImage: "arrow.clockwise").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("receiveAgain")
+        case .connecting, .confirming, .waitingForAnswer, .sent, .declined:
             EmptyView()
         }
-    }
-
-    private func restart(_ transfer: NearbyTransfer) {
-        transfer.stop()
-        transfer.start()
     }
 }
 

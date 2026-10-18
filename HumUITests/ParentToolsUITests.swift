@@ -102,6 +102,23 @@ final class ParentToolsUITests: XCTestCase {
         XCTAssertTrue(opened, "One tap opens the share sheet (AirDrop first), no export step")
     }
 
+    /// Scenario: Send with AirDrop shows "Preparing…" at once (the file takes a moment), and it can be
+    /// cancelled. The export is slowed down on purpose for this test.
+    @MainActor
+    func testSendWithAirDropShowsPreparingAtOnce() {
+        let app = launchHum(["-skipFirstRun", "-startInParent", "-uiTestingSlowExport"])
+        tapToolbar(app, "setupSharing", label: "Share & sync")
+        let send = el(app, "sendAirDrop")
+        send.tap()
+        let preparing = el(app, "airDropPreparing")
+        XCTAssertTrue(preparing.waitForExistence(timeout: 1), "Preparing shows right away, the screen doesn't freeze")
+        XCTAssertFalse(send.isEnabled, "no second tap while it's preparing")
+        shot(app, "send with airdrop preparing")
+        el(app, "airDropCancel").tap()
+        XCTAssertTrue(send.waitForExistence(timeout: 2) && send.isEnabled)
+        XCTAssertFalse(preparing.exists)
+    }
+
     /// Scenario: Receive from a nearby device waits for a sender and names this device.
     @MainActor
     func testReceiveFromANearbyDeviceWaits() {

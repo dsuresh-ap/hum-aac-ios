@@ -46,9 +46,10 @@ final class NearbyTransfer {
         case sent
         /// Receiver: the file arrived and its import preview is open.
         case received
-        /// Sender: the other device said no. Receiver: the parent declined or cancelled; not listening.
+        /// Sender: Decline was tapped on the other device.
         case declined
-        /// Receiver: not listening any more (see `failed` too) until the parent starts again.
+        /// Ended without a file, and why. The receiver isn't listening any more until the parent taps
+        /// Receive again; the sender can try again once the other device is listening.
         case failed(NearbyTransferError)
     }
 
@@ -60,6 +61,8 @@ final class NearbyTransfer {
     private(set) var peers: [NearbyPeer] = []
     /// The last code typed didn't match.
     private(set) var codeWasWrong = false
+    /// Goes up with every connection, so code fields start empty each time.
+    private(set) var attempt = 0
     /// This device's name, as other devices see it.
     var localName: String { transport.localName }
 
@@ -104,10 +107,27 @@ final class NearbyTransfer {
 
     /// Stops everything. Called when the screen closes: the device can't be found after this.
     func stop() {
-        dropLink(tellingOtherSide: true)
+        dropLink(telling: .cancelled)
         transport.stop()
         peers = []
+        codeWasWrong = false
         state = .idle
+    }
+
+    /// Clears what happened and starts again: the sender looks for devices afresh (so the list fills
+    /// again when the other device is back), the receiver listens again.
+    func restart() {
+        stop()
+        start()
+    }
+
+    /// Hum stopped being the app in front while a code or a question was showing: stop, and say so on
+    /// both screens. (Plain waiting is paused by the screen instead, and a transfer under way carries on.)
+    func leave() {
+        switch state {
+        case .connecting, .confirming, .waitingForAnswer, .pairing, .asking: failLink(.leftFront)
+        default: break
+        }
     }
 
     // MARK: Sender
@@ -128,7 +148,7 @@ final class NearbyTransfer {
         case .looking, .declined, .sent, .failed: break
         default: return
         }
-        dropLink(tellingOtherSide: false)
+        dropLink(telling: nil)
         state = .connecting(peer)
         open(NearbyLink(channel: transport.connect(to: peer), isSender: true))
     }
@@ -153,10 +173,10 @@ final class NearbyTransfer {
     /// Stops what's happening. The sender goes back to the list of devices; the receiver stops listening
     /// until the parent starts again.
     func cancel() {
-        dropLink(tellingOtherSide: true)
+        dropLink(telling: .cancelled)
         switch role {
         case .send: state = .looking
-        case .receive: endWithoutFile(.declined)
+        case .receive: endWithoutFile(.failed(.youCancelled))
         }
     }
 
@@ -186,7 +206,7 @@ final class NearbyTransfer {
         guard role == .receive, case .asking = state, let link else { return }
         self.link = nil
         link.send(.decline) { _ in link.close() }
-        endWithoutFile(.declined)
+        endWithoutFile(.failed(.youDeclined))
     }
 
     // MARK: Events
@@ -218,6 +238,7 @@ final class NearbyTransfer {
         keys = nil
         offer = nil
         codeWasWrong = false
+        attempt += 1
         linkOpened = .now
         lastActivity = .now
         link.onEvent = { [weak self, weak link] event in
@@ -251,7 +272,7 @@ final class NearbyTransfer {
             guard now - linkOpened > handshakeTimeout else { return }
             switch role {
             case .send: failLink(.couldNotConnect)
-            case .receive: dropLink(tellingOtherSide: false)  // nothing was shown yet: keep waiting
+            case .receive: dropLink(telling: nil)  // nothing was shown yet: keep waiting
             }
             return
         }
@@ -284,22 +305,17 @@ final class NearbyTransfer {
 
         case .message(.decline):
             guard case .waitingForAnswer = state else { return failLink(.badData) }
-            dropLink(tellingOtherSide: false)
+            dropLink(telling: nil)
             state = .declined
 
         case .message(.gotIt):
             guard case .transferring = state, sentBytes == file?.data.count else { return failLink(.badData) }
-            dropLink(tellingOtherSide: false)
+            dropLink(telling: nil)
             state = .sent
 
-        case .message(.cancel):
-            switch state {
-            case .confirming, .waitingForAnswer:
-                dropLink(tellingOtherSide: false)
-                state = .declined
-            default:
-                failLink(.stopped)
-            }
+        case .message(.cancel(let reason)):
+            dropLink(telling: nil)
+            state = .failed(NearbyTransferError(otherSide: reason))
 
         case .message:
             failLink(.badData)
@@ -308,7 +324,7 @@ final class NearbyTransfer {
             switch state {
             case .connecting: failLink(.couldNotConnect)
             case .confirming, .waitingForAnswer, .transferring: failLink(error ?? .lostConnection)
-            default: dropLink(tellingOtherSide: false)
+            default: dropLink(telling: nil)
             }
         }
     }
@@ -369,18 +385,16 @@ final class NearbyTransfer {
             state = .received
             deliver(data, offer.fileName)
 
-        case .message(.cancel):
-            switch state {
-            case .looking: dropLink(tellingOtherSide: false)
-            default: failLink(.stopped)
-            }
+        case .message(.cancel(let reason)):
+            dropLink(telling: nil)
+            if state != .looking { endWithoutFile(.failed(NearbyTransferError(otherSide: reason))) }
 
         case .message:
             failLink(.badData)
 
         case .closed(let error):
             switch state {
-            case .looking: dropLink(tellingOtherSide: false)  // gone before the handshake finished
+            case .looking: dropLink(telling: nil)  // gone before the handshake finished
             default: failLink(error ?? .lostConnection)
             }
         }
@@ -394,19 +408,20 @@ final class NearbyTransfer {
     }
 
     private func failLink(_ error: NearbyTransferError) {
-        dropLink(tellingOtherSide: true)
+        dropLink(telling: error.reasonForOtherSide)
         endWithoutFile(.failed(error))
     }
 
-    private func dropLink(tellingOtherSide: Bool) {
+    /// Lets go of the connection, telling the other side why when `reason` is given.
+    private func dropLink(telling reason: NearbyStopReason?) {
         incoming?.discard()
         incoming = nil
         guard let link else { return }
         self.link = nil
         offer = nil
         keys = nil
-        if tellingOtherSide {
-            link.send(.cancel) { _ in link.close() }
+        if let reason {
+            link.send(.cancel(reason)) { _ in link.close() }
         } else {
             link.close()
         }
@@ -630,8 +645,20 @@ nonisolated enum NearbyTransferError: Error, Equatable, Sendable {
     /// The file didn't arrive whole.
     case unreadable
     case lostConnection
-    /// The other device stopped the transfer.
+    /// The other device stopped (for no reason it could say).
     case stopped
+    /// Cancel was tapped on the other device.
+    case otherCancelled
+    /// The other device waited too long for a code or an answer.
+    case otherTimedOut
+    /// Hum on the other device stopped being the app in front.
+    case otherLeftFront
+    /// Hum on this device stopped being the app in front.
+    case leftFront
+    /// Receiver: the parent tapped Cancel here.
+    case youCancelled
+    /// Receiver: the parent tapped Decline here.
+    case youDeclined
     /// Couldn't start (Wi-Fi off, or local network access turned off for Hum).
     case couldNotConnect
     /// Nobody typed the code or answered in time.
@@ -644,8 +671,36 @@ nonisolated enum NearbyTransferError: Error, Equatable, Sendable {
         case .unreadable: String(localized: "The file didn't arrive in one piece. Try again.")
         case .lostConnection: String(localized: "The connection was lost. Keep both devices close together and try again.")
         case .stopped: String(localized: "The other device stopped.")
+        case .otherCancelled: String(localized: "Cancel was tapped on the other device.")
+        case .otherTimedOut: String(localized: "The other device waited too long for the code, so it stopped.")
+        case .otherLeftFront: String(localized: "Hum on the other device was closed or went to the background.")
+        case .leftFront: String(localized: "Hum stopped because it wasn't the app in front.")
+        case .youCancelled: String(localized: "You tapped Cancel, so other devices can't find this one now.")
+        case .youDeclined: String(localized: "You tapped Decline, so other devices can't find this one now.")
         case .couldNotConnect: String(localized: "Hum couldn't reach nearby devices. Check that Wi-Fi is on, and that Hum is allowed to use the local network in Settings.")
         case .timedOut: String(localized: "Nothing happened for a while, so Hum stopped. Try again when both devices are ready.")
+        }
+    }
+}
+
+extension NearbyTransferError {
+    /// What the other side hears when this ends a try here.
+    nonisolated var reasonForOtherSide: NearbyStopReason {
+        switch self {
+        case .timedOut: .timedOut
+        case .leftFront: .leftFront
+        case .youCancelled: .cancelled
+        default: .error
+        }
+    }
+
+    /// How a stop on the other side reads here.
+    nonisolated init(otherSide reason: NearbyStopReason) {
+        switch reason {
+        case .cancelled: self = .otherCancelled
+        case .timedOut: self = .otherTimedOut
+        case .leftFront: self = .otherLeftFront
+        case .error: self = .stopped
         }
     }
 }

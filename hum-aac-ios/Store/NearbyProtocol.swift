@@ -56,8 +56,8 @@ nonisolated enum NearbyMessage: Equatable, Sendable {
     case done(digest: Data)
     /// Receiver → sender: the file arrived whole.
     case gotIt
-    /// Either side stopped.
-    case cancel
+    /// Either side stopped, and why, so the other screen can say what happened.
+    case cancel(NearbyStopReason)
 
     /// The biggest piece of the file in one message.
     static let chunkBytes = 64 * 1024
@@ -70,7 +70,7 @@ nonisolated enum NearbyMessage: Equatable, Sendable {
         case .chunk(let bytes): Data([4]) + bytes
         case .done(let digest): Data([5]) + digest
         case .gotIt: Data([6])
-        case .cancel: Data([7])
+        case .cancel(let reason): Data([7, reason.rawValue])
         }
     }
 
@@ -84,10 +84,22 @@ nonisolated enum NearbyMessage: Equatable, Sendable {
         case 4 where !body.isEmpty && body.count <= chunkBytes: return .chunk(body)
         case 5 where body.count == SHA256.byteCount: return .done(digest: body)
         case 6 where body.isEmpty: return .gotIt
-        case 7 where body.isEmpty: return .cancel
+        case 7 where body.count == 1: return .cancel(NearbyStopReason(rawValue: body[0]) ?? .error)
         default: throw NearbyTransferError.badData
         }
     }
+}
+
+/// Why one side stopped, sent with `cancel`.
+nonisolated enum NearbyStopReason: UInt8, Sendable {
+    /// Something went wrong (bad data, a lost file, an unknown reason).
+    case error = 0
+    /// The parent tapped Cancel.
+    case cancelled = 1
+    /// Nobody typed the code or answered in time.
+    case timedOut = 2
+    /// Hum stopped being the app in front.
+    case leftFront = 3
 }
 
 /// What the sender says before anything is sent.

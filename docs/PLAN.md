@@ -267,6 +267,10 @@ AVAudioEngine (started once, kept running while foreground)
   ending other than a finished transfer (Decline, Cancel, a timeout, an error, Hum leaving the front
   while a code or question is showing) stops the listener until the parent taps "Receive again", so
   nobody can keep putting prompts on the screen. It never restarts by itself once a file has arrived.
+  Every ending says why on both screens (`cancel` carries a reason: Cancel, timeout, Hum left the
+  front), with "Try again" on the sender and a prominent "Receive again" on the receiver; code fields
+  start empty on every try. "Send with AirDrop…" shows "Preparing…" with Cancel while the file is made;
+  zipping runs off the main actor (`ImportService.exportPackage`).
 - Devices appear under a label made for each Receive screen, like "iPad 472" or "Mac 138", never the
   device's own name (a Mac's name is often its owner's). Labels are not proof of anything; the codes are.
   The listener accepts only link-local, private (RFC 1918), unique-local IPv6 and loopback addresses,
