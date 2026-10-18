@@ -26,10 +26,10 @@ struct ConfigAppTests {
     }
 
     @Test(arguments: ["food.hum.json", "linked-boards.hum.json"])
-    func examplesRoundTripThroughTheStore(name: String) throws {
+    func examplesRoundTripThroughTheStore(name: String) async throws {
         let model = makeModel(starter: false)
         let data = try Data(contentsOf: repoRoot.appendingPathComponent("examples/\(name)"))
-        let pending = try ImportService(model: model).prepare(data: data, fileName: name)
+        let pending = try await ImportService(model: model).prepare(data: data, fileName: name)
         try ImportService(model: model).apply(pending, mode: .merge)
         let exported = ConfigBridge.export(boards: model.store.boards()).document
         let original = try HumConfigLoader.load(data).document
@@ -54,10 +54,10 @@ struct ConfigAppTests {
         #expect(model.home.placedTiles.contains { $0.spokenText == "Hello, friend!" })
     }
 
-    @Test func importCanBeUndone() throws {
+    @Test func importCanBeUndone() async throws {
         let model = makeModel()
         let data = try Data(contentsOf: repoRoot.appendingPathComponent("examples/food.hum.json"))
-        let pending = try ImportService(model: model).prepare(data: data, fileName: "food")
+        let pending = try await ImportService(model: model).prepare(data: data, fileName: "food")
         try ImportService(model: model).apply(pending, mode: .merge)
         #expect(model.store.boards().count == 2)
         model.store.undo()

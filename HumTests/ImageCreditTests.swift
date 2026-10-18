@@ -30,7 +30,7 @@ struct ImageCreditTests {
         }
     }
 
-    @Test func exportThenImportKeepsTheCredit() throws {
+    @Test func exportThenImportKeepsTheCredit() async throws {
         let model = makeModel()
         let tile = try symbolTile(model)
         let (document, media) = ConfigBridge.export(boards: model.store.boards())
@@ -41,7 +41,7 @@ struct ImageCreditTests {
 
         let other = makeModel(starter: false)
         let service = ImportService(model: other)
-        try service.apply(try service.prepare(data: package, fileName: "shared.hum"), mode: .merge)
+        try service.apply(try await service.prepare(data: package, fileName: "shared.hum"), mode: .merge)
         let imported = try #require(other.store.liveTile(tile.id))
         #expect(imported.imageData != nil)
         #expect(imported.imageCredit == Self.credit)
@@ -55,7 +55,7 @@ struct ImageCreditTests {
         #expect(document.boards.flatMap(\.tiles).first { $0.id == tile.id }?.imageCredit == nil)
     }
 
-    @Test func aNewPhotoFromAFileReplacesTheCredit() throws {
+    @Test func aNewPhotoFromAFileReplacesTheCredit() async throws {
         let model = makeModel()
         let tile = try symbolTile(model)
         var (document, _) = ConfigBridge.export(boards: model.store.boards())
@@ -67,7 +67,7 @@ struct ImageCreditTests {
         }
         let package = try HumPackage.write(document, media: ["media/photo.jpg": try picture()])
         let service = ImportService(model: model)
-        try service.apply(try service.prepare(data: package, fileName: "photo.hum"), mode: .merge)
+        try service.apply(try await service.prepare(data: package, fileName: "photo.hum"), mode: .merge)
         #expect(model.store.liveTile(tile.id)?.imageCredit == nil)
     }
 

@@ -195,20 +195,22 @@ final class AppModel {
         }
     }
 
+    /// A file still being read and checked in the background. The sheet shows "Checking…" until its
+    /// preview is ready. If the file can't be imported, it stays to show why (`importError`).
+    private(set) var checkingImport: ImportCheck?
+    @ObservationIgnored private var importCheckTask: Task<Void, Never>?
+
+    /// What the import sheet shows, if anything.
+    var importStage: ImportStage? {
+        if let checkingImport { return .checking(checkingImport) }
+        return pendingImport.map { .ready($0) }
+    }
+
     /// Changes queued by Shortcuts/Siri surface one at a time, only in parent mode.
     func showNextPendingChange() {
-        guard mode == .parent, pendingImport == nil else { return }
-        for url in PendingChanges.all() {
-            do {
-                var pending = try ImportService(model: self).prepare(url: url)
-                pending = PendingImport(fileName: PendingChanges.displayName(url), loaded: pending.loaded,
-                                        merge: pending.merge, replace: pending.replace, queueFile: url)
-                pendingImport = pending
-                return
-            } catch {
-                PendingChanges.remove(url)  // a broken queued file must not block the others
-            }
-        }
+        guard mode == .parent, pendingImport == nil, checkingImport == nil,
+              let url = PendingChanges.all().first else { return }
+        checkImport(ImportCheck(fileName: PendingChanges.displayName(url), queueFile: url)) { try await $0.prepare(url: url) }
     }
     var importError: String?
     /// The import that just finished, for the editor's banner (cleared when the parent closes it).
@@ -221,20 +223,63 @@ final class AppModel {
     /// Every way a file arrives (Files, AirDrop, "Open in Hum", drag and drop) ends here. Nothing
     /// changes until the parent sees the preview, and the preview only shows in parent mode.
     func requestImport(url: URL) {
-        do {
-            pendingImport = try ImportService(model: self).prepare(url: url)
-        } catch {
-            importError = friendlyMessage(for: error)
+        checkImport(ImportCheck(fileName: url.lastPathComponent)) { try await $0.prepare(url: url) }
+    }
+
+    /// Reads and checks a file in the background (a big one takes a few seconds), then shows its preview.
+    /// The child's board keeps working meanwhile. A newer file replaces one still being checked.
+    func checkImport(_ check: ImportCheck, prepare: @escaping @MainActor (ImportService) async throws -> PendingImport) {
+        importCheckTask?.cancel()
+        importError = nil
+        checkingImport = check
+        importCheckTask = Task {
+            do {
+                var pending = try await prepare(ImportService(model: self))
+                try Task.checkCancellation()
+                pending.id = check.id
+                pending.fileName = check.fileName
+                pending.queueFile = check.queueFile
+                checkingImport = nil
+                pendingImport = pending
+            } catch {
+                // Cancelled: whoever cancelled it has already moved on.
+                guard !Task.isCancelled else { return }
+                if let queued = check.queueFile {
+                    checkingImport = nil
+                    PendingChanges.remove(queued)  // a broken queued file must not block the others
+                    showNextPendingChange()
+                } else {
+                    // The sheet stays open to say why: an alert can't show while a sheet is closing.
+                    importError = friendlyMessage(for: error)
+                }
+            }
+        }
+    }
+
+    /// The parent cancelled while the file was being checked (or closed why it couldn't be imported).
+    /// Nothing has changed.
+    func cancelImportCheck() {
+        guard let check = checkingImport else { return }
+        importCheckTask?.cancel()
+        checkingImport = nil
+        // Like cancelling a queued change's preview: it's dropped and the next one shows.
+        if let queued = check.queueFile {
+            PendingChanges.remove(queued)
+            showNextPendingChange()
+        }
+    }
+
+    /// Waits until no file is being checked (tests).
+    func waitForImportCheck() async {
+        while let task = importCheckTask {
+            await task.value
+            if task == importCheckTask { return }
         }
     }
 
     /// A file sent from a nearby device (Share & sync → Receive). Same checks and preview as any file.
     func requestImport(data: Data, fileName: String) {
-        do {
-            pendingImport = try ImportService(model: self).prepare(data: data, fileName: fileName)
-        } catch {
-            importError = friendlyMessage(for: error)
-        }
+        checkImport(ImportCheck(fileName: fileName)) { try await $0.prepare(data: data, fileName: fileName) }
     }
 
     /// Last time the child touched a tile. Snapshot refreshes from outside wait for a quiet moment.
