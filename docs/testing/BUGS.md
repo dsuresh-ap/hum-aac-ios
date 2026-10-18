@@ -68,6 +68,7 @@ or misleading) · Medium (works, but confusing or against the spec) · Low (poli
 | [HUM-042](#hum-042) | Low | UX | Setup & sharing | Export can take over 10 s with no “preparing…” feedback | Fixed |
 | [HUM-045](#hum-045) | Low | UI | All sheets (iPad) | Sheets are small form sheets on a 13" iPad; Settings needs lots of scrolling | Fixed (confirm on device) |
 | [HUM-046](#hum-046) | Low | UI | First run (iPad) | Welcome and grid steps use a small block in the middle of a big screen | Fixed |
+| [HUM-055](#hum-055) | Low | Text | Import | A tile with no label or words is called “Tile ''” in import errors | Fixed |
 | [HUM-014](#hum-014) | ? | Bug? | Editor | First tap on “⋯” (and after a sheet closes) sometimes ignored; simulator panel only so far | Open (device) |
 
 ---
@@ -457,6 +458,12 @@ In the simulator panel, the first tap after launch or after a sheet closes is of
 so this may be the panel, not Hum. Listed in the human test plan to check on a device.
 
 ---
+
+### HUM-055
+**“Tile ''” in import errors.** Low · Text · Import · *Found by:* code (coverage pass, 2026-10-18)
+
+A tile with no label and no words was named by its empty label: "Tile '' has no words to say." It is now
+named by its place, like the schema checks already did: "Tile 1 on 'Home' has no words to say."
 
 ## Fixes (2026-10-12)
 

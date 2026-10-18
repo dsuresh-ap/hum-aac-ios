@@ -86,6 +86,19 @@ struct ValidationTests {
         #expect(issues.contains { $0.message == "Tile 'snack' has no words to say." })
     }
 
+    /// No label and no words: the tile is named by its place, not "Tile ''".
+    @Test func aTileWithNoWordsOrLabelIsNamedByItsPlace() {
+        let issues = HumConfigLoader.validate(doc(tile: """
+            {"id": "22222222-2222-2222-2222-222222222222", "spokenText": " ", "row": 0, "column": 0},
+            {"id": "33333333-3333-3333-3333-333333333333", "spokenText": "", "row": 5, "column": 0}
+            """))
+        #expect(issues.map(\.message) == [
+            "Tile 1 on 'Home' has no words to say.",
+            "Tile 2 on 'Home' has no words to say.",
+            "Tile 2 on 'Home' is outside the grid of Board 'Home' (row 5, column 0; the grid is 2 rows × 2 columns, counting from 0).",
+        ])
+    }
+
     @Test func silentFolderTileIsAllowed() throws {
         let input = json("""
         {"formatVersion": 1, "boards": [
