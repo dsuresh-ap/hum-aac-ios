@@ -4584,6 +4584,47 @@
         }
       }
     },
+    "A device wants to send you boards. Type this code on it:" : {
+      "comment" : "Receiving screen: a device connected; the parent types this code on the sending device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un dispositivo quiere enviarte tableros. Escribe este código en él:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un appareil veut vous envoyer des tableaux. Tapez ce code dessus :"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Gerät möchte dir Tafeln senden. Gib diesen Code dort ein:"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um dispositivo quer enviar pranchas para você. Digite este código nele:"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un dispositivo vuole inviarti delle tabelle. Inserisci questo codice su di esso:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有设备想发送沟通板给你。请在该设备上输入这个代码："
+          }
+        }
+      }
+    },
     "A folder tile on %@ needs a label or words to say." : {
       "comment" : "A problem found in a Hum file. The first value is the board or tile it is about (like Tile “snack”). Words in “ ” such as “spokenText” are names from the file: keep them as they are.",
       "localizations" : {
@@ -4996,6 +5037,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "接受"
+          }
+        }
+      }
+    },
+    "Accept only if you're sending this from your own device right now." : {
+      "comment" : "Under the Accept prompt on the receiving device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acepta solo si lo estás enviando ahora desde tu propio dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acceptez seulement si vous l'envoyez en ce moment depuis votre propre appareil."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nimm nur an, wenn du das gerade von deinem eigenen Gerät sendest."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceite só se você estiver enviando isso agora do seu próprio dispositivo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accetta solo se lo stai inviando ora dal tuo dispositivo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有当你正在从自己的设备发送时才接受。"
           }
         }
       }
@@ -7606,88 +7688,6 @@
         }
       }
     },
-    "Check that the other device shows the same code. Accept only if it does." : {
-      "comment" : "Under the six-digit code on the receiving device.",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comprueba que el otro dispositivo muestra el mismo código. Acepta solo si es así."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vérifiez que l'autre appareil affiche le même code. Acceptez seulement si c'est le cas."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prüfe, ob das andere Gerät denselben Code zeigt. Nimm nur an, wenn es so ist."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Confira se o outro dispositivo mostra o mesmo código. Aceite só se mostrar."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Controlla che l'altro dispositivo mostri lo stesso codice. Accetta solo se è così."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请确认另一台设备显示相同的代码。只有相同时才接受。"
-          }
-        }
-      }
-    },
-    "Check that the other device shows the same code. If it doesn't, tap Cancel." : {
-      "comment" : "Under the six-digit code on the sending device.",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comprueba que el otro dispositivo muestra el mismo código. Si no, toca Cancelar."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vérifiez que l'autre appareil affiche le même code. Sinon, touchez Annuler."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prüfe, ob das andere Gerät denselben Code zeigt. Wenn nicht, tippe auf „Abbrechen“."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Confira se o outro dispositivo mostra o mesmo código. Se não mostrar, toque em Cancelar."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Controlla che l'altro dispositivo mostri lo stesso codice. Se non è così, tocca Annulla."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请确认另一台设备显示相同的代码。如果不同，请轻点“取消”。"
-          }
-        }
-      }
-    },
     "Checking…" : {
       "comment" : "Text displayed when checking iCloud account status.",
       "isCommentAutoGenerated" : true,
@@ -8229,6 +8229,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "关闭这条消息"
+          }
+        }
+      }
+    },
+    "Code" : {
+      "comment" : "Placeholder of the field where the parent types the six-digit code.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codice"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代码"
           }
         }
       }
@@ -13553,6 +13594,47 @@
         }
       }
     },
+    "It's too big for Hum to open." : {
+      "comment" : "Why a Hum file couldn't be imported.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es demasiado grande para que Hum lo abra."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il est trop gros pour que Hum puisse l'ouvrir."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sie ist zu groß, als dass Hum sie öffnen könnte."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "É grande demais para o Hum abrir."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "È troppo grande perché Hum possa aprirlo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件太大，Hum 无法打开。"
+          }
+        }
+      }
+    },
     "Its spot will be empty. Other tiles stay where they are. You can undo this." : {
       "comment" : "The body of a confirmation dialog that asks whether to delete a tile.",
       "isCommentAutoGenerated" : true,
@@ -16686,6 +16768,88 @@
         }
       }
     },
+    "Nothing happened for a while, so Hum stopped. Try again when both devices are ready." : {
+      "comment" : "An error when nobody typed the code or answered in time.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pasó nada durante un rato, así que Hum se detuvo. Inténtalo de nuevo cuando los dos dispositivos estén listos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien ne s'est passé pendant un moment, alors Hum s'est arrêté. Réessayez quand les deux appareils sont prêts."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Weile ist nichts passiert, deshalb hat Hum aufgehört. Versuch es noch einmal, wenn beide Geräte bereit sind."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada aconteceu por um tempo, então o Hum parou. Tente de novo quando os dois dispositivos estiverem prontos."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per un po' non è successo niente, quindi Hum si è fermato. Riprova quando entrambi i dispositivi sono pronti."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一段时间内没有任何操作，Hum 已停止。请在两台设备都准备好后再试一次。"
+          }
+        }
+      }
+    },
+    "Nothing is sent until the code matches." : {
+      "comment" : "Under the code field on the sending device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se envía nada hasta que el código coincida."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien n'est envoyé tant que le code ne correspond pas."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nichts wird gesendet, bis der Code stimmt."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada é enviado até o código bater."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non viene inviato niente finché il codice non corrisponde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代码一致之前不会发送任何内容。"
+          }
+        }
+      }
+    },
     "Nothing yet. What your child says will appear here." : {
       "comment" : "A description of the text that appears when the user has no history.",
       "isCommentAutoGenerated" : true,
@@ -17142,6 +17306,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "一个完整的短语，完全按孩子的说法。"
+          }
+        }
+      }
+    },
+    "Only type it on your own device, the one where you just tapped it in the list." : {
+      "comment" : "Under the code on the receiving device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escríbelo solo en tu propio dispositivo, en el que acabas de tocarlo en la lista."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapez-le seulement sur votre propre appareil, celui où vous venez de le toucher dans la liste."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib ihn nur auf deinem eigenen Gerät ein, auf dem du es gerade in der Liste angetippt hast."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite só no seu próprio dispositivo, aquele em que você acabou de tocar nele na lista."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inseriscilo solo sul tuo dispositivo, quello in cui l'hai appena toccato nell'elenco."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只在你自己的设备上输入，也就是你刚刚在列表中轻点它的那台设备。"
           }
         }
       }
@@ -21156,6 +21361,47 @@
         }
       }
     },
+    "Send" : {
+      "comment" : "A button that sends the boards once the code is typed.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senden"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送"
+          }
+        }
+      }
+    },
     "Send to a nearby device" : {
       "comment" : "A button and screen title in Share & sync.",
       "localizations" : {
@@ -23846,6 +24092,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "那块沟通板已经不在 Hum 中了。"
+          }
+        }
+      }
+    },
+    "That code doesn't match. Check the code on the other device and type it again." : {
+      "comment" : "Shown when the typed code is wrong.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ese código no coincide. Mira el código en el otro dispositivo y escríbelo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce code ne correspond pas. Vérifiez le code sur l'autre appareil et tapez-le à nouveau."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Code stimmt nicht. Sieh dir den Code auf dem anderen Gerät an und gib ihn noch einmal ein."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esse código não bate. Confira o código no outro dispositivo e digite de novo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo codice non corrisponde. Controlla il codice sull'altro dispositivo e inseriscilo di nuovo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代码不一致。请查看另一台设备上的代码，然后重新输入。"
           }
         }
       }
@@ -26807,6 +27094,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输入或粘贴孩子说的短语，完全按孩子的说法。每一行会成为一张完整的卡片。"
+          }
+        }
+      }
+    },
+    "Type the code shown on “%@”." : {
+      "comment" : "Sending device: the argument is the other device's name, like iPad 47.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe el código que aparece en «%@»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapez le code affiché sur « %@ »."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib den Code ein, der auf „%@“ angezeigt wird."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite o código mostrado em “%@”."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci il codice mostrato su «%@»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入“%@”上显示的代码。"
           }
         }
       }

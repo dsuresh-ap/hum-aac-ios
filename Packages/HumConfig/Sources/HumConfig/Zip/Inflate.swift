@@ -10,9 +10,14 @@ import Foundation
 enum Inflate {
     struct Failure: Error {}
 
+    /// With `expectedSize`, output stops there: a stream that unpacks to more is rejected instead of
+    /// filling memory.
     static func decompress(_ input: Data, expectedSize: Int? = nil) throws -> Data {
         var state = State(input: [UInt8](input))
-        if let expectedSize { state.output.reserveCapacity(expectedSize) }
+        if let expectedSize {
+            state.limit = expectedSize
+            state.output.reserveCapacity(expectedSize)
+        }
         var last = false
         while !last {
             last = try state.bits(1) == 1
@@ -79,6 +84,7 @@ enum Inflate {
         var bitBuffer = 0
         var bitCount = 0
         var output: [UInt8] = []
+        var limit = Int.max
 
         init(input: [UInt8]) { self.input = input }
 
@@ -103,7 +109,7 @@ enum Inflate {
             let nlen = Int(input[position + 2]) | Int(input[position + 3]) << 8
             guard len == (~nlen & 0xFFFF) else { throw Failure() }
             position += 4
-            guard position + len <= input.count else { throw Failure() }
+            guard position + len <= input.count, output.count + len <= limit else { throw Failure() }
             output.append(contentsOf: input[position..<(position + len)])
             position += len
         }
@@ -126,6 +132,7 @@ enum Inflate {
             while true {
                 var symbol = try decode(lengths)
                 if symbol < 256 {
+                    guard output.count < limit else { throw Failure() }
                     output.append(UInt8(symbol))
                 } else if symbol == 256 {
                     return
@@ -136,7 +143,7 @@ enum Inflate {
                     let dsym = try decode(distances)
                     guard dsym < 30 else { throw Failure() }
                     let dist = Inflate.distBase[dsym] + (try bits(Inflate.distExtra[dsym]))
-                    guard dist <= output.count else { throw Failure() }
+                    guard dist <= output.count, output.count + len <= limit else { throw Failure() }
                     let start = output.count - dist
                     for i in 0..<len { output.append(output[start + i]) }
                 }

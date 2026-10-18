@@ -166,12 +166,15 @@ public enum PackageProblem: Sendable, Equatable {
     case noConfig
     /// The file couldn't be read at all.
     case unreadable
+    /// Too many files inside, or too big once unpacked (see `ZipArchive.maxTotalSize`).
+    case tooBig
 
     public var text: String {
         switch self {
         case .damaged: return "It may be damaged or only partly downloaded."
         case .noConfig: return "It has no hum.json inside."
         case .unreadable: return "Hum couldn't read the file."
+        case .tooBig: return "It is too big to open (more than 600 MB once unpacked)."
         }
     }
 }

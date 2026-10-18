@@ -67,6 +67,7 @@ extension PackageProblem {
         case .damaged: String(localized: "It may be damaged, or only partly downloaded.", comment: "Why a Hum file couldn't be imported.")
         case .noConfig: String(localized: "There are no boards inside it.", comment: "Why a Hum file couldn't be imported.")
         case .unreadable: String(localized: "Try saving or downloading it again.", comment: "Why a Hum file couldn't be imported.")
+        case .tooBig: String(localized: "It's too big for Hum to open.", comment: "Why a Hum file couldn't be imported.")
         }
     }
 }

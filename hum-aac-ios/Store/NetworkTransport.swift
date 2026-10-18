@@ -5,8 +5,6 @@ import Foundation
 import Network
 #if os(iOS)
 import UIKit
-#else
-import SystemConfiguration
 #endif
 
 /// `NearbyTransport` with the Network framework: Bonjour on the local network, plus Wi-Fi straight
@@ -28,6 +26,7 @@ final class NetworkTransport: NearbyTransport {
         tcp.connectionTimeout = 10
         let parameters = NWParameters(tls: nil, tcp: tcp)
         parameters.includePeerToPeer = true
+        parameters.prohibitedInterfaceTypes = [.cellular]
         return parameters
     }
 
@@ -47,7 +46,10 @@ final class NetworkTransport: NearbyTransport {
         }
         listener.newConnectionHandler = { [weak self, weak listener] connection in
             MainActor.assumeIsolated {
-                guard let self, let listener, self.listener === listener else { return connection.cancel() }
+                // Only devices on this local network or Wi-Fi link: never an address from the internet
+                // (a device with a public IPv6 address could otherwise be reached from anywhere).
+                guard let self, let listener, self.listener === listener,
+                      Self.isLocal(connection.endpoint) else { return connection.cancel() }
                 self.onEvent?(.incoming(NetworkChannel(connection)))
             }
         }
@@ -98,17 +100,36 @@ final class NetworkTransport: NearbyTransport {
         onEvent?(.peers(found.keys.map { NearbyPeer(id: $0, name: $0) }))
     }
 
-    /// The name other devices see: the Mac's computer name, or "iPad"/"iPhone" (iOS only shares the model).
+    /// The name other devices see: the kind of device and a number picked for this screen, like
+    /// "iPad 47". Not the device's own name: a Mac's name is often its owner's, and everyone on the
+    /// network can read it.
     private static func deviceName() -> String {
         #if os(iOS)
-        var name = UIDevice.current.name
+        let kind = UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
         #else
-        var name = (SCDynamicStoreCopyComputerName(nil, nil) as String?) ?? "Mac"
+        let kind = "Mac"
         #endif
-        if name.isEmpty { name = "Hum" }
-        // Bonjour allows 63 bytes.
-        while name.utf8.count > 63 { name.removeLast() }
-        return name
+        return "\(kind) \(Int.random(in: 10...99))"
+    }
+
+    /// Link-local, private (RFC 1918), unique-local IPv6 or loopback: addresses that can't come from the
+    /// internet. Peer-to-peer Wi-Fi between Apple devices uses link-local IPv6.
+    nonisolated static func isLocal(_ endpoint: NWEndpoint) -> Bool {
+        guard case .hostPort(let host, _) = endpoint else { return false }
+        switch host {
+        case .ipv4(let address):
+            let b = [UInt8](address.rawValue)
+            guard b.count == 4 else { return false }
+            return b[0] == 10 || b[0] == 127 || (b[0] == 172 && b[1] & 0xF0 == 16) || (b[0] == 192 && b[1] == 168)
+                || (b[0] == 169 && b[1] == 254)
+        case .ipv6(let address):
+            if address.isLoopback || address.isLinkLocal { return true }
+            if let mapped = address.asIPv4 { return isLocal(.hostPort(host: .ipv4(mapped), port: 0)) }
+            let first = address.rawValue.first ?? 0
+            return first & 0xFE == 0xFC  // fc00::/7
+        default:
+            return false
+        }
     }
 }
 

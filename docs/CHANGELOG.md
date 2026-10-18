@@ -5,9 +5,12 @@
 - **Send with AirDrop…** in Share & sync opens the share sheet with your boards already in it: no
   separate export step. On the other device, Hum opens the file in its import preview.
 - **Send to / Receive from a nearby device.** Open Receive on one device and Send on the other, pick the
-  device, check that both show the same six-digit code, and tap Accept. The boards arrive in the usual
+  device, type the six-digit code it shows, and tap Accept on it. Nothing is sent until the code
+  matches. You can send all boards or only the one you're editing. The boards arrive in the usual
   import preview (Merge or Replace), so nothing changes until you choose. Local network only, never the
   internet; a device can only be found while its Receive screen is open. Works between iPad, iPhone and Mac.
+- **Safer file imports.** Hum refuses a file that would unpack to more than 600 MB or more than 20 000
+  files before opening it, so a broken or hostile file can't make Hum run out of memory.
 
 ## Unreleased: word finder
 

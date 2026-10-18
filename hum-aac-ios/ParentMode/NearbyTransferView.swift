@@ -12,6 +12,8 @@ struct NearbySendView: View {
     @State private var prepareError: String?
     /// The board to send on its own, or nil for all boards.
     @State private var onlyBoardID: UUID?
+    /// The code the parent reads on the other device.
+    @State private var typedCode = ""
 
     var body: some View {
         Form {
@@ -83,13 +85,34 @@ struct NearbySendView: View {
             }
             .accessibilityElement(children: .combine)
             Button("Cancel", role: .cancel) { transfer.cancel() }
-        case .waitingForAnswer(let peer, let code):
+        case .confirming(let peer):
+            // The parent types the code from the other screen, so it can't be skipped: nothing about the
+            // boards is sent until it matches.
             VStack(alignment: .leading, spacing: 8) {
-                Text("Waiting for “\(peer.name)” to accept.")
-                MatchingCode(code: code)
-                Text("Check that the other device shows the same code. If it doesn't, tap Cancel.")
+                Text("Type the code shown on “\(peer.name)”.")
+                TextField("Code", text: $typedCode)
+                    .font(.system(.title, design: .monospaced))
+                    #if os(iOS)
+                    .keyboardType(.numberPad)
+                    #endif
+                    .onSubmit(confirm)
+                    .onChange(of: typedCode) { _, code in
+                        if code.filter(\.isNumber).count == 6 { confirm() }
+                    }
+                    .accessibilityIdentifier("nearbyCode")
+                if transfer.codeWasWrong {
+                    Text("That code doesn't match. Check the code on the other device and type it again.")
+                        .foregroundStyle(.red)
+                }
+                Text("Nothing is sent until the code matches.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
+            .onAppear { typedCode = "" }
+            Button("Send", systemImage: "paperplane", action: confirm)
+                .disabled(typedCode.filter(\.isNumber).count != 6)
+            Button("Cancel", role: .cancel) { transfer.cancel() }
+        case .waitingForAnswer(let peer):
+            Text("Waiting for “\(peer.name)” to accept.")
             Button("Cancel", role: .cancel) { transfer.cancel() }
         case .transferring(let fraction):
             ProgressView(value: fraction) { Text("Sending…") }
@@ -100,9 +123,13 @@ struct NearbySendView: View {
             Label("The other device didn't accept.", systemImage: "xmark.circle")
         case .failed(let error):
             Label(error.message, systemImage: "exclamationmark.triangle")
-        case .idle, .looking, .asking, .received:
+        case .idle, .looking, .pairing, .asking, .received:
             EmptyView()
         }
+    }
+
+    private func confirm() {
+        if !transfer.confirm(code: typedCode) { typedCode = "" }
     }
 
     private var canChoose: Bool {
@@ -141,6 +168,8 @@ struct NearbyReceiveView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
     @State private var transfer: NearbyTransfer?
+    /// Stopped while Hum wasn't the app in front; starts again when it is.
+    @State private var paused = false
 
     var body: some View {
         Form {
@@ -163,10 +192,28 @@ struct NearbyReceiveView: View {
             transfer.start()
         }
         .onDisappear { transfer?.stop() }
+        // Findable only while Hum is the app in front.
         .onChange(of: scenePhase) { _, phase in
-            // Not findable while Hum is in the background.
-            if phase == .background { transfer?.stop() } else if phase == .active { transfer?.start() }
+            if phase == .active { resume() } else { pause() }
         }
+        #if os(macOS)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in pause() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in resume() }
+        #endif
+    }
+
+    /// Stops being findable while only waiting. A transfer under way carries on, and once a file has
+    /// arrived the screen never starts listening again by itself.
+    private func pause() {
+        guard let transfer, transfer.state == .looking else { return }
+        transfer.stop()
+        paused = true
+    }
+
+    private func resume() {
+        guard paused else { return }
+        paused = false
+        transfer?.start()
     }
 
     @ViewBuilder private func content(_ transfer: NearbyTransfer) -> some View {
@@ -179,11 +226,18 @@ struct NearbyReceiveView: View {
             .accessibilityElement(children: .combine)
             Text("On your other device, open Hum, go to Share & sync, and tap “Send to a nearby device”.")
                 .foregroundStyle(.secondary)
-        case .asking(let offer, let code):
+        case .pairing(let code):
+            VStack(alignment: .leading, spacing: 8) {
+                Text("A device wants to send you boards. Type this code on it:")
+                MatchingCode(code: code)
+                Text("Only type it on your own device, the one where you just tapped it in the list.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            Button("Cancel", role: .cancel) { transfer.cancel() }
+        case .asking(let offer):
             VStack(alignment: .leading, spacing: 8) {
                 Text("“\(offer.senderName)” wants to send “\(offer.fileName)” (\(Int64(offer.byteCount).formatted(.byteCount(style: .file)))).")
-                MatchingCode(code: code)
-                Text("Check that the other device shows the same code. Accept only if it does.")
+                Text("Accept only if you're sending this from your own device right now.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             Button("Accept", systemImage: "checkmark") { transfer.accept() }
@@ -198,7 +252,7 @@ struct NearbyReceiveView: View {
         case .failed(let error):
             Label(error.message, systemImage: "exclamationmark.triangle")
             Button("Try again") { restart(transfer) }
-        case .connecting, .waitingForAnswer, .sent, .declined:
+        case .connecting, .confirming, .waitingForAnswer, .sent, .declined:
             EmptyView()
         }
     }
@@ -209,7 +263,7 @@ struct NearbyReceiveView: View {
     }
 }
 
-/// The six digits both screens show, in two groups of three.
+/// The six-digit code, in two groups of three.
 private struct MatchingCode: View {
     let code: String
 

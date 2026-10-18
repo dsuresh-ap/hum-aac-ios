@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import Foundation
+import Network
 import Testing
 import HumConfig
 @testable import Hum
@@ -86,6 +87,8 @@ struct NearbyWireTests {
         #expect(NearbyOffer.safeFileName(String(repeating: "y", count: 300)).count == 84)
         #expect(NearbyOffer.safeDeviceName("  ") == "Another device")
         #expect(NearbyOffer.safeDeviceName("Line\nbreak") == "Line-break")
+        // Invisible right-to-left overrides and zero-width spaces can't make look-alike names.
+        #expect(NearbyOffer.safeDeviceName("i\u{200B}Pad\u{202E}") == "iPad")
     }
 
     @Test func handshakeGivesBothSidesTheSameCodeAndKeys() throws {
@@ -155,20 +158,23 @@ struct NearbyTransferTests {
         let pair = Pair(network: network, sender: NearbyTransfer(role: .send, transport: senderTransport),
                         receiver: NearbyTransfer(role: .receive, transport: receiverTransport, deliver: deliver),
                         senderTransport: senderTransport, receiverTransport: receiverTransport)
+        pair.receiver.cooldown = .zero
         pair.receiver.start()
         pair.sender.start()
         network.run()
         return pair
     }
 
-    /// Asks the receiver; returns the code both screens show.
+    /// Connects, then types the code the receiver shows, like a parent would. Returns that code.
     @discardableResult
     func offer(_ pair: Pair, file: Data) throws -> String? {
         try pair.sender.setFile(file, name: "Hum boards 2026-10-18.hum")
         guard let peer = pair.sender.peers.first else { return nil }
         pair.sender.send(to: peer)
         pair.network.run()
-        guard case .waitingForAnswer(_, let code) = pair.sender.state else { return nil }
+        guard case .pairing(let code) = pair.receiver.state else { return nil }
+        pair.sender.confirm(code: code)
+        pair.network.run()
         return code
     }
 
@@ -179,12 +185,11 @@ struct NearbyTransferTests {
         let pair = makePair { data, name in to.requestImport(data: data, fileName: name) }
 
         #expect(pair.sender.peers.map(\.name) == ["Kitchen iPad"])
-        let code = try #require(try offer(pair, file: file))
-        guard case .asking(let offer, let shown) = pair.receiver.state else {
+        try #require(try offer(pair, file: file) != nil)
+        guard case .asking(let offer) = pair.receiver.state else {
             Issue.record("receiver should be asking, is \(pair.receiver.state)")
             return
         }
-        #expect(shown == code)
         #expect(offer.senderName == "Mac")
         #expect(offer.fileName == "Hum boards 2026-10-18.hum")
         #expect(offer.byteCount == file.count)
@@ -320,12 +325,12 @@ struct NearbyTransferTests {
         other.send(to: try #require(other.peers.first))
         pair.network.run()
         #expect(other.state == .failed(.couldNotConnect))
-        #expect({ if case .asking(let offer, _) = pair.receiver.state { offer.senderName == "Mac" } else { false } }())
+        #expect({ if case .asking(let offer) = pair.receiver.state { offer.senderName == "Mac" } else { false } }())
     }
 
     @Test func aDeviceThatNeverOffersIsLetGo() async throws {
         let pair = makePair { _, _ in }
-        pair.receiver.offerTimeout = .milliseconds(20)
+        pair.receiver.idleTimeout = .milliseconds(20)
         // Something connects and says nothing.
         let silent = pair.senderTransport.connect(to: try #require(pair.sender.peers.first))
         silent.start()
@@ -339,6 +344,120 @@ struct NearbyTransferTests {
             asking = { if case .asking = pair.receiver.state { true } else { false } }()
         }
         #expect(asking)
+    }
+
+    // MARK: The code check (security review, finding 1)
+
+    @Test func nothingAboutTheFileLeavesTheSenderBeforeTheCodeIsTyped() throws {
+        let pair = makePair { _, _ in }
+        try pair.sender.setFile(Data(count: 1000), name: "Mia's school.hum")
+        pair.sender.send(to: try #require(pair.sender.peers.first))
+        pair.network.run()
+        #expect({ if case .confirming = pair.sender.state { true } else { false } }())
+        #expect({ if case .pairing = pair.receiver.state { true } else { false } }())
+        // Only the two handshake frames: no offer (with its file name), no file.
+        #expect(pair.senderTransport.channels.first?.sentFrames == 2)
+    }
+
+    @Test func aWrongCodeSendsNothingAndCanBeTypedAgain() throws {
+        let pair = makePair { _, _ in }
+        try pair.sender.setFile(Data(count: 1000), name: "x.hum")
+        pair.sender.send(to: try #require(pair.sender.peers.first))
+        pair.network.run()
+        guard case .pairing(let code) = pair.receiver.state else {
+            Issue.record("receiver should show a code, is \(pair.receiver.state)")
+            return
+        }
+        let wrong = String(code.map { $0 == "9" ? "0" : Character(String(($0.wholeNumberValue ?? 0) + 1)) })
+        #expect(!pair.sender.confirm(code: wrong))
+        #expect(pair.sender.codeWasWrong)
+        pair.network.run()
+        #expect(pair.senderTransport.channels.first?.sentFrames == 2)
+        #expect({ if case .pairing = pair.receiver.state { true } else { false } }())
+
+        // Spaces as shown ("123 456") are fine.
+        #expect(pair.sender.confirm(code: "\(code.prefix(3)) \(code.suffix(3))"))
+        pair.network.run()
+        #expect({ if case .asking = pair.receiver.state { true } else { false } }())
+    }
+
+    @Test func onlyDigitsCount() throws {
+        let pair = makePair { _, _ in }
+        try pair.sender.setFile(Data(count: 100), name: "x.hum")
+        pair.sender.send(to: try #require(pair.sender.peers.first))
+        pair.network.run()
+        #expect(!pair.sender.confirm(code: "abcdef"))
+        #expect({ if case .confirming = pair.sender.state { true } else { false } }())
+    }
+
+    // MARK: Timeouts and repeat tries (findings 5 and 6)
+
+    @Test func anUnansweredPromptGoesAway() async throws {
+        let pair = makePair { _, _ in }
+        pair.receiver.personTimeout = .milliseconds(40)
+        try offer(pair, file: Data(count: 100))
+        #expect({ if case .asking = pair.receiver.state { true } else { false } }())
+        try await Task.sleep(for: .milliseconds(250))
+        pair.network.run()
+        #expect(pair.receiver.state == .looking)
+        #expect(pair.sender.state == .declined)
+    }
+
+    @Test func aCodeNobodyTypesGoesAway() async throws {
+        let pair = makePair { _, _ in }
+        pair.receiver.personTimeout = .milliseconds(40)
+        try pair.sender.setFile(Data(count: 100), name: "x.hum")
+        pair.sender.send(to: try #require(pair.sender.peers.first))
+        pair.network.run()
+        try await Task.sleep(for: .milliseconds(250))
+        pair.network.run()
+        #expect(pair.receiver.state == .looking)
+        #expect(pair.sender.state == .declined)
+    }
+
+    @Test func aStalledTransferGivesUp() async throws {
+        let pair = makePair { _, _ in }
+        pair.sender.idleTimeout = .milliseconds(40)
+        pair.receiver.idleTimeout = .milliseconds(40)
+        try offer(pair, file: Data(count: 1_000_000))
+        pair.receiver.accept()
+        pair.network.run(limit: 5)
+        // Nothing more arrives on either side.
+        try await Task.sleep(for: .milliseconds(250))
+        #expect(pair.receiver.state == .failed(.lostConnection))
+        #expect(pair.sender.state == .failed(.lostConnection))
+    }
+
+    @Test func afterADeclineOthersWaitABit() throws {
+        let pair = makePair { _, _ in }
+        pair.receiver.cooldown = .seconds(60)
+        try offer(pair, file: Data(count: 100))
+        pair.receiver.decline()
+        pair.network.run()
+        try offer(pair, file: Data(count: 100))
+        #expect(pair.sender.state == .failed(.couldNotConnect))
+        #expect(pair.receiver.state == .looking)
+    }
+
+    // MARK: Local addresses only (finding 4)
+
+    @Test func onlyLocalAddressesMayConnect() {
+        func local(_ host: NWEndpoint.Host) -> Bool { NetworkTransport.isLocal(.hostPort(host: host, port: 4000)) }
+        #expect(local("192.168.1.20"))
+        #expect(local("10.0.0.5"))
+        #expect(local("172.20.1.1"))
+        #expect(local("169.254.3.4"))
+        #expect(local("127.0.0.1"))
+        #expect(local("fe80::1c2b:3cff:fe4d:5e6f"))
+        #expect(local("fd12:3456:789a::1"))
+        #expect(local("::1"))
+        #expect(local("::ffff:192.168.1.20"))
+        #expect(!local("8.8.8.8"))
+        #expect(!local("172.32.0.1"))
+        #expect(!local("100.64.0.1"))
+        #expect(!local("2001:4860:4860::8888"))
+        #expect(!local("::ffff:8.8.8.8"))
+        #expect(!NetworkTransport.isLocal(.service(name: "x", type: "_hum-setup._tcp", domain: "local.", interface: nil)))
     }
 }
 
@@ -496,12 +615,13 @@ struct NearbyLiveTests {
 
         try await waitUntil { sender.peers.contains { $0.name == receiver.localName } }
         sender.send(to: try #require(sender.peers.first { $0.name == receiver.localName }))
-        try await waitUntil { if case .asking = receiver.state { true } else { false } }
-        guard case .asking(_, let receiverCode) = receiver.state, case .waitingForAnswer(_, let senderCode) = sender.state else {
+        try await waitUntil { if case .pairing = receiver.state { true } else { false } }
+        guard case .pairing(let code) = receiver.state else {
             Issue.record("receiver \(receiver.state), sender \(sender.state)")
             return
         }
-        #expect(receiverCode == senderCode)
+        #expect(sender.confirm(code: code))
+        try await waitUntil { if case .asking = receiver.state { true } else { false } }
 
         receiver.accept()
         try await waitUntil { sender.state == .sent && received.files.count == 1 }
@@ -511,18 +631,27 @@ struct NearbyLiveTests {
     }
 
     /// Sends a small setup to Hum on another device or simulator whose Receive screen is open, named by
-    /// HUM_LIVE_NEARBY_PEER. A person taps Accept there within 90 seconds.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["HUM_LIVE_NEARBY_PEER"] != nil), .timeLimit(.minutes(2)))
+    /// HUM_LIVE_NEARBY_PEER. A person writes the code that device shows into the file named by
+    /// HUM_LIVE_NEARBY_CODE_FILE, then taps Accept there, within 90 seconds each.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["HUM_LIVE_NEARBY_PEER"] != nil), .timeLimit(.minutes(4)))
     func sendsToAnotherDevice() async throws {
-        let name = try #require(ProcessInfo.processInfo.environment["HUM_LIVE_NEARBY_PEER"])
+        let environment = ProcessInfo.processInfo.environment
+        let name = try #require(environment["HUM_LIVE_NEARBY_PEER"])
+        let codeFile = URL(fileURLWithPath: try #require(environment["HUM_LIVE_NEARBY_CODE_FILE"]))
         let sender = NearbyTransfer(role: .send, transport: NetworkTransport())
         defer { sender.stop() }
         try sender.setFile(try ImportService(model: makeModel()).exportData(), name: "Live starter.hum")
         sender.start()
         try await waitUntil { sender.peers.contains { $0.name == name } }
         sender.send(to: try #require(sender.peers.first { $0.name == name }))
-        try await waitUntil { if case .waitingForAnswer = sender.state { true } else { false } }
-        print("Nearby live: \(sender.state)")
+        try await waitUntil { if case .confirming = sender.state { true } else { false } }
+        print("Nearby live: type the code into \(codeFile.path)")
+        var typed = ""
+        try await waitUntil(seconds: 90) {
+            typed = (try? String(contentsOf: codeFile, encoding: .utf8)) ?? ""
+            return typed.filter(\.isNumber).count == 6
+        }
+        #expect(sender.confirm(code: typed))
         try await waitUntil(seconds: 90) { sender.state == .sent }
     }
 

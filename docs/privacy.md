@@ -26,7 +26,7 @@ Hum is a free, open-source AAC (communication) app. We built it to collect nothi
 |---|---|---|---|
 | **iCloud sync** | Your boards, tiles, photos and recordings | Your own private iCloud database (Apple) | Only you, on your Apple Account. We can't. |
 | **AI helper** | The text you type and the words on your tiles. Never photos or recordings. | Your device, or Apple Private Cloud Compute | Apple processes the request and doesn't keep it. We never receive it. |
-| **Send to a nearby device** | Your boards, photos and recordings (the same as an exported file), encrypted | Your other iPad, iPhone or Mac nearby, over your local network or Wi-Fi between the two devices. Never the internet. | Only the device you choose, and only after someone taps Accept on it and the six-digit codes match. |
+| **Send to a nearby device** | Your boards, photos and recordings (the same as an exported file), encrypted | Your other iPad, iPhone or Mac nearby, over your local network or Wi-Fi between the two devices. Never the internet. | Only the device you choose: you type the six-digit code it shows on the sending device, and tap Accept on it. People on the same network can see that Hum is open on its Send or Receive screen, and roughly how big the file is. |
 | **Symbol search** | Only the word you search for (and, like any web request, your IP address) | ARASAAC (`api.arasaac.org`, Government of Aragón, Spain) or Global Symbols (`globalsymbols.com`, for Mulberry symbols) | That service. No account, cookie or device ID is sent. The symbol you pick is saved in the tile, so the child's board never uses the network. |
 
 The symbol services have their own privacy policies. Hum sends them nothing that identifies you or

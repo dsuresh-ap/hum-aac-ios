@@ -9,9 +9,10 @@ import CryptoKit
 // 1. Handshake, in plain frames. The sender sends "HUM1" + a hash of its key, the receiver answers
 //    "HUM1" + its key, then the sender shows its key. Both work out the same secret keys and the same
 //    six-digit code. The sender commits to its key before it sees the receiver's, so a device in the
-//    middle can't choose keys that give both screens the same code.
-// 2. Then every frame is sealed (ChaChaPoly, a key and a counter for each direction): the offer,
-//    Accept or Decline, the file in pieces, a check of the whole file, and "got it".
+//    middle can't choose keys that give both sides the same code.
+// 2. The receiver shows the code and the parent types it on the sender. Only then is anything about the
+//    file sent. Every frame from here is sealed (ChaChaPoly, a key and a counter for each direction):
+//    the offer, Accept or Decline, the file in pieces, a check of the whole file, and "got it".
 
 /// Frames on a byte stream: 4 bytes of length (big-endian), then that many bytes.
 nonisolated struct NearbyFrames {
@@ -90,8 +91,9 @@ nonisolated enum NearbyMessage: Equatable, Sendable {
 /// What the sender says before anything is sent.
 nonisolated struct NearbyOffer: Codable, Equatable, Sendable {
     static let currentVersion = 1
-    /// Large enough for a big setup full of photos and recordings.
-    static let maxFileBytes = 500 * 1024 * 1024
+    /// Large enough for a big setup full of photos and recordings, small enough for an older iPad's
+    /// memory while the file is imported. Bigger setups can still go by AirDrop or Files.
+    static let maxFileBytes = 200 * 1024 * 1024
     /// The offer itself stays tiny.
     static let maxOfferBytes = 1024
 
@@ -127,7 +129,10 @@ nonisolated struct NearbyOffer: Codable, Equatable, Sendable {
     }
 
     private static func cleaned(_ text: String, limit: Int) -> String {
-        let text = String(text.map { "/\\:".contains($0) || $0.isNewline || $0.unicodeScalars.contains { $0.properties.generalCategory == .control } ? "-" : $0 })
+        // Invisible formatting (right-to-left overrides, zero-width spaces) could make one name look like
+        // another, so it goes.
+        let visible = String(String.UnicodeScalarView(text.unicodeScalars.filter { $0.properties.generalCategory != .format }))
+        let text = String(visible.map { "/\\:".contains($0) || $0.isNewline || $0.unicodeScalars.contains { $0.properties.generalCategory == .control } ? "-" : $0 })
         return String(text.trimmingCharacters(in: CharacterSet(charactersIn: ".").union(.whitespacesAndNewlines)).prefix(limit))
     }
 }

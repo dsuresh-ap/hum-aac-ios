@@ -263,16 +263,29 @@ AVAudioEngine (started once, kept running while foreground)
   peer-to-peer Wi-Fi (`includePeerToPeer`). No internet, no servers, no accounts. MultipeerConnectivity
   isn't used: it is deprecated in the iOS/macOS 27 SDKs.
 - Parent mode only (Share & sync is behind the grown-up lock); child mode never touches it. A device can
-  be found only while its **Receive** screen is open and Hum is in the foreground; leaving the screen
-  stops the listener (and the browser on the sender).
+  be found only while its **Receive** screen is open and Hum is the app in front (it stops when Hum
+  goes inactive or to the background, and never restarts by itself once a file has arrived).
+- Devices appear under a label made for each Receive screen, like "iPad 47" or "Mac 12", never the
+  device's own name (a Mac's name is often its owner's). The listener accepts only link-local, private
+  (RFC 1918), unique-local IPv6 and loopback addresses, never cellular, so a device with a public IPv6
+  address can't be reached from the internet.
 - Each transfer starts with an X25519 key exchange (CryptoKit). The sender commits to its key (sends a
-  hash) before it sees the receiver's, then both derive ChaChaPoly keys and a **six-digit code** shown
-  on both screens. The receiver sees the sender's name, the file name and size, and the code, and must
-  tap **Accept**. Every frame after the handshake is sealed with a counter nonce (no replay, reorder or
-  tampering); the file is also checked against its size and SHA-256. Limits: 500 MB per file, 128 KB per
-  frame, 1 KB per offer. A device that connects but makes no offer is dropped after 20 s.
+  hash) before it sees the receiver's, then both derive ChaChaPoly keys and a **six-digit code**. The
+  receiving screen shows the code and the parent **types it on the sending device** (passkey entry, as
+  in Bluetooth pairing). Nothing about the file, not even its name, is sent until it matches, so a
+  look-alike device that answers first gets nothing, and a device in the middle has a one-in-a-million
+  chance. Then the receiver sees the sender's label, the file name and size, and taps **Accept**.
+- Every frame after the handshake is sealed with a counter nonce (no replay, reorder or tampering); the
+  file is also checked against its size and SHA-256 and written to a temporary file as it arrives.
+  Limits: 200 MB per file (older iPads must import it in memory), 128 KB per frame, 1 KB per offer.
+  Timeouts: 30 s without bytes while connecting or sending; 2 minutes for a person to type the code or
+  answer. After a sender is turned away or gives up, the receiver ignores new ones for 2 s.
 - The received bytes go to `AppModel.requestImport(data:fileName:)`, the same validator, preview and
-  Merge/Replace as every import. Nothing changes until the parent chooses.
+  Merge/Replace as every import. Nothing changes until the parent chooses. The zip reader refuses more
+  than 20 000 files, more than 600 MB unpacked, impossible compression ratios and overlapping entries
+  before it unpacks anything (`ZipArchive.read`), which protects every import path.
+- People on the same network can see that Hum is on its Send or Receive screen (the Bonjour service
+  name) and roughly how big a file is. Security review: 2026-10-18; findings and fixes in PR #15.
 - Needs `NSLocalNetworkUsageDescription` and `NSBonjourServices`, and on macOS the sandbox's incoming
   connections (server) entitlement for the listener. Code: `Store/NearbyProtocol.swift`,
   `Store/NearbyTransfer.swift`, `Store/NetworkTransport.swift`, `ParentMode/NearbyTransferView.swift`.
