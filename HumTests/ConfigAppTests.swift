@@ -176,6 +176,60 @@ struct HistoryTests {
         #expect(history.latest(10).count == 4)
     }
 
+    /// The newest entry is always the last one: a repeat counts on it there, and the same phrase after
+    /// something else (or after a pause) is a new entry at the end.
+    @Test func repeatsCountAtTheTrailingEnd() {
+        let history = SpeechHistory(fileURL: nil)
+        let t = Date.now
+        func say(_ phrase: String, at seconds: TimeInterval) {
+            history.add(label: phrase, spokenText: phrase, function: nil, colorHex: nil, at: t.addingTimeInterval(seconds))
+        }
+        say("Hi!", at: 0)
+        say("Let's go!", at: 1)
+        say("Let's go!", at: 2)
+        #expect(history.latest(12).map(\.spokenText) == ["Hi!", "Let's go!"])
+        #expect(history.latest(12).map(\.count) == [1, 2])
+        say("Hi!", at: 3)
+        #expect(history.latest(12).map(\.spokenText) == ["Hi!", "Let's go!", "Hi!"], "not counted on the older Hi!")
+        say("Hi!", at: 3 + SpeechHistory.repeatWindow)
+        #expect(history.latest(12).map(\.count) == [1, 2, 1, 1])
+        #expect(history.latest(12).last?.date == t.addingTimeInterval(3 + SpeechHistory.repeatWindow))
+    }
+
+    /// A steady repeat (vocal stimming) stays one entry: each tap restarts the window.
+    @Test func aSteadyRepeatStaysOneEntry() {
+        let history = SpeechHistory(fileURL: nil)
+        let t = Date.now
+        for i in 0..<6 {
+            history.add(label: "uh oh", spokenText: "Uh oh!", function: nil, colorHex: nil,
+                        at: t.addingTimeInterval(Double(i) * (SpeechHistory.repeatWindow - 1)))
+        }
+        #expect(history.entries.map(\.count) == [6])
+    }
+
+    /// Saying an entry again from the history box doesn't add or move anything there.
+    @Test func sayingAnEntryAgainLeavesTheHistoryAlone() throws {
+        let model = makeModel()
+        let cells = model.snapshot?.cells.joined().compactMap { $0 }.filter { !$0.spokenText.isEmpty && $0.linkedBoardID == nil } ?? []
+        try #require(cells.count >= 2)
+        model.tap(cells[0], tapTime: 0)
+        model.tap(cells[1], tapTime: 0)
+        let before = model.history.entries
+        #expect(model.history.latest(12).map(\.spokenText) == [cells[0].spokenText, cells[1].spokenText])
+        model.replay(before[0])
+        #expect(model.history.entries == before)
+    }
+
+    @Test func theCapKeepsTheNewestInOrder() {
+        let history = SpeechHistory(fileURL: nil)
+        for i in 0..<(SpeechHistory.maxEntries + 10) {
+            history.add(label: "\(i)", spokenText: "Phrase \(i)", function: nil, colorHex: nil, at: Date(timeIntervalSince1970: Double(i) * 100))
+        }
+        let last = SpeechHistory.maxEntries + 9
+        #expect(history.latest(3).map(\.spokenText) == ["Phrase \(last - 2)", "Phrase \(last - 1)", "Phrase \(last)"])
+        #expect(history.entries.first?.spokenText == "Phrase 10")
+    }
+
     @Test func historyIsCappedAndClearable() throws {
         let history = SpeechHistory(fileURL: nil)
         for i in 0..<(SpeechHistory.maxEntries + 50) {
