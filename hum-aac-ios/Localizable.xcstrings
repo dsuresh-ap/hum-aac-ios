@@ -4584,6 +4584,47 @@
         }
       }
     },
+    "A device wants to send you boards. Type this code on it:" : {
+      "comment" : "Receiving screen: a device connected; the parent types this code on the sending device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un dispositivo quiere enviarte tableros. Escribe este código en él:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un appareil veut vous envoyer des tableaux. Tapez ce code dessus :"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Gerät möchte dir Tafeln senden. Gib diesen Code dort ein:"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um dispositivo quer enviar pranchas para você. Digite este código nele:"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un dispositivo vuole inviarti delle tabelle. Inserisci questo codice su di esso:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有设备想发送沟通板给你。请在该设备上输入这个代码："
+          }
+        }
+      }
+    },
     "A folder tile on %@ needs a label or words to say." : {
       "comment" : "A problem found in a Hum file. The first value is the board or tile it is about (like Tile “snack”). Words in “ ” such as “spokenText” are names from the file: keep them as they are.",
       "localizations" : {
@@ -4955,6 +4996,88 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在图片上方"
+          }
+        }
+      }
+    },
+    "Accept" : {
+      "comment" : "A button: take the file another device is sending.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceptar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accepter"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annehmen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceitar"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accetta"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接受"
+          }
+        }
+      }
+    },
+    "Accept only if you're sending this from your own device right now." : {
+      "comment" : "Under the Accept prompt on the receiving device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acepta solo si lo estás enviando ahora desde tu propio dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acceptez seulement si vous l'envoyez en ce moment depuis votre propre appareil."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nimm nur an, wenn du das gerade von deinem eigenen Gerät sendest."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceite só se você estiver enviando isso agora do seu próprio dispositivo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accetta solo se lo stai inviando ora dal tuo dispositivo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有当你正在从自己的设备发送时才接受。"
           }
         }
       }
@@ -6201,6 +6324,88 @@
         }
       }
     },
+    "AirDrop isn't available on this Mac. Check that Wi-Fi and Bluetooth are on, or use Export instead." : {
+      "comment" : "Mac: Send with AirDrop can't start.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AirDrop no está disponible en este Mac. Comprueba que la wifi y el Bluetooth están activados, o usa Exportar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AirDrop n'est pas disponible sur ce Mac. Vérifiez que le Wi-Fi et le Bluetooth sont activés, ou utilisez Exporter."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AirDrop ist auf diesem Mac nicht verfügbar. Prüfe, ob WLAN und Bluetooth an sind, oder verwende Exportieren."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O AirDrop não está disponível neste Mac. Confira se o Wi-Fi e o Bluetooth estão ligados, ou use Exportar."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AirDrop non è disponibile su questo Mac. Controlla che Wi-Fi e Bluetooth siano attivi, oppure usa Esporta."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这台 Mac 无法使用隔空投送。请确认无线局域网和蓝牙已打开，或改用导出。"
+          }
+        }
+      }
+    },
+    "All boards" : {
+      "comment" : "A choice: send every board.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los tableros"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous les tableaux"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Tafeln"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas as pranchas"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutte le tabelle"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有沟通板"
+          }
+        }
+      }
+    },
     "Animals" : {
       "comment" : "Emoji picker heading.",
       "localizations" : {
@@ -6238,6 +6443,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "动物"
+          }
+        }
+      }
+    },
+    "Another device" : {
+      "comment" : "Shown when a sending device has no usable name.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otro dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un autre appareil"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein anderes Gerät"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outro dispositivo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un altro dispositivo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "另一台设备"
           }
         }
       }
@@ -6822,6 +7068,88 @@
         }
       }
     },
+    "Backups" : {
+      "comment" : "Share & sync: the row showing the saved backups.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copias de seguridad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sauvegardes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sicherungen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backups"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backup"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "备份"
+          }
+        }
+      }
+    },
+    "Before “Replace everything”, Hum saves a backup of your boards on this device and keeps the %lld newest." : {
+      "comment" : "Footer of the backups section; the number is how many are kept (3).",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de «Reemplazar todo», Hum guarda una copia de tus tableros en este dispositivo y conserva las %lld más recientes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avant « Tout remplacer », Hum enregistre une sauvegarde de vos tableaux sur cet appareil et garde les %lld plus récentes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vor „Alles ersetzen“ sichert Hum deine Tafeln auf diesem Gerät und behält die %lld neuesten Sicherungen."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de “Substituir tudo”, o Hum salva um backup das suas pranchas neste dispositivo e mantém os %lld mais recentes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prima di «Sostituisci tutto», Hum salva un backup delle tue tabelle su questo dispositivo e conserva i %lld più recenti."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“全部替换”之前，Hum 会在这台设备上备份你的沟通板，并保留最新的 %lld 份。"
+          }
+        }
+      }
+    },
     "Below the picture" : {
       "localizations" : {
         "es" : {
@@ -7397,6 +7725,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "取消"
+          }
+        }
+      }
+    },
+    "Cancel was tapped on the other device." : {
+      "comment" : "Why a nearby transfer stopped.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se tocó Cancelar en el otro dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler a été touché sur l'autre appareil."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf dem anderen Gerät wurde auf „Abbrechen“ getippt."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar foi tocado no outro dispositivo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "È stato toccato Annulla sull'altro dispositivo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "另一台设备上轻点了“取消”。"
           }
         }
       }
@@ -8110,6 +8479,129 @@
         }
       }
     },
+    "Code" : {
+      "comment" : "Placeholder of the field where the parent types the six-digit code.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codice"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代码"
+          }
+        }
+      }
+    },
+    "Code %@" : {
+      "comment" : "VoiceOver label for the six-digit matching code; the argument is the digits read one by one.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codice %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代码 %@"
+          }
+        }
+      }
+    },
+    "Connecting to “%@”…" : {
+      "comment" : "The argument is the other device's name.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectando con «%@»…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connexion à « %@ »…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindung mit „%@“ …"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectando a “%@”…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connessione a «%@»…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在连接“%@”…"
+          }
+        }
+      }
+    },
     "Copy your boards to another device, or keep your devices in sync" : {
       "comment" : "A description of the \"Share & sync\" button.",
       "isCommentAutoGenerated" : true,
@@ -8399,6 +8891,129 @@
         }
       }
     },
+    "Decline" : {
+      "comment" : "A button: refuse the file another device is sending.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechazar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refuser"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ablehnen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recusar"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rifiuta"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拒绝"
+          }
+        }
+      }
+    },
+    "Decline was tapped on the other device." : {
+      "comment" : "Why a nearby transfer stopped (sending device).",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se tocó Rechazar en el otro dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refuser a été touché sur l'autre appareil."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf dem anderen Gerät wurde auf „Ablehnen“ getippt."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recusar foi tocado no outro dispositivo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "È stato toccato Rifiuta sull'altro dispositivo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "另一台设备上轻点了“拒绝”。"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "comment" : "Confirms deleting all backups.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löschen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apagar"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
+        }
+      }
+    },
     "Delete %@?" : {
       "comment" : "A confirmation dialog that lets the user delete a folder. The argument is the name of the folder to be deleted.",
       "isCommentAutoGenerated" : true,
@@ -8521,6 +9136,88 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "删除卡片"
+          }
+        }
+      }
+    },
+    "Delete all backups?" : {
+      "comment" : "Title of the confirmation before deleting backups.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar todas las copias de seguridad?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer toutes les sauvegardes ?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Sicherungen löschen?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apagar todos os backups?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminare tutti i backup?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除所有备份？"
+          }
+        }
+      }
+    },
+    "Delete backups" : {
+      "comment" : "A button in Share & sync.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar copias de seguridad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer les sauvegardes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sicherungen löschen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apagar backups"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina backup"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除备份"
           }
         }
       }
@@ -12393,6 +13090,47 @@
         }
       }
     },
+    "Hum couldn't reach nearby devices. Check that Wi-Fi is on, and that Hum is allowed to use the local network in Settings." : {
+      "comment" : "An error when nearby sending can't start.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum no pudo encontrar dispositivos cercanos. Comprueba que la wifi está activada y que Hum puede usar la red local en Ajustes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum n'a pas pu joindre les appareils à proximité. Vérifiez que le Wi-Fi est activé et que Hum peut utiliser le réseau local dans Réglages."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum konnte keine Geräte in der Nähe erreichen. Prüfe, ob WLAN an ist und ob Hum in den Einstellungen das lokale Netzwerk verwenden darf."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Hum não conseguiu alcançar dispositivos próximos. Confira se o Wi-Fi está ligado e se o Hum pode usar a rede local nos Ajustes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum non riesce a raggiungere i dispositivi vicini. Controlla che il Wi-Fi sia attivo e che Hum possa usare la rete locale in Impostazioni."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum 无法连接附近的设备。请确认无线局域网已打开，并在“设置”中允许 Hum 使用本地网络。"
+          }
+        }
+      }
+    },
     "Hum doesn't understand how this file is laid out." : {
       "comment" : "A problem found in a Hum file. The first value is the board or tile it is about (like Tile “snack”). Words in “ ” such as “spokenText” are names from the file: keep them as they are.",
       "localizations" : {
@@ -12809,6 +13547,47 @@
         }
       }
     },
+    "Hum on the other device was closed or went to the background." : {
+      "comment" : "Why a nearby transfer stopped.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum se cerró o pasó a segundo plano en el otro dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum a été fermé ou est passé en arrière-plan sur l'autre appareil."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum wurde auf dem anderen Gerät geschlossen oder ist in den Hintergrund gegangen."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Hum foi fechado ou foi para segundo plano no outro dispositivo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum è stato chiuso o è passato in background sull'altro dispositivo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "另一台设备上的 Hum 已关闭或转到后台。"
+          }
+        }
+      }
+    },
     "Hum picks an emoji from the words until you add a photo. Real photos often work better than drawings. You can also drag a picture onto the square." : {
       "comment" : "A description of the emoji picker.",
       "isCommentAutoGenerated" : true,
@@ -12847,6 +13626,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在你添加照片之前，Hum 会根据文字选一个表情符号。真实照片通常比图画效果更好。你也可以把图片拖到方框上。"
+          }
+        }
+      }
+    },
+    "Hum stopped because it wasn't the app in front." : {
+      "comment" : "Why a nearby transfer stopped on this device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum se detuvo porque no era la app en primer plano."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum s'est arrêté parce qu'il n'était pas l'app au premier plan."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum hat aufgehört, weil es nicht die App im Vordergrund war."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Hum parou porque não era o app em primeiro plano."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum si è fermato perché non era l'app in primo piano."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hum 不在前台，所以已停止。"
           }
         }
       }
@@ -13344,6 +14164,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "它只提供建议。在你轻点“添加”之前，什么都不会改变。"
+          }
+        }
+      }
+    },
+    "It's too big for Hum to open." : {
+      "comment" : "Why a Hum file couldn't be imported.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es demasiado grande para que Hum lo abra."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il est trop gros pour que Hum puisse l'ouvrir."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sie ist zu groß, als dass Hum sie öffnen könnte."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "É grande demais para o Hum abrir."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "È troppo grande perché Hum possa aprirlo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件太大，Hum 无法打开。"
           }
         }
       }
@@ -14220,6 +15081,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在看照片"
+          }
+        }
+      }
+    },
+    "Looking for devices…" : {
+      "comment" : "Shown while the sending device searches.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando dispositivos…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recherche d'appareils…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geräte werden gesucht …"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procurando dispositivos…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricerca dei dispositivi…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在查找设备…"
           }
         }
       }
@@ -15235,6 +16137,47 @@
         }
       }
     },
+    "Nearby devices" : {
+      "comment" : "Section header: devices that can receive.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivos cercanos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appareils à proximité"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geräte in der Nähe"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivos próximos"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivi vicini"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附近的设备"
+          }
+        }
+      }
+    },
     "New Board" : {
       "comment" : "Text for the undo step when a new board is created.",
       "isCommentAutoGenerated" : true,
@@ -16236,6 +17179,47 @@
         }
       }
     },
+    "None" : {
+      "comment" : "No backups saved.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguna"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuno"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无"
+          }
+        }
+      }
+    },
     "Not signed in to iCloud on this device" : {
       "localizations" : {
         "es" : {
@@ -16436,6 +17420,88 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无（只说话）"
+          }
+        }
+      }
+    },
+    "Nothing happened for a while, so Hum stopped. Try again when both devices are ready." : {
+      "comment" : "An error when nobody typed the code or answered in time.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pasó nada durante un rato, así que Hum se detuvo. Inténtalo de nuevo cuando los dos dispositivos estén listos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien ne s'est passé pendant un moment, alors Hum s'est arrêté. Réessayez quand les deux appareils sont prêts."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Weile ist nichts passiert, deshalb hat Hum aufgehört. Versuch es noch einmal, wenn beide Geräte bereit sind."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada aconteceu por um tempo, então o Hum parou. Tente de novo quando os dois dispositivos estiverem prontos."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per un po' non è successo niente, quindi Hum si è fermato. Riprova quando entrambi i dispositivi sono pronti."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一段时间内没有任何操作，Hum 已停止。请在两台设备都准备好后再试一次。"
+          }
+        }
+      }
+    },
+    "Nothing is sent until the code matches." : {
+      "comment" : "Under the code field on the sending device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se envía nada hasta que el código coincida."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien n'est envoyé tant que le code ne correspond pas."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nichts wird gesendet, bis der Code stimmt."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada é enviado até o código bater."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non viene inviato niente finché il codice non corrisponde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代码一致之前不会发送任何内容。"
           }
         }
       }
@@ -16650,6 +17716,47 @@
         }
       }
     },
+    "On the other device, open Hum, go to Share & sync, and tap “Receive from a nearby device”." : {
+      "comment" : "Instructions on the sending device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el otro dispositivo, abre Hum, ve a Compartir y sincronizar y toca «Recibir de un dispositivo cercano»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur l'autre appareil, ouvrez Hum, allez dans Partage et synchro, puis touchez « Recevoir d'un appareil à proximité »."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne Hum auf dem anderen Gerät, geh zu „Teilen & Synchronisieren“ und tippe auf „Von einem Gerät in der Nähe empfangen“."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No outro dispositivo, abra o Hum, vá em Compartilhar e sincronizar e toque em “Receber de um dispositivo próximo”."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sull'altro dispositivo, apri Hum, vai in Condividi e sincronizza e tocca «Ricevi da un dispositivo vicino»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在另一台设备上打开 Hum，前往“共享与同步”，然后轻点“从附近的设备接收”。"
+          }
+        }
+      }
+    },
     "On this device" : {
       "comment" : "A label for a toggle that lets the user choose whether to use the AI helper on their device or on Apple's Private Cloud Compute.",
       "isCommentAutoGenerated" : true,
@@ -16688,6 +17795,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在这台设备上"
+          }
+        }
+      }
+    },
+    "On your other device, open Hum, go to Share & sync, and tap “Send to a nearby device”." : {
+      "comment" : "Instructions on the receiving device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En tu otro dispositivo, abre Hum, ve a Compartir y sincronizar y toca «Enviar a un dispositivo cercano»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur votre autre appareil, ouvrez Hum, allez dans Partage et synchro, puis touchez « Envoyer à un appareil à proximité »."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne Hum auf deinem anderen Gerät, geh zu „Teilen & Synchronisieren“ und tippe auf „An ein Gerät in der Nähe senden“."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No seu outro dispositivo, abra o Hum, vá em Compartilhar e sincronizar e toque em “Enviar para um dispositivo próximo”."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sul tuo altro dispositivo, apri Hum, vai in Condividi e sincronizza e tocca «Invia a un dispositivo vicino»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在你的另一台设备上打开 Hum，前往“共享与同步”，然后轻点“发送到附近的设备”。"
           }
         }
       }
@@ -16859,6 +18007,47 @@
         }
       }
     },
+    "Only type it on your own device, the one where you just tapped it in the list." : {
+      "comment" : "Under the code on the receiving device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escríbelo solo en tu propio dispositivo, en el que acabas de tocarlo en la lista."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapez-le seulement sur votre propre appareil, celui où vous venez de le toucher dans la liste."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib ihn nur auf deinem eigenen Gerät ein, auf dem du es gerade in der Liste angetippt hast."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite só no seu próprio dispositivo, aquele em que você acabou de tocar nele na lista."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inseriscilo solo sul tuo dispositivo, quello in cui l'hai appena toccato nell'elenco."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只在你自己的设备上输入，也就是你刚刚在列表中轻点它的那台设备。"
+          }
+        }
+      }
+    },
     "Only your words and your tiles' text are used, never photos or recordings." : {
       "comment" : "A description of the privacy policy of the AI helper.",
       "isCommentAutoGenerated" : true,
@@ -16939,6 +18128,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "只使用你的文字和卡片上的文字。从不使用照片或录音。"
+          }
+        }
+      }
+    },
+    "Only “%@”" : {
+      "comment" : "A choice: send just this board. The argument is the board's name.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo «%@»"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seulement « %@ »"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur „%@“"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Só “%@”"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo «%@»"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅“%@”"
           }
         }
       }
@@ -17565,6 +18795,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "可选。用孩子熟悉的旋律和节奏录下这句话。卡片会播放你的录音，而不是电脑语音。录音只保存在这台设备上。"
+          }
+        }
+      }
+    },
+    "Other devices see this one as “%@” while this screen is open. Nothing goes through the internet." : {
+      "comment" : "Footer on the receiving screen; the argument is this device's name.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los otros dispositivos ven este como «%@» mientras esta pantalla esté abierta. Nada pasa por internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les autres appareils voient celui-ci sous le nom « %@ » tant que cet écran est ouvert. Rien ne passe par Internet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andere Geräte sehen dieses als „%@“, solange dieser Bildschirm offen ist. Nichts geht über das Internet."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os outros dispositivos veem este como “%@” enquanto esta tela estiver aberta. Nada passa pela internet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli altri dispositivi vedono questo come «%@» finché questa schermata è aperta. Niente passa da internet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此页面打开时，其他设备会看到这台设备名为“%@”。不经过互联网。"
           }
         }
       }
@@ -19331,6 +20602,129 @@
         }
       }
     },
+    "Receive again" : {
+      "comment" : "A button: listen for a sending device again.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibir de nuevo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recevoir à nouveau"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut empfangen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receber de novo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricevi di nuovo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新接收"
+          }
+        }
+      }
+    },
+    "Receive another" : {
+      "comment" : "A button after a file arrived.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibir otro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En recevoir un autre"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weiteres empfangen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receber outro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricevi un altro"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再接收一个"
+          }
+        }
+      }
+    },
+    "Receive from a nearby device" : {
+      "comment" : "A button and screen title in Share & sync.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibir de un dispositivo cercano"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recevoir d'un appareil à proximité"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Von einem Gerät in der Nähe empfangen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receber de um dispositivo próximo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricevi da un dispositivo vicino"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从附近的设备接收"
+          }
+        }
+      }
+    },
     "Received from iCloud" : {
       "comment" : "A label for the iCloud data that was received by the app.",
       "isCommentAutoGenerated" : true,
@@ -19369,6 +20763,88 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "从 iCloud 接收"
+          }
+        }
+      }
+    },
+    "Received. Choose how to add the boards." : {
+      "comment" : "Shown when the file arrived; the import preview opens.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibido. Elige cómo añadir los tableros."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reçu. Choisissez comment ajouter les tableaux."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empfangen. Wähle, wie die Tafeln hinzugefügt werden."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recebido. Escolha como adicionar as pranchas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricevuto. Scegli come aggiungere le tabelle."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已收到。请选择如何添加沟通板。"
+          }
+        }
+      }
+    },
+    "Receiving…" : {
+      "comment" : "Progress label.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibiendo…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réception…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird empfangen …"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recebendo…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricezione…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在接收…"
           }
         }
       }
@@ -20705,6 +22181,334 @@
         }
       }
     },
+    "Send" : {
+      "comment" : "A button that sends the boards once the code is typed.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senden"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送"
+          }
+        }
+      }
+    },
+    "Send to a nearby device" : {
+      "comment" : "A button and screen title in Share & sync.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar a un dispositivo cercano"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer à un appareil à proximité"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An ein Gerät in der Nähe senden"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar para um dispositivo próximo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia a un dispositivo vicino"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送到附近的设备"
+          }
+        }
+      }
+    },
+    "Send to your other devices" : {
+      "comment" : "Section header in Share & sync.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar a tus otros dispositivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer à vos autres appareils"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An deine anderen Geräte senden"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar para seus outros dispositivos"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia ai tuoi altri dispositivi"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送到你的其他设备"
+          }
+        }
+      }
+    },
+    "Send with AirDrop…" : {
+      "comment" : "A button that opens the share sheet with the boards file.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar con AirDrop…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer avec AirDrop…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit AirDrop senden …"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar com AirDrop…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia con AirDrop…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用隔空投送发送…"
+          }
+        }
+      }
+    },
+    "Sending…" : {
+      "comment" : "Progress label.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviando…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoi…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird gesendet …"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviando…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invio…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在发送…"
+          }
+        }
+      }
+    },
+    "Sends all your boards to an iPad, iPhone or Mac near you. To send without AirDrop, first open “Receive from a nearby device” in Hum on the other device. Nothing goes through the internet." : {
+      "comment" : "Footer of the send section in Share & sync.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía todos tus tableros a un iPad, iPhone o Mac cercano. Para enviar sin AirDrop, primero abre «Recibir de un dispositivo cercano» en Hum en el otro dispositivo. Nada pasa por internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoie tous vos tableaux à un iPad, iPhone ou Mac proche. Pour envoyer sans AirDrop, ouvrez d'abord « Recevoir d'un appareil à proximité » dans Hum sur l'autre appareil. Rien ne passe par Internet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sendet alle deine Tafeln an ein iPad, iPhone oder einen Mac in deiner Nähe. Um ohne AirDrop zu senden, öffne zuerst „Von einem Gerät in der Nähe empfangen“ in Hum auf dem anderen Gerät. Nichts geht über das Internet."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envia todas as suas pranchas para um iPad, iPhone ou Mac perto de você. Para enviar sem AirDrop, primeiro abra “Receber de um dispositivo próximo” no Hum do outro dispositivo. Nada passa pela internet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia tutte le tue tabelle a un iPad, iPhone o Mac vicino. Per inviare senza AirDrop, apri prima «Ricevi da un dispositivo vicino» in Hum sull'altro dispositivo. Niente passa da internet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把你的所有沟通板发送到附近的 iPad、iPhone 或 Mac。如果不用隔空投送，请先在另一台设备的 Hum 中打开“从附近的设备接收”。不经过互联网。"
+          }
+        }
+      }
+    },
+    "Sends all your boards, photos and settings. Nothing goes through the internet." : {
+      "comment" : "Footer under the list of nearby devices.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía todos tus tableros, fotos y ajustes. Nada pasa por internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoie tous vos tableaux, photos et réglages. Rien ne passe par Internet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sendet alle deine Tafeln, Fotos und Einstellungen. Nichts geht über das Internet."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envia todas as suas pranchas, fotos e ajustes. Nada passa pela internet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia tutte le tue tabelle, foto e impostazioni. Niente passa da internet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送你的所有沟通板、照片和设置。不经过互联网。"
+          }
+        }
+      }
+    },
+    "Sends “%@” with its photos and recordings. Nothing goes through the internet." : {
+      "comment" : "Footer when sending one board. The argument is the board's name.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía «%@» con sus fotos y grabaciones. Nada pasa por internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoie « %@ » avec ses photos et enregistrements. Rien ne passe par Internet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sendet „%@“ mit seinen Fotos und Aufnahmen. Nichts geht über das Internet."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envia “%@” com suas fotos e gravações. Nada passa pela internet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia «%@» con le sue foto e registrazioni. Niente passa da internet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送“%@”及其照片和录音。不经过互联网。"
+          }
+        }
+      }
+    },
     "Sent to iCloud" : {
       "comment" : "A label for the last time the user's boards were sent to iCloud.",
       "isCommentAutoGenerated" : true,
@@ -20743,6 +22547,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已发送到 iCloud"
+          }
+        }
+      }
+    },
+    "Sent. On the other device, choose how to add the boards." : {
+      "comment" : "Shown on the sending device when done.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviado. En el otro dispositivo, elige cómo añadir los tableros."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyé. Sur l'autre appareil, choisissez comment ajouter les tableaux."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesendet. Wähle auf dem anderen Gerät, wie die Tafeln hinzugefügt werden."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviado. No outro dispositivo, escolha como adicionar as pranchas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inviato. Sull'altro dispositivo, scegli come aggiungere le tabelle."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已发送。请在另一台设备上选择如何添加沟通板。"
           }
         }
       }
@@ -23153,6 +24998,47 @@
         }
       }
     },
+    "That code doesn't match. Check the code on the other device and type it again." : {
+      "comment" : "Shown when the typed code is wrong.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ese código no coincide. Mira el código en el otro dispositivo y escríbelo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce code ne correspond pas. Vérifiez le code sur l'autre appareil et tapez-le à nouveau."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Code stimmt nicht. Sieh dir den Code auf dem anderen Gerät an und gib ihn noch einmal ein."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esse código não bate. Confira o código no outro dispositivo e digite de novo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo codice non corrisponde. Controlla il codice sull'altro dispositivo e inseriscilo di nuovo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代码不一致。请查看另一台设备上的代码，然后重新输入。"
+          }
+        }
+      }
+    },
     "That spot already has a tile." : {
       "comment" : "Error description when trying to place a tile on a spot that's already taken.",
       "isCommentAutoGenerated" : true,
@@ -23486,6 +25372,47 @@
         }
       }
     },
+    "The connection was lost. Keep both devices close together and try again." : {
+      "comment" : "An error during a nearby transfer.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se perdió la conexión. Mantén los dos dispositivos cerca e inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La connexion a été perdue. Gardez les deux appareils proches et réessayez."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Verbindung wurde unterbrochen. Halte beide Geräte nah beieinander und versuch es noch einmal."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A conexão caiu. Mantenha os dois dispositivos perto e tente de novo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La connessione si è interrotta. Tieni i due dispositivi vicini e riprova."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接已断开。请让两台设备靠近一些，然后再试一次。"
+          }
+        }
+      }
+    },
     "The file" : {
       "comment" : "Starts a sentence about a problem in a Hum file.",
       "localizations" : {
@@ -23523,6 +25450,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "文件"
+          }
+        }
+      }
+    },
+    "The file didn't arrive in one piece. Try again." : {
+      "comment" : "An error during a nearby transfer.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El archivo no llegó completo. Inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fichier n'est pas arrivé en entier. Réessayez."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Datei ist nicht vollständig angekommen. Versuch es noch einmal."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O arquivo não chegou inteiro. Tente de novo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il file non è arrivato intero. Riprova."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件没有完整送达。请再试一次。"
           }
         }
       }
@@ -23778,6 +25746,129 @@
         }
       }
     },
+    "The other device sent something Hum can't read. Make sure both devices have the latest Hum, then try again." : {
+      "comment" : "An error during a nearby transfer.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El otro dispositivo envió algo que Hum no puede leer. Asegúrate de que los dos dispositivos tienen la última versión de Hum e inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'autre appareil a envoyé quelque chose que Hum ne peut pas lire. Vérifiez que les deux appareils ont la dernière version de Hum, puis réessayez."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das andere Gerät hat etwas gesendet, das Hum nicht lesen kann. Achte darauf, dass beide Geräte die neueste Version von Hum haben, und versuch es noch einmal."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O outro dispositivo enviou algo que o Hum não consegue ler. Confira se os dois dispositivos têm a versão mais recente do Hum e tente de novo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'altro dispositivo ha inviato qualcosa che Hum non riesce a leggere. Assicurati che entrambi i dispositivi abbiano l'ultima versione di Hum, poi riprova."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "另一台设备发送了 Hum 无法读取的内容。请确认两台设备都安装了最新版 Hum，然后再试一次。"
+          }
+        }
+      }
+    },
+    "The other device stopped." : {
+      "comment" : "The other device cancelled the transfer.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El otro dispositivo se detuvo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'autre appareil a arrêté."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das andere Gerät hat abgebrochen."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O outro dispositivo parou."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'altro dispositivo si è fermato."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "另一台设备已停止。"
+          }
+        }
+      }
+    },
+    "The other device waited too long for the code, so it stopped." : {
+      "comment" : "Why a nearby transfer stopped.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El otro dispositivo esperó demasiado el código, así que se detuvo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'autre appareil a attendu le code trop longtemps, alors il s'est arrêté."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das andere Gerät hat zu lange auf den Code gewartet und deshalb aufgehört."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O outro dispositivo esperou demais pelo código, então parou."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'altro dispositivo ha aspettato troppo il codice, quindi si è fermato."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "另一台设备等待代码太久，已停止。"
+          }
+        }
+      }
+    },
     "The sentence strip collects tapped tiles so your child can play them together; it's for when your child starts mixing words into new sentences. The history box shows what was said recently, so you can catch up if you missed it. The word finder looks up a word and lights up the way to its tile, without saying it, so the path is learned. All three are off at first, and each tile always speaks on its own." : {
       "localizations" : {
         "es" : {
@@ -23981,6 +26072,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "里面没有沟通板。"
+          }
+        }
+      }
+    },
+    "These boards are too big to send this way. Use “Send with AirDrop” instead." : {
+      "comment" : "An error on the sending device.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estos tableros son demasiado grandes para enviarlos así. Usa «Enviar con AirDrop»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ces tableaux sont trop gros pour être envoyés ainsi. Utilisez plutôt « Envoyer avec AirDrop »."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Tafeln sind zu groß, um sie so zu senden. Verwende stattdessen „Mit AirDrop senden“."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essas pranchas são grandes demais para enviar assim. Use “Enviar com AirDrop”."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Queste tabelle sono troppo grandi per inviarle così. Usa «Invia con AirDrop»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些沟通板太大，无法这样发送。请改用“用隔空投送发送”。"
           }
         }
       }
@@ -25536,6 +27668,47 @@
         }
       }
     },
+    "To try again, tap “Receive again” on the other device (or open “Receive from a nearby device”), then pick it below." : {
+      "comment" : "Sending device, after a try ended.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para intentarlo de nuevo, toca «Recibir de nuevo» en el otro dispositivo (o abre «Recibir de un dispositivo cercano») y elígelo abajo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour réessayer, touchez « Recevoir à nouveau » sur l'autre appareil (ou ouvrez « Recevoir d'un appareil à proximité »), puis choisissez-le ci-dessous."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um es noch einmal zu versuchen, tippe auf dem anderen Gerät auf „Erneut empfangen“ (oder öffne „Von einem Gerät in der Nähe empfangen“) und wähle es dann unten aus."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para tentar de novo, toque em “Receber de novo” no outro dispositivo (ou abra “Receber de um dispositivo próximo”) e escolha-o abaixo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per riprovare, tocca «Ricevi di nuovo» sull'altro dispositivo (o apri «Ricevi da un dispositivo vicino»), poi sceglilo qui sotto."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要重试，请在另一台设备上轻点“重新接收”（或打开“从附近的设备接收”），然后在下方选择它。"
+          }
+        }
+      }
+    },
     "Today's Private Cloud Compute requests are used up. They refresh %@. “On this device” still works." : {
       "comment" : "A message that says that today's Private Cloud Compute requests are used up, and that the next time it runs, it'll be after a certain date.",
       "isCommentAutoGenerated" : true,
@@ -25950,6 +28123,47 @@
         }
       }
     },
+    "Type the code shown on “%@”." : {
+      "comment" : "Sending device: the argument is the other device's name, like iPad 47.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe el código que aparece en «%@»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapez le code affiché sur « %@ »."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib den Code ein, der auf „%@“ angezeigt wird."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite o código mostrado em “%@”."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci il codice mostrato su «%@»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入“%@”上显示的代码。"
+          }
+        }
+      }
+    },
     "Type the whole phrase, just the way your child says it, even if it's from a show or a song. Keep it whole. Don't split it into single words." : {
       "comment" : "A description of the text field for the phrase of a tile.",
       "isCommentAutoGenerated" : true,
@@ -25988,6 +28202,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按孩子的说法输入完整的短语，即使它来自动画片或歌曲。保持完整，不要拆成单个的词。"
+          }
+        }
+      }
+    },
+    "Type this code on “%@” to let it accept:" : {
+      "comment" : "Sending device: the argument is the receiving device's name, like iPad 472.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe este código en «%@» para que pueda aceptar:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapez ce code sur « %@ » pour qu'il puisse accepter :"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib diesen Code auf „%@“ ein, damit es annehmen kann:"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite este código em “%@” para ele poder aceitar:"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci questo codice su «%@» per permettergli di accettare:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“%@”上输入这个代码，让它可以接受："
           }
         }
       }
@@ -26570,6 +28825,88 @@
         }
       }
     },
+    "Waiting for a device…" : {
+      "comment" : "Shown on the receiving device while it can be found.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperando un dispositivo…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En attente d'un appareil…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warten auf ein Gerät …"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aguardando um dispositivo…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In attesa di un dispositivo…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在等待设备…"
+          }
+        }
+      }
+    },
+    "Waiting for “%@” to accept." : {
+      "comment" : "The argument is the receiving device's name.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperando a que «%@» acepte."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En attente de l'acceptation de « %@ »."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warten, bis „%@“ annimmt."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aguardando “%@” aceitar."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In attesa che «%@» accetti."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在等待“%@”接受。"
+          }
+        }
+      }
+    },
     "Welcome to Hum" : {
       "comment" : "The title of the first-run setup.",
       "isCommentAutoGenerated" : true,
@@ -26818,6 +29155,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "卡片说的话"
+          }
+        }
+      }
+    },
+    "What to send" : {
+      "comment" : "A picker on the Send to a nearby device screen: all boards, or one board.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué enviar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quoi envoyer"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was senden"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que enviar"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa inviare"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送内容"
           }
         }
       }
@@ -27319,6 +29697,47 @@
         }
       }
     },
+    "You can't undo this." : {
+      "comment" : "Message of the confirmation before deleting backups.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se puede deshacer."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette action est irréversible."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das kann nicht rückgängig gemacht werden."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não dá para desfazer."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non puoi annullare questa azione."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此操作无法撤销。"
+          }
+        }
+      }
+    },
     "You changed this tile but haven't saved it yet." : {
       "comment" : "A message in a confirmation dialog that appears when the user tries to dismiss the tile editor without saving their changes.",
       "isCommentAutoGenerated" : true,
@@ -27483,6 +29902,88 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "You tapped Cancel, so other devices can't find this one now." : {
+      "comment" : "Receiving device, after the parent cancelled.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocaste Cancelar, así que los otros dispositivos ya no pueden encontrar este."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez touché Annuler, alors les autres appareils ne peuvent plus trouver celui-ci."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast auf „Abbrechen“ getippt, deshalb können andere Geräte dieses jetzt nicht finden."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você tocou em Cancelar, então os outros dispositivos não conseguem mais encontrar este."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai toccato Annulla, quindi gli altri dispositivi non possono più trovare questo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你轻点了“取消”，所以其他设备现在找不到这台设备。"
+          }
+        }
+      }
+    },
+    "You tapped Decline, so other devices can't find this one now." : {
+      "comment" : "Receiving device, after the parent declined.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocaste Rechazar, así que los otros dispositivos ya no pueden encontrar este."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez touché Refuser, alors les autres appareils ne peuvent plus trouver celui-ci."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast auf „Ablehnen“ getippt, deshalb können andere Geräte dieses jetzt nicht finden."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você tocou em Recusar, então os outros dispositivos não conseguem mais encontrar este."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai toccato Rifiuta, quindi gli altri dispositivi non possono più trovare questo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你轻点了“拒绝”，所以其他设备现在找不到这台设备。"
           }
         }
       }
@@ -28852,6 +31353,53 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "“%@”听起来像表扬或指令。Hum 的卡片是孩子自己的声音，所以我们建议使用孩子会说的话。"
+          }
+        }
+      }
+    },
+    "“%@” wants to send “%@” (%@)." : {
+      "comment" : "On the receiving device: the sending device's name, the file name, and its size (like 2.1 MB).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“%1$@” wants to send “%2$@” (%3$@)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%1$@» quiere enviar «%2$@» (%3$@)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "« %1$@ » veut envoyer « %2$@ » (%3$@)."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%1$@“ möchte „%2$@“ senden (%3$@)."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%1$@” quer enviar “%2$@” (%3$@)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%1$@» vuole inviare «%2$@» (%3$@)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%1$@”想发送“%2$@”（%3$@）。"
           }
         }
       }

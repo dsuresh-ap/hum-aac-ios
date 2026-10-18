@@ -228,6 +228,15 @@ final class AppModel {
         }
     }
 
+    /// A file sent from a nearby device (Share & sync → Receive). Same checks and preview as any file.
+    func requestImport(data: Data, fileName: String) {
+        do {
+            pendingImport = try ImportService(model: self).prepare(data: data, fileName: fileName)
+        } catch {
+            importError = friendlyMessage(for: error)
+        }
+    }
+
     /// Last time the child touched a tile. Snapshot refreshes from outside wait for a quiet moment.
     @ObservationIgnored private var lastTouch = Date.distantPast
     @ObservationIgnored private var pendingRefresh: Task<Void, Never>?
@@ -260,6 +269,10 @@ final class AppModel {
         goHome()
         // Pictures saved as SVG (older builds, or synced from another device) become JPEGs.
         Task { await ImportService.renderImportedSVGs(self) }
+        // Files an earlier run left in the temporary folder, and backups beyond the ones kept. Off the
+        // main actor; anything this run makes from now on is newer than `started` and stays.
+        let started = Date.now
+        Task.detached(priority: .utility) { HumTemporaryFiles.cleanUpAtLaunch(startedAt: started) }
     }
 
     /// Finishes first-run setup with the parent's choice.
