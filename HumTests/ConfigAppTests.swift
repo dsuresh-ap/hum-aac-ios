@@ -165,6 +165,17 @@ struct HistoryTests {
         #expect(history.recent(2).map(\.spokenText) == ["Uh oh!", "Hi!"])
     }
 
+    /// The child's history box reads like a sentence: oldest first, newest last.
+    @Test func latestIsOldestFirst() throws {
+        let history = SpeechHistory(fileURL: nil)
+        let t = Date.now
+        for (i, phrase) in ["Hi!", "Let's go!", "Uh oh!", "All done"].enumerated() {
+            history.add(label: phrase, spokenText: phrase, function: nil, colorHex: nil, at: t.addingTimeInterval(Double(i) * 30))
+        }
+        #expect(history.latest(3).map(\.spokenText) == ["Let's go!", "Uh oh!", "All done"])
+        #expect(history.latest(10).count == 4)
+    }
+
     @Test func historyIsCappedAndClearable() throws {
         let history = SpeechHistory(fileURL: nil)
         for i in 0..<(SpeechHistory.maxEntries + 50) {
