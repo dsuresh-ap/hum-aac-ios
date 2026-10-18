@@ -95,6 +95,27 @@ struct FileCheckTests {
         #expect(issues.contains("Settings: 'appearance' must be one of: system, light, dark."))
     }
 
+    // MARK: Settings
+
+    /// A parent's voice and display settings travel with the file, unknown fields included.
+    @Test func settingsRoundTrip() throws {
+        let input = json("""
+            {"formatVersion": 1,
+             "settings": {"voice": {"identifier": "com.example.voice", "rate": 0.4, "pitch": 1.1, "volume": 0.9, "style": "calm"},
+                          "showLabels": false, "labelPosition": "top", "sentenceStrip": true, "appearance": "dark",
+                          "retrigger": "finish", "activation": "touchUp"},
+             "boards": [{"id": "11111111-1111-1111-1111-111111111111", "name": "Home", "rows": 1, "columns": 2, "isHome": true, "tiles": []}]}
+            """)
+        let loaded = try HumConfigLoader.load(input)
+        let settings = try #require(loaded.document.settings)
+        #expect(settings.voice == HumVoice(identifier: "com.example.voice", rate: 0.4, pitch: 1.1, volume: 0.9,
+                                           extra: ["style": .string("calm")]))
+        #expect(settings.showLabels == false && settings.sentenceStrip == true)
+        #expect(settings.labelPosition == .top && settings.appearance == .dark)
+        #expect(settings.retrigger == .finish && settings.activation == .touchUp)
+        #expect(try JSONValue.parse(loaded.document.encodedJSON()) == JSONValue.parse(input))
+    }
+
     // MARK: The error as a whole
 
     @Test func manyProblemsAreSummed() {
