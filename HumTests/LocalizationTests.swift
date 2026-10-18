@@ -131,3 +131,81 @@ struct TranslationTests {
         #expect(String.localizedStringWithFormat(chinese, 3) == "每行 3 张卡片")
     }
 }
+
+/// What a parent reads when a file can't be imported: every problem HumConfig can find, in the app's words.
+@Suite("Import problems in the app's words")
+struct ImportProblemTextTests {
+    let tile = ConfigSubject.tile("snack")
+    let board = ConfigSubject.board("Food")
+
+    var everyProblem: [ConfigProblem] {
+        [.noWords(tile), .emptyLabel(tile), .noName(board), .missingID(tile), .invalidID(tile, field: "id"), .noPlace(tile),
+         .noFormatVersion, .missingField(tile, field: "row"), .wrongType(tile, field: "row", expected: ["integer", "string"]),
+         .notOneOf(tile, field: "function", options: ["protest", "request"]), .mustBe(.file, field: "formatVersion", value: "1"),
+         .tooShort(tile, field: "label", min: 1), .tooLong(tile, field: "label", max: 60), .badColor(tile),
+         .wrongFormat(tile, field: "image"), .outOfRange(board, field: "rows", min: "1", max: "20"),
+         .tooFewItems(board, field: "tiles", min: 1), .tooManyItems(board, field: "tiles", max: 3), .notAllowed(.settings, field: "x"),
+         .notAnObject, .unknownShape, .unsupportedVersion(9), .severalHomes(["Home", "Food"]), .duplicateBoardID(board),
+         .boardTooSmall(board), .duplicateTileID(tile), .folderNeedsLabel(board: board),
+         .outsideGrid(tile, board: board, row: 9, column: 1, rows: 2, columns: 2),
+         .sameSpot(tile, otherTile: "park", row: 0, column: 1, board: board), .missingLink(tile), .creditWithoutPicture(tile),
+         .praisePhrase(tile, phrase: "good job"), .missingMedia(tile: "dog", path: "media/dog.jpg"), .other("Something else.")]
+    }
+
+    @Test func everyProblemReadsAsASentence() {
+        for problem in everyProblem {
+            let text = problem.localizedText
+            #expect(!text.isEmpty && !text.contains("%"), "\(problem)")
+        }
+        #expect(Set(everyProblem.map(\.localizedText)).count == everyProblem.count, "each problem has its own words")
+        #expect(ConfigProblem.noWords(tile).localizedText == "Tile “snack” has no words to say.")
+        #expect(ConfigProblem.wrongType(tile, field: "row", expected: ["integer", "string"]).localizedText
+            == "Tile “snack”: “row” should be a whole number or text.")
+        #expect(ConfigProblem.severalHomes(["Home", "Food"]).localizedText.contains("“Home” and “Food”"))
+        #expect(ConfigProblem.outsideGrid(tile, board: board, row: 9, column: 1, rows: 2, columns: 2).localizedText.contains("row 9, column 1"))
+    }
+
+    @Test func everyKindOfSubjectIsNamed() {
+        #expect(ConfigSubject.tileNumber(3, boardName: "Food", boardNumber: 2).localizedText == "Tile 3 on “Food”")
+        #expect(ConfigSubject.tileNumber(3, boardName: nil, boardNumber: 2).localizedText == "Tile 3 on board 2")
+        #expect(ConfigSubject.boardNumber(2).localizedText == "Board 2")
+        #expect(ConfigSubject.settings.localizedText == "Settings")
+        #expect(ConfigSubject.file.localizedText == "The file")
+        let types = ["integer", "number", "string", "boolean", "array", "object"].map(ConfigProblem.localizedTypeName)
+        #expect(Set(types).count == 6)
+        #expect(ConfigProblem.localizedTypeName("date") == "date", "an unknown type stays as written")
+    }
+
+    @Test func everyErrorHasAMessage() {
+        let issues = (1...7).map { ValidationIssue(.error, .noWords(.tile("t\($0)"))) } + [ValidationIssue(.warning, .missingLink(.tile("w")))]
+        let invalid = HumConfigError.invalid(issues).localizedMessage
+        #expect(invalid.hasPrefix("This file has some problems:\nTile “t1” has no words to say."))
+        #expect(invalid.hasSuffix("…and 2 more."))
+        #expect(!invalid.contains("“w”"), "warnings don't stop an import, so they aren't listed")
+
+        let packages: [PackageProblem] = [.damaged, .noConfig, .unreadable, .tooBig]
+        let texts = packages.map { HumConfigError.badPackage($0).localizedMessage }
+        #expect(Set(texts).count == packages.count)
+        #expect(texts.allSatisfy { $0.hasPrefix("This Hum file couldn't be opened. ") })
+        #expect(!HumConfigError.notJSON.localizedMessage.isEmpty)
+        #expect(HumConfigError.newerFormat(found: 2, supported: 1).localizedMessage.contains("newer version"))
+
+        // Any error a parent might see gets readable words.
+        #expect(friendlyMessage(for: HumConfigError.notJSON) == HumConfigError.notJSON.localizedMessage)
+        #expect(friendlyMessage(for: StoreError.slotTaken) == StoreError.slotTaken.errorDescription)
+        #expect(!friendlyMessage(for: CocoaError(.fileReadNoSuchFile)).isEmpty)
+    }
+
+    /// Every string in the app's catalog has all six translations, so a parent never meets English by
+    /// surprise in their own language.
+    @Test func everyStringIsTranslated() throws {
+        let data = try Data(contentsOf: repoRoot.appendingPathComponent("hum-aac-ios/Localizable.xcstrings"))
+        let catalog = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let strings = try #require(catalog["strings"] as? [String: [String: Any]])
+        for (key, entry) in strings where !key.isEmpty && entry["shouldTranslate"] as? Bool != false {
+            let localizations = entry["localizations"] as? [String: Any] ?? [:]
+            let missing = TranslationTests.languages.filter { localizations[$0] == nil }
+            #expect(missing.isEmpty, "“\(key)” has no \(missing.joined(separator: ", "))")
+        }
+    }
+}

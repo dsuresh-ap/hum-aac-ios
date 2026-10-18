@@ -217,4 +217,16 @@ final class ChildModeUITests: XCTestCase {
         let inView = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: newHi)
         XCTAssertEqual(XCTWaiter.wait(for: [inView], timeout: 3), .completed, "The bar scrolls to show the new entry")
     }
+
+    /// Scenario: in a right-to-left layout the history bar mirrors with the board: the oldest entry is on
+    /// the right, the newest on the left, and the newest is kept in view.
+    @MainActor
+    func testHistoryBoxRightToLeft() {
+        let app = launchHum(["-skipFirstRun", "-demoHistory", "-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"])
+        let newest = app.buttons["Said: Let's have crackers! Say it again."]
+        XCTAssertTrue(newest.waitForExistence(timeout: 5))
+        let older = app.buttons["Said: Look at that! Say it again."]
+        XCTAssertGreaterThan(older.frame.minX, newest.frame.maxX, "Older entries sit to the right of newer ones")
+        XCTAssertTrue(newest.isHittable, "The newest entry is in view")
+    }
 }

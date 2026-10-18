@@ -142,6 +142,24 @@ final class ImportUITests: XCTestCase {
                       "The message names the tile")
     }
 
+    /// Scenario: a file takes a while to check. The parent sees "Checking…", taps Cancel, and the sheet
+    /// closes with nothing changed and no preview or error afterwards.
+    @MainActor
+    func testCancelWhileChecking() throws {
+        let path = try writeTemp("slow.json", """
+        {"formatVersion": 1, "boards": [{"id": "6F1C2D4E-1111-4A1A-9C1A-1A2B3C4D5E6F", "name": "Trains", "rows": 2, "columns": 2,
+          "isHome": false, "tiles": [{"id": "6F1C2D4E-2222-4A1A-9C1A-1A2B3C4D5E6F", "label": "all aboard", "spokenText": "All aboard!", "row": 0, "column": 0}]}]}
+        """)
+        let app = launchHum(["-skipFirstRun", "-startInParent", "-importFile", path, "-uiTestingSlowImport"])
+        XCTAssertTrue(el(app, "importChecking").waitForExistence(timeout: 10), "Checking… shows while the file is read")
+        shot(app, "checking")
+        el(app, "cancelImportCheck").tap()
+        XCTAssertTrue(el(app, "importChecking").waitForNonExistence(timeout: 5), "Cancel closes the sheet")
+        XCTAssertFalse(el(app, "importSummary").waitForExistence(timeout: 3), "no preview comes later")
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        XCTAssertTrue(el(app, "editTile.hi").exists)
+    }
+
     /// Scenario: an import that arrives while the child is using Hum waits for grown-up mode.
     @MainActor
     func testImportWaitsForParentMode() throws {

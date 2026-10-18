@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import Foundation
+import HumConfig
 import Testing
 @testable import Hum
 
@@ -122,5 +123,66 @@ struct CleanupTests {
         #expect(ImportService.backupsSummary(in: dir).bytes == 0)
         #expect(model.store.boards().map(\.id) == boardsBefore)
         #expect(model.store.boards().flatMap(\.placedTiles).count == tilesBefore)
+    }
+}
+
+extension CleanupTests {
+    @Test func backupHelpersLeaveOtherFilesAlone() throws {
+        let dir = try scratch()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let missing = dir.appendingPathComponent("No backups yet", isDirectory: true)
+        #expect(ImportService.backups(in: missing).isEmpty)
+        #expect(ImportService.backupsSummary(in: missing) == (0, 0))
+        ImportService.pruneBackups(in: missing)
+        try ImportService.deleteBackups(in: missing)
+
+        let note = try make("notes.txt", in: dir)
+        for day in 1...5 { _ = try make("Before import 2020-01-0\(day)T10-00-00Z.hum", in: dir) }
+        ImportService.pruneBackups(in: dir)
+        #expect(ImportService.backups(in: dir).count == ImportService.backupsToKeep)
+        try ImportService.deleteBackups(in: dir)
+        #expect(ImportService.backups(in: dir).isEmpty)
+        #expect(FileManager.default.fileExists(atPath: note.path), "only backups are touched")
+    }
+}
+
+/// The `.hum` file made for AirDrop and nearby devices.
+@MainActor
+@Suite("Files for sending")
+struct SendingFileTests {
+    @Test func theFileForSendingHasEverything() async throws {
+        let model = makeModel()
+        let data = try await ImportService(model: model).exportPackage()
+        let loaded = try HumConfigLoader.load(data)
+        #expect(Set(loaded.document.boards.map(\.id)) == Set(model.store.boards().map(\.id)))
+        #expect(loaded.document.settings != nil)
+        #expect(loaded.document == (try HumConfigLoader.load(ImportService(model: model).exportData())).document)
+    }
+
+    @Test func oneBoardOnItsOwn() async throws {
+        let model = makeModel()
+        let home = model.home
+        let loaded = try HumConfigLoader.load(try await ImportService(model: model).exportPackage(boardID: home.id))
+        #expect(loaded.document.boards.map(\.id) == [home.id])
+        #expect(loaded.document.settings == nil, "settings go only with the whole setup")
+    }
+
+    /// The parent changed their mind while the file was being made: the screen drops it.
+    @Test func makingTheFileCanBeCancelled() async {
+        let model = makeModel()
+        let making = Task { try await ImportService(model: model).exportPackage() }
+        making.cancel()
+        await #expect(throws: CancellationError.self) { try await making.value }
+    }
+
+    /// HUM-054: a tall board's file opens again (a tile in its last row).
+    @Test func aTallBoardsFileOpensAgain() async throws {
+        let model = makeModel()
+        let home = model.home
+        try model.store.resize(home, rows: 20, columns: home.columns)
+        _ = try model.store.addTile(to: home, row: 19, column: 0, label: "bottom", spokenText: "All the way down!")
+        let loaded = try HumConfigLoader.load(try await ImportService(model: model).exportPackage())
+        let tile = loaded.document.boards.first(where: \.isHome)?.tiles.first { $0.label == "bottom" }
+        #expect(tile?.row == 19)
     }
 }

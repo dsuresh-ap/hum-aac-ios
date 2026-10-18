@@ -78,17 +78,22 @@ struct WhatsThisView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    enum Step: Equatable { case starting, live, looking, words([String]), noWords, noCamera }
+    @State private var camera: CameraController
+    @State private var session: WhatsThisSession
 
-    @State private var step = Step.starting
-    @State private var photo: CGImage?
-    @State private var camera = CameraController()
+    init() {
+        let camera = CameraController()
+        _camera = State(initialValue: camera)
+        _session = State(initialValue: WhatsThisSession(camera: camera))
+    }
+
+    private var step: WhatsThisSession.Step { session.step }
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             // The live view fills the screen. A picture taken sits above its words instead (below).
-            if photo == nil {
+            if session.photo == nil {
                 if model.usesFakeCamera {
                     FakeCameraPreview()
                 } else if step != .noCamera {
@@ -101,7 +106,7 @@ struct WhatsThisView: View {
                     closeButton
                     Spacer()
                 }
-                if let photo {
+                if let photo = session.photo {
                     Image(decorative: photo, scale: 1).resizable().scaledToFit()
                         .clipShape(.rect(cornerRadius: 18, style: .continuous))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -114,8 +119,8 @@ struct WhatsThisView: View {
             .padding(Theme.gridPadding)
         }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: step)
-        .task { await startCamera() }
-        .onDisappear { camera.stop() }
+        .task { await session.start(model) }
+        .onDisappear { session.close() }
         #if os(macOS)
         .frame(minWidth: 640, minHeight: 560)
         #endif
@@ -141,7 +146,7 @@ struct WhatsThisView: View {
         case .starting:
             EmptyView()
         case .live:
-            Button { Task { await snap() } } label: {
+            Button { Task { await session.snap(model) } } label: {
                 Circle().fill(.white)
                     .padding(8)
                     .background(Circle().stroke(.white, lineWidth: 6))
@@ -198,7 +203,7 @@ struct WhatsThisView: View {
     }
 
     private func retakeButton(big: Bool) -> some View {
-        Button { Task { await retake() } } label: {
+        Button { Task { await session.retake(model) } } label: {
             Label("Take another", systemImage: "camera.fill")
                 .font(.system(big ? .title2 : .title3, design: .rounded, weight: .semibold))
                 .foregroundStyle(Theme.ink)
@@ -209,18 +214,39 @@ struct WhatsThisView: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier("whatsThis.retake")
     }
+}
 
-    // MARK: Actions
+/// What the "What's this?" screen does, apart from how it looks: start the camera, take one picture, show
+/// its words, take another, close. Tests drive it with a fake camera.
+@MainActor
+@Observable
+final class WhatsThisSession {
+    enum Step: Equatable { case starting, live, looking, words([String]), noWords, noCamera }
 
-    private func startCamera() async {
+    private(set) var step = Step.starting
+    /// The picture taken, shown above its words. Never saved.
+    private(set) var photo: CGImage?
+    @ObservationIgnored let camera: any WhatsThisCameraDevice
+    /// Set by Close. The camera stays off after it, even if a start was still on its way.
+    @ObservationIgnored private var closed = false
+
+    init(camera: any WhatsThisCameraDevice) {
+        self.camera = camera
+    }
+
+    func start(_ model: AppModel) async {
+        guard !closed else { return }
         if model.usesFakeCamera {
             step = .live
             return
         }
-        step = await camera.start() ? .live : .noCamera
+        let started = await camera.start()
+        // Closed while the camera was starting: turn it off again.
+        guard !closed else { return camera.stop() }
+        step = started ? .live : .noCamera
     }
 
-    private func snap() async {
+    func snap(_ model: AppModel) async {
         // Children tap again and again: only the first tap takes a picture. The shutter goes away now,
         // before the picture is taken, so a second tap can't start another one.
         guard step == .live else { return }
@@ -240,7 +266,7 @@ struct WhatsThisView: View {
         step = words.isEmpty ? .noWords : .words(words)
     }
 
-    private func retake() async {
+    func retake(_ model: AppModel) async {
         switch step {
         case .words, .noWords: break
         default: return
@@ -248,8 +274,23 @@ struct WhatsThisView: View {
         model.noteTouch()
         photo = nil
         step = .starting
-        await startCamera()
+        await start(model)
     }
+
+    /// The screen closed.
+    func close() {
+        closed = true
+        camera.stop()
+    }
+}
+
+/// The camera as the "What's this?" screen uses it. Tests use a fake.
+nonisolated protocol WhatsThisCameraDevice: AnyObject, Sendable {
+    /// Starts the camera. False when there's no camera or Hum may not use it.
+    func start() async -> Bool
+    func stop()
+    /// One picture, as image data. Nil if the camera isn't running.
+    func capture() async -> Data?
 }
 
 /// The live picture from the camera.
@@ -317,7 +358,7 @@ private struct FakeCameraPreview: View {
 
 /// The camera itself (the back camera on iPad and iPhone, the FaceTime camera on a Mac). Pictures stay in
 /// memory and are never saved.
-nonisolated final class CameraController: NSObject, @unchecked Sendable {
+nonisolated final class CameraController: NSObject, WhatsThisCameraDevice, @unchecked Sendable {
     let session = AVCaptureSession()
     private let output = AVCapturePhotoOutput()
     private let queue = DispatchQueue(label: "hum.whatsThis.camera")

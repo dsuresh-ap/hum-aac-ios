@@ -88,13 +88,16 @@ struct RawEntry {
     var data: Data
     var size: Int
     var crc: UInt32
+    /// General purpose flags (bit 0: encrypted).
+    var flags: UInt16
 
-    init(name: String, method: UInt16, data: Data, size: Int? = nil, crc: UInt32? = nil) {
+    init(name: String, method: UInt16, data: Data, size: Int? = nil, crc: UInt32? = nil, flags: UInt16 = 0) {
         self.name = name
         self.method = method
         self.data = data
         self.size = size ?? data.count
         self.crc = crc ?? CRC32.checksum(data)
+        self.flags = flags
     }
 }
 
@@ -108,7 +111,7 @@ func craftZip(_ entries: [RawEntry], sameOffset: Bool = false) -> Data {
         let offset = UInt32(out.count)
         if firstOffset == nil { firstOffset = offset }
         out.appendLE(ZipArchive.localHeaderSignature)
-        out.appendLE(UInt16(20)); out.appendLE(UInt16(0)); out.appendLE(entry.method)
+        out.appendLE(UInt16(20)); out.appendLE(entry.flags); out.appendLE(entry.method)
         out.appendLE(UInt16(0)); out.appendLE(UInt16(0))
         out.appendLE(entry.crc); out.appendLE(UInt32(entry.data.count)); out.appendLE(UInt32(truncatingIfNeeded: entry.size))
         out.appendLE(UInt16(name.count)); out.appendLE(UInt16(0))
@@ -116,7 +119,7 @@ func craftZip(_ entries: [RawEntry], sameOffset: Bool = false) -> Data {
         out.append(entry.data)
 
         central.appendLE(ZipArchive.centralHeaderSignature)
-        central.appendLE(UInt16(20)); central.appendLE(UInt16(20)); central.appendLE(UInt16(0)); central.appendLE(entry.method)
+        central.appendLE(UInt16(20)); central.appendLE(UInt16(20)); central.appendLE(entry.flags); central.appendLE(entry.method)
         central.appendLE(UInt16(0)); central.appendLE(UInt16(0))
         central.appendLE(entry.crc); central.appendLE(UInt32(entry.data.count)); central.appendLE(UInt32(truncatingIfNeeded: entry.size))
         central.appendLE(UInt16(name.count)); central.appendLE(UInt16(0)); central.appendLE(UInt16(0))

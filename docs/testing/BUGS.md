@@ -20,6 +20,7 @@ or misleading) · Medium (works, but confusing or against the spec) · Low (poli
 | [HUM-001](#hum-001) | Critical | Bug | Import | Merging a whole setup strands its Home: all imported boards (and its protest tiles) become unreachable | Fixed |
 | [HUM-002](#hum-002) | Critical | Bug | Editor | Undo after deleting a tile doesn't bring it back; the tile is lost | Fixed |
 | [HUM-052](#hum-052) | Critical | Bug | Editor, AI helper | Before iOS 27, undo after moving a tile into a folder or adding AI tiles loses tiles or crashes | Fixed |
+| [HUM-054](#hum-054) | Critical | Bug | Import, backups | A tile below row 8 on a tall board makes the setup's file unopenable (export, backup, AirDrop, nearby) | Fixed |
 | [HUM-053](#hum-053) | High | Bug | Settings (Mac) | Clicks in Settings do nothing on the Mac: About Hum, the voice list, pop-up menus | Fixed |
 | [HUM-037](#hum-037) | High | Bug | Import (iOS) | Imported SVG symbols stay blank for minutes after import (1 of ~40 appeared in 90 s) | Fixed |
 | [HUM-038](#hum-038) | High | Bug | Import | Undo after “Replace everything” doesn't bring the old boards back | Fixed |
@@ -67,6 +68,7 @@ or misleading) · Medium (works, but confusing or against the spec) · Low (poli
 | [HUM-042](#hum-042) | Low | UX | Setup & sharing | Export can take over 10 s with no “preparing…” feedback | Fixed |
 | [HUM-045](#hum-045) | Low | UI | All sheets (iPad) | Sheets are small form sheets on a 13" iPad; Settings needs lots of scrolling | Fixed (confirm on device) |
 | [HUM-046](#hum-046) | Low | UI | First run (iPad) | Welcome and grid steps use a small block in the middle of a big screen | Fixed |
+| [HUM-055](#hum-055) | Low | Text | Import | A tile with no label or words is called “Tile ''” in import errors | Fixed |
 | [HUM-014](#hum-014) | ? | Bug? | Editor | First tap on “⋯” (and after a sheet closes) sometimes ignored; simulator panel only so far | Open (device) |
 
 ---
@@ -114,6 +116,15 @@ The app targets iOS 17, but SwiftData's own undo only handles a tile's board lin
 On iOS 18, undo after "Move to folder" left the tile with no board, and undo after adding AI suggestions
 took "hi", "more" and "bye-bye" off Home. On iOS 26 the same undo crashed the app. This is also why the
 CI app-test job (iOS 26 simulator) failed every test in 0.000 s.
+
+### HUM-054
+**Files of tall boards can't be opened again.** Critical · Bug · Import, backups · *Found by:* code (coverage pass,
+2026-10-18)
+
+Boards can be 20 rows tall, but the schema still allowed a tile's `row` only up to 7. Any setup with a tile
+in row 8 or lower was refused on import ("'row' must be between 0 and 7"): its export, its "Before import"
+backup, AirDrop and nearby transfer all made files Hum couldn't open. The schema now allows rows 0–19, and
+`schemaGridLimitsMatchTheValidator` keeps the schema and `HumValidator`'s grid limits together.
 
 ## High
 
@@ -447,6 +458,12 @@ In the simulator panel, the first tap after launch or after a sheet closes is of
 so this may be the panel, not Hum. Listed in the human test plan to check on a device.
 
 ---
+
+### HUM-055
+**“Tile ''” in import errors.** Low · Text · Import · *Found by:* code (coverage pass, 2026-10-18)
+
+A tile with no label and no words was named by its empty label: "Tile '' has no words to say." It is now
+named by its place, like the schema checks already did: "Tile 1 on 'Home' has no words to say."
 
 ## Fixes (2026-10-12)
 

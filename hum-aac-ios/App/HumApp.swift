@@ -61,7 +61,16 @@ struct HumApp: App {
                         if args.contains("-demoHistory") { UITestFixtures.addHistory(model) }
                         // A .hum file to import, as if it arrived through "Open in Hum".
                         if let i = args.firstIndex(of: "-importFile"), i + 1 < args.count {
-                            model.requestImport(url: URL(fileURLWithPath: args[i + 1]))
+                            let url = URL(fileURLWithPath: args[i + 1])
+                            if args.contains("-uiTestingSlowImport") {
+                                // Keeps "Checking…" on screen long enough to see and cancel.
+                                model.checkImport(ImportCheck(fileName: url.lastPathComponent)) { service in
+                                    try await Task.sleep(for: .seconds(30))
+                                    return try await service.prepare(url: url)
+                                }
+                            } else {
+                                model.requestImport(url: url)
+                            }
                         }
                         if args.contains("-openFolder"), let snack = model.snapshot?.cells.joined().compactMap({ $0 }).first(where: { $0.linkedBoardID != nil }) {
                             model.tap(snack, tapTime: mach_absolute_time())

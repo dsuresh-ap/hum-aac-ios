@@ -86,6 +86,19 @@ struct ValidationTests {
         #expect(issues.contains { $0.message == "Tile 'snack' has no words to say." })
     }
 
+    /// No label and no words: the tile is named by its place, not "Tile ''".
+    @Test func aTileWithNoWordsOrLabelIsNamedByItsPlace() {
+        let issues = HumConfigLoader.validate(doc(tile: """
+            {"id": "22222222-2222-2222-2222-222222222222", "spokenText": " ", "row": 0, "column": 0},
+            {"id": "33333333-3333-3333-3333-333333333333", "spokenText": "", "row": 5, "column": 0}
+            """))
+        #expect(issues.map(\.message) == [
+            "Tile 1 on 'Home' has no words to say.",
+            "Tile 2 on 'Home' has no words to say.",
+            "Tile 2 on 'Home' is outside the grid of Board 'Home' (row 5, column 0; the grid is 2 rows × 2 columns, counting from 0).",
+        ])
+    }
+
     @Test func silentFolderTileIsAllowed() throws {
         let input = json("""
         {"formatVersion": 1, "boards": [
@@ -122,6 +135,31 @@ struct ValidationTests {
             {"id": "22222222-2222-2222-2222-222222222222", "label": "x", "spokenText": "x", "row": 5, "column": 0}
             """))
         #expect(issues.contains { $0.severity == .error && $0.message.contains("outside the grid") })
+    }
+
+    /// A tall board scrolls (up to 20 rows): a tile in its last row must load, or a backup of it can't be
+    /// opened again.
+    @Test func aTileLowOnATallBoardLoads() throws {
+        let input = json("""
+        {"formatVersion": 1, "boards": [{"id": "11111111-1111-1111-1111-111111111111", "name": "Home",
+          "rows": 20, "columns": 8, "isHome": true, "tiles": [
+          {"id": "22222222-2222-2222-2222-222222222222", "label": "down", "spokenText": "All the way down!", "row": 19, "column": 7}]}]}
+        """)
+        let loaded = try HumConfigLoader.load(input)
+        #expect(loaded.document.boards[0].tiles[0].row == 19)
+        #expect(try HumConfigLoader.load(HumPackage.write(loaded.document, media: [:])).document == loaded.document)
+    }
+
+    /// The schema's grid limits are the validator's: rows and columns, and the spots inside them.
+    @Test func schemaGridLimitsMatchTheValidator() throws {
+        let url = try #require(Bundle.module.url(forResource: "hum.schema", withExtension: "json"))
+        let schema = try JSONValue.parse(Data(contentsOf: url))
+        let board = schema["$defs"]?["board"]?["properties"], tile = schema["$defs"]?["tile"]?["properties"]
+        func maximum(_ v: JSONValue?) -> Int? { if case .number(let n)? = v?["maximum"] { Int(n) } else { nil } }
+        #expect(maximum(board?["rows"]) == HumValidator.rowRange.upperBound)
+        #expect(maximum(board?["columns"]) == HumValidator.columnRange.upperBound)
+        #expect(maximum(tile?["row"]) == HumValidator.rowRange.upperBound - 1)
+        #expect(maximum(tile?["column"]) == HumValidator.columnRange.upperBound - 1)
     }
 
     @Test func twoTilesInOneSpotIsAnError() {

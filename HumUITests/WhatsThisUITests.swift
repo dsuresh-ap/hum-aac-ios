@@ -49,6 +49,12 @@ final class WhatsThisUITests: XCTestCase {
         XCTAssertEqual(app.buttons.matching(identifier: "whatsThis.word").count, 0)
         keepScreenshot(app, "Nothing named")
 
+        // "Try again" really can: the camera comes back and the next picture gets its words.
+        el(app, "whatsThis.retake").tap()
+        XCTAssertTrue(shutter.waitForExistence(timeout: 3), "Take another brings the shutter back")
+        shutter.tap()
+        XCTAssertTrue(app.buttons["dog"].waitForExistence(timeout: 5))
+
         el(app, "whatsThis.close").tap()
         XCTAssertTrue(el(app, "whatsThis").waitForExistence(timeout: 3), "Close goes back to the board")
         XCTAssertFalse(shutter.exists)
@@ -71,6 +77,34 @@ final class WhatsThisUITests: XCTestCase {
         XCTAssertTrue(app.buttons["dog"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["Try again"].exists)
         XCTAssertFalse(app.buttons["hot air balloon"].waitForExistence(timeout: 1), "Only one picture was taken")
+    }
+
+    /// Scenario: a parent turns it on in Settings (the stand-in camera is always allowed), and the child's
+    /// board gets the button.
+    @MainActor
+    func testTurnedOnInSettings() {
+        let app = launchHum(["-skipFirstRun", "-fakeCamera", "-startInParent"])
+        tapToolbar(app, "settings", label: "Settings")
+        setSwitch(app, "whatsThisToggle", on: true)
+        closeSheet(app)
+        finishEditing(app)
+        XCTAssertTrue(el(app, "whatsThis").waitForExistence(timeout: 3), "The child's board has the camera button")
+    }
+
+    /// Scenario: Hum is in German. The words would be English, so the button isn't offered even when the
+    /// setting is on, and the Settings switch is off and can't be turned on.
+    @MainActor
+    func testNotOfferedInOtherLanguages() {
+        let app = launchHum(["-skipFirstRun", "-fakeCamera", "-whatsThisCamera", "-AppleLanguages", "(de)", "-AppleLocale", "de_DE"])
+        XCTAssertTrue(el(app, "home").waitForExistence(timeout: 5))
+        XCTAssertFalse(el(app, "whatsThis").exists)
+        openParentMode(app)
+        tapToolbar(app, "settings", label: "Einstellungen")
+        let toggle = app.switches["whatsThisToggle"].firstMatch
+        scrollTo(app, toggle)
+        XCTAssertTrue(toggle.exists)
+        XCTAssertFalse(toggle.isEnabled)
+        XCTAssertEqual(toggle.value as? String, "0")
     }
 
     private func keepScreenshot(_ app: XCUIApplication, _ name: String) {

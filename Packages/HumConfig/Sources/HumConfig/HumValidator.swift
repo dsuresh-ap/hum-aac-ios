@@ -32,7 +32,9 @@ public enum HumValidator {
             var occupied: [String: HumTile] = [:]
             for (t, tile) in board.tiles.enumerated() {
                 let tPath = "\(bPath)/tiles/\(t)"
-                let tName = ConfigSubject.tile(tile.label.isEmpty ? tile.spokenText : tile.label)
+                // A tile with no words or label is named by its place ("Tile 3 on 'Home'"), never "Tile ''".
+                let name = [tile.label, tile.spokenText].first { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                let tName = name.map(ConfigSubject.tile) ?? .tileNumber(t + 1, boardName: board.name, boardNumber: b + 1)
                 if !tileIDs.insert(tile.id).inserted {
                     issues.append(.init(.error, .duplicateTileID(tName), path: tPath + "/id"))
                 }
