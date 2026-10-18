@@ -77,6 +77,22 @@ struct ZipReadTests {
         #expect(try ZipArchive.read(padded.dropFirst(3)) == entries)
     }
 
+    /// The app stops reading a file the parent no longer wants: between entries, as a cancellation, not
+    /// as a damaged file.
+    @Test func readingStopsWhenCancelled() async {
+        let zip = ZipArchive.write([.init(path: "hum.json", data: json("{}")), .init(path: "media/a.jpg", data: Data([1]))])
+        let read = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try ZipArchive.read(zip)
+        }
+        await #expect(throws: CancellationError.self) { try await read.value }
+        let open = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try HumPackage.read(zip)
+        }
+        await #expect(throws: CancellationError.self) { try await open.value }
+    }
+
     // MARK: Limits are inclusive
 
     @Test func exactlyTheMostFilesPassesTheCount() {

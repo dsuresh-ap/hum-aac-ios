@@ -15,7 +15,7 @@ nonisolated enum PendingChanges {
     }
 
     /// Adds a change to the queue. `name` is shown to the parent ("From Shortcuts: Add a tile").
-    static func enqueue(_ data: Data, name: String) throws {
+    static func enqueue(_ data: Data, name: String, in directory: URL = directory) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let stamp = String(format: "%.0f", Date.now.timeIntervalSince1970 * 1000)
         let safe = name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
@@ -23,7 +23,7 @@ nonisolated enum PendingChanges {
     }
 
     /// Oldest first.
-    static func all() -> [URL] {
+    static func all(in directory: URL = directory) -> [URL] {
         let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
         return files.filter { !$0.lastPathComponent.hasPrefix(".") }.sorted { $0.lastPathComponent < $1.lastPathComponent }
     }

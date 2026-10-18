@@ -206,10 +206,13 @@ final class AppModel {
         return pendingImport.map { .ready($0) }
     }
 
+    /// Where Shortcuts and Siri queue their changes (tests use their own folder).
+    @ObservationIgnored var pendingChangesFolder = PendingChanges.directory
+
     /// Changes queued by Shortcuts/Siri surface one at a time, only in parent mode.
     func showNextPendingChange() {
         guard mode == .parent, pendingImport == nil, checkingImport == nil,
-              let url = PendingChanges.all().first else { return }
+              let url = PendingChanges.all(in: pendingChangesFolder).first else { return }
         checkImport(ImportCheck(fileName: PendingChanges.displayName(url), queueFile: url)) { try await $0.prepare(url: url) }
     }
     var importError: String?
