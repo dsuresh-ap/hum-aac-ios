@@ -15,7 +15,7 @@ import HumConfig
 @Suite("Imported pictures")
 struct ImportMediaTests {
     /// Imports a `.hum` with one new tile in Home's free spot that uses `picture`.
-    func importTile(_ model: AppModel, picture: Data, name: String) throws -> Tile {
+    func importTile(_ model: AppModel, picture: Data, name: String) async throws -> Tile {
         var doc = ConfigBridge.export(boards: model.store.boards()).document
         let home = try #require(doc.boards.firstIndex { $0.isHome })
         let spot = try #require(model.store.firstEmptySpot(on: model.home))
@@ -24,7 +24,7 @@ struct ImportMediaTests {
                                           image: "media/\(name)")]
         let package = try HumPackage.write(doc, media: ["media/\(name)": picture])
         let service = ImportService(model: model)
-        try service.apply(try service.prepare(data: package, fileName: "test.hum"), mode: .merge)
+        try service.apply(try await service.prepare(data: package, fileName: "test.hum"), mode: .merge)
         return try #require(model.home.tiles?.first { $0.id == id })
     }
 
@@ -51,27 +51,27 @@ struct ImportMediaTests {
         return context.makeImage().flatMap { encode($0, as: .png) }
     }
 
-    @Test func bigTransparentPicturesAreResizedOntoWhite() throws {
+    @Test func bigTransparentPicturesAreResizedOntoWhite() async throws {
         let model = makeModel()
         let png = try #require(Self.bigTransparentPNG())
-        let tile = try importTile(model, picture: png, name: "big.png")
+        let tile = try await importTile(model, picture: png, name: "big.png")
         let stored = try #require(tile.imageData)
         let (width, height) = try Self.pixelSize(stored)
         #expect(width == 1024 && height == 512)
         #expect(try SymbolTests.cornerBrightness(stored) > 0.95)
     }
 
-    @Test func humsOwnJPEGsAreKeptByteForByte() throws {
+    @Test func humsOwnJPEGsAreKeptByteForByte() async throws {
         let model = makeModel()
         let png = try #require(Self.bigTransparentPNG())
         let jpeg = try #require(ImageProcessing.tileImageData(from: png))
-        let tile = try importTile(model, picture: jpeg, name: "ready.jpg")
+        let tile = try await importTile(model, picture: jpeg, name: "ready.jpg")
         #expect(tile.imageData == jpeg)
     }
 
-    @Test func aFileThatIsNotAPictureIsIgnored() throws {
+    @Test func aFileThatIsNotAPictureIsIgnored() async throws {
         let model = makeModel()
-        let tile = try importTile(model, picture: Data("not a picture".utf8), name: "broken.jpg")
+        let tile = try await importTile(model, picture: Data("not a picture".utf8), name: "broken.jpg")
         #expect(tile.imageData == nil)
     }
 
@@ -80,7 +80,7 @@ struct ImportMediaTests {
         let svg = Data("""
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="15" fill="red"/></svg>
             """.utf8)
-        let tile = try importTile(model, picture: svg, name: "symbol.svg")
+        let tile = try await importTile(model, picture: svg, name: "symbol.svg")
         // macOS draws SVG during the import; iOS right after it, with WebKit.
         await ImportService.renderImportedSVGs(model)
         let stored = try #require(tile.imageData)
@@ -119,7 +119,7 @@ struct ImportMediaTests {
         let package = try HumPackage.write(doc, media: Dictionary(uniqueKeysWithValues: pictures.map { ($0, png) }))
         let service = ImportService(model: model)
         var steps: [ImportService.Progress] = []
-        try await service.apply(try service.prepare(data: package, fileName: "big.hum"), mode: .replace) { steps.append($0) }
+        try await service.apply(try await service.prepare(data: package, fileName: "big.hum"), mode: .replace) { steps.append($0) }
         #expect(steps.first == .backingUp)
         #expect(steps.contains(.pictures(done: 3, total: 3)))
         #expect(steps.last == .saving)

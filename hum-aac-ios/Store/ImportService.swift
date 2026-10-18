@@ -43,13 +43,35 @@ struct ImportReport: Equatable {
 
 /// A file that has been read and checked, waiting for the parent to choose Merge or Replace.
 struct PendingImport: Identifiable {
-    let id = UUID()
-    let fileName: String
+    var id = UUID()
+    var fileName: String
     let loaded: LoadedConfig
     let merge: MergePlanner.Plan
     let replace: MergePlanner.Plan
     /// Set when this came from the Shortcuts/Siri queue; the file is removed once the parent decides.
     var queueFile: URL? = nil
+}
+
+/// A file still being read and checked in the background, before its preview.
+struct ImportCheck: Identifiable, Equatable {
+    let id = UUID()
+    let fileName: String
+    /// Set when this came from the Shortcuts/Siri queue.
+    var queueFile: URL? = nil
+}
+
+/// What the import sheet shows: "Checking…" while the file is read, then its preview. Both have the same
+/// ID, so the sheet stays open from one to the other.
+enum ImportStage: Identifiable {
+    case checking(ImportCheck)
+    case ready(PendingImport)
+
+    var id: UUID {
+        switch self {
+        case .checking(let check): check.id
+        case .ready(let pending): pending.id
+        }
+    }
 }
 
 /// Reads, previews and applies imports; writes exports and backups.
@@ -61,30 +83,62 @@ struct ImportService {
     let model: AppModel
 
     /// Reads a file and plans both options. Throws `HumConfigError` with friendly text.
-    func prepare(url: URL) throws -> PendingImport {
-        let access = url.startAccessingSecurityScopedResource()
-        defer { if access { url.stopAccessingSecurityScopedResource() } }
-        let data: Data
-        do { data = try Data(contentsOf: url) } catch {
-            throw HumConfigError.badPackage(.unreadable)
+    func prepare(url: URL) async throws -> PendingImport {
+        try await prepare(fileName: url.lastPathComponent) { try Self.read(url) }
+    }
+
+    func prepare(data: Data, fileName: String) async throws -> PendingImport {
+        try await prepare(fileName: fileName) { data }
+    }
+
+    /// A big file takes seconds to unzip and check, so reading, unzipping, checking and planning all run
+    /// in the background. Only reading the current boards (SwiftData) uses the main actor. Cancelling the
+    /// calling task stops it, and nothing has changed.
+    func prepare(fileName: String, read: @escaping @Sendable () throws -> Data) async throws -> PendingImport {
+        let loaded = try await Self.inBackground {
+            let data = try read()
+            try Task.checkCancellation()
+            return try HumConfigLoader.load(data)
         }
-        return try prepare(data: data, fileName: url.lastPathComponent)
+        try Task.checkCancellation()
+        let existing = ConfigBridge.export(boards: model.store.boards()).document
+        let name = Self.folderName(for: fileName)
+        let (merge, replace) = try await Self.inBackground {
+            (MergePlanner.plan(existing: existing, incoming: loaded.document, mode: .merge, name: name),
+             MergePlanner.plan(existing: existing, incoming: loaded.document, mode: .replace))
+        }
+        try Task.checkCancellation()
+        return PendingImport(fileName: fileName, loaded: loaded, merge: merge, replace: replace)
     }
 
-    func prepare(data: Data, fileName: String) throws -> PendingImport {
-        let loaded = try HumConfigLoader.load(data)
-        return prepare(loaded: loaded, fileName: fileName)
-    }
-
-    /// Also used by the AI helper and App Intents with documents they built.
+    /// Also used by the AI helper with documents it built (small, so planned right here).
     func prepare(loaded: LoadedConfig, fileName: String) -> PendingImport {
         let existing = ConfigBridge.export(boards: model.store.boards()).document
-        // A merged file's own Home becomes a folder named after the file ("Express2-v2.hum" → "Express2-v2").
-        let name = (fileName as NSString).deletingPathExtension
+        let name = Self.folderName(for: fileName)
         return PendingImport(
             fileName: fileName, loaded: loaded,
             merge: MergePlanner.plan(existing: existing, incoming: loaded.document, mode: .merge, name: name),
             replace: MergePlanner.plan(existing: existing, incoming: loaded.document, mode: .replace))
+    }
+
+    /// A merged file's own Home becomes a folder named after the file ("Express2-v2.hum" → "Express2-v2").
+    nonisolated static func folderName(for fileName: String) -> String {
+        (fileName as NSString).deletingPathExtension
+    }
+
+    /// Reads a file the parent chose; it may be outside Hum's own folders.
+    nonisolated static func read(_ url: URL) throws -> Data {
+        let access = url.startAccessingSecurityScopedResource()
+        defer { if access { url.stopAccessingSecurityScopedResource() } }
+        do { return try Data(contentsOf: url) } catch {
+            throw HumConfigError.badPackage(.unreadable)
+        }
+    }
+
+    /// Runs `work` on a background thread, never the main actor. Cancelling the caller cancels it too.
+    nonisolated static func inBackground<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
+        let task = Task.detached(priority: .userInitiated) { try work() }
+        return try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
     }
 
     /// Where a long import is, for the preview's progress bar.

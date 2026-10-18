@@ -140,7 +140,48 @@ struct ImportPreviewSheet: View {
     }
 }
 
-/// Shows the import preview (and import errors) for `model.pendingImport`.
+/// Shown while a file is read and checked in the background (a big setup takes a few seconds). The parent
+/// can cancel; nothing changes until they choose in the preview. A file that can't be imported says why here.
+struct ImportCheckingSheet: View {
+    let check: ImportCheck
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    HStack(spacing: 10) {
+                        ProgressView().controlSize(.small)
+                        Text("Checking…").foregroundStyle(.secondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("importChecking")
+                } header: {
+                    Text(check.fileName)
+                }
+            }
+            .formStyle(.grouped)
+            .navigationTitle("Import boards")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { model.cancelImportCheck() }.accessibilityIdentifier("cancelImportCheck")
+                }
+            }
+            .alert("This file couldn't be imported", isPresented: Binding(
+                get: { model.importError != nil },
+                set: { if !$0 { model.importError = nil; model.cancelImportCheck() } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(model.importError ?? "")
+            }
+        }
+        #if os(macOS)
+        .frame(minWidth: 480, minHeight: 460)
+        #endif
+    }
+}
+
+/// Shows the import preview (and import errors) for `model.importStage`: "Checking…", then the preview.
 ///
 /// SwiftUI can't present a sheet from a view that is already presenting one, so a preview asked for
 /// from inside a sheet (Setup & sharing) has to be shown by that sheet. The root view shows it the rest
@@ -153,16 +194,23 @@ struct ImportPreviewHost: ViewModifier {
     func body(content: Content) -> some View {
         content
             .sheet(item: Binding(
-                get: { isActive ? model.pendingImport : nil },
-                set: { if $0 == nil { model.pendingImport = nil } })) { pending in
-                ImportPreviewSheet(pending: pending)
+                get: { isActive ? model.importStage : nil },
+                set: { if $0 == nil { close() } })) { stage in
+                switch stage {
+                case .checking(let check): ImportCheckingSheet(check: check)
+                case .ready(let pending): ImportPreviewSheet(pending: pending)
+                }
             }
             .alert("This file couldn't be imported", isPresented: Binding(
-                get: { isActive && model.importError != nil },
+                get: { isActive && model.importError != nil && model.checkingImport == nil },
                 set: { if !$0 { model.importError = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(model.importError ?? "")
             }
+    }
+
+    private func close() {
+        if model.checkingImport != nil { model.cancelImportCheck() } else { model.pendingImport = nil }
     }
 }
