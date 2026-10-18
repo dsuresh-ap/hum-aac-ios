@@ -14,8 +14,6 @@ import ImagePlayground
 /// Picture → What it says → Label → Folder. Color, hide and delete wait under "More options".
 struct TileEditorSheet: View {
     let request: TileEditorRequest
-    /// Guesses what's in a new photo, to offer names for the tile.
-    var classifier: any ObjectClassifying = VisionObjectClassifier()
 
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -296,18 +294,26 @@ struct TileEditorSheet: View {
     private var objectIdeasRow: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Looks like:").font(.callout).foregroundStyle(.secondary)
-            HStack(spacing: 6) {
-                ForEach(objectIdeas, id: \.self) { name in
-                    Button(name) { useObjectName(name) }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .accessibilityHint("Uses this word for the tile")
-                        .accessibilityIdentifier("tileEditor.objectIdea")
-                }
+            // One line when they fit; otherwise one name per line, so a long name never wraps mid-word.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 6) { objectIdeaButtons }
+                VStack(alignment: .leading, spacing: 6) { objectIdeaButtons }
             }
             Text("Hum's guess from the photo, made on this device. Tap one to use it, or type your own words.")
                 .font(.footnote).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var objectIdeaButtons: some View {
+        ForEach(objectIdeas, id: \.self) { name in
+            Button { useObjectName(name) } label: {
+                Text(name).lineLimit(1).fixedSize()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .accessibilityHint("Uses this word for the tile")
+            .accessibilityIdentifier("tileEditor.objectIdea")
         }
     }
 
@@ -506,7 +512,7 @@ struct TileEditorSheet: View {
         setPicture(data)
         guard let data else { return }
         Task {
-            let ideas = await ObjectNamer.names(for: data, using: classifier)
+            let ideas = await ObjectNamer.names(for: data, using: model.objectClassifier)
             // The parent may have picked another picture meanwhile.
             if imageData == data { objectIdeas = ideas }
         }

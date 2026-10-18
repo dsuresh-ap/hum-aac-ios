@@ -32,6 +32,9 @@ struct ObjectNamerTests {
         // What Vision says about an eagle photo: the whole family tree, all equally sure.
         let eagle = [guess("animal", 0.99), guess("bird", 0.99), guess("eagle", 0.99), guess("raptor", 0.99)]
         #expect(ObjectNamer.suggestions(from: eagle) == ["bird", "eagle"])
+        // A zebra photo: the sky behind it counts once, not as "sky" and "blue sky".
+        let zebra = [guess("animal", 0.99), guess("zebra", 0.99), guess("outdoor", 0.26), guess("sky", 0.26), guess("blue_sky", 0.26)]
+        #expect(ObjectNamer.suggestions(from: zebra) == ["zebra", "sky"])
     }
 
     @Test func mostLikelyFirstAndAtMostThree() {

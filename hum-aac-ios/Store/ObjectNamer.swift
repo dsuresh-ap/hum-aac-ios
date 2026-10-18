@@ -89,19 +89,20 @@ nonisolated enum ObjectNamer {
         "train_real": "train", "train_toy": "toy train", "wood_natural": "wood",
     ]
 
-    /// Groups too broad to name one thing on a tile. Vision gives them as high a score as the thing itself
-    /// (a dog photo is "animal" as surely as "dog"), so they would push the useful word out.
+    /// Groups too broad to name one thing on a tile, and backgrounds ("blue sky" behind a zebra). Vision gives
+    /// groups as high a score as the thing itself (a dog photo is "animal" as surely as "dog"), so they would
+    /// push the useful word out.
     static let broad: Set<String> = [
         "adult", "agriculture", "aircraft", "animal", "appliance", "arachnid", "art", "arthropods", "athletics",
-        "automobile", "baked_goods", "ballgames", "canine", "celebration", "celestial_body", "celestial_body_other",
+        "automobile", "baked_goods", "ballgames", "blue_sky", "canine", "celebration", "celestial_body", "celestial_body_other",
         "cephalopod", "cetacean", "clothing", "consumer_electronics", "container", "conveyance", "cookware",
         "daytime", "decoration", "document", "domicile", "entertainer", "feline", "foliage", "food", "footwear",
         "frozen_dessert", "furniture", "games", "gastropod", "headgear", "housewares", "illustrations",
         "interior_room", "land", "liquid", "machine", "mammal", "marsupial", "material", "media", "mollusk",
-        "music", "musical_instrument", "office_supplies", "optical_equipment", "outdoor", "people", "raptor",
+        "music", "musical_instrument", "night_sky", "office_supplies", "optical_equipment", "outdoor", "people", "raptor",
         "recreation", "reptile", "road_safety_equipment", "rodent", "seasonings", "shellfish_prepared",
         "ski_equipment", "smoking_item", "sport", "sports_equipment", "string_instrument", "structure",
-        "tableware", "teen", "textile", "timepiece", "tool", "ungulates", "utensil", "vegetation", "vehicle",
+        "tableware", "teen", "textile", "timepiece", "tool", "underwater", "ungulates", "utensil", "vegetation", "vehicle",
         "water_body", "watercraft", "watersport", "waterways", "winter_sport", "wood_processed",
     ]
 }
