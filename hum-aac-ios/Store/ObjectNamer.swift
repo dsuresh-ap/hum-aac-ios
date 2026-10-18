@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import Foundation
+import Observation
 import Vision
 
 /// One guess about what's in a photo: Vision's English name for it ("food_bowl") and how sure it is (0...1).
@@ -29,6 +30,37 @@ nonisolated struct VisionObjectClassifier: ObjectClassifying {
             }
             return (request.results ?? []).map { ObjectGuess(identifier: $0.identifier, confidence: Double($0.confidence)) }
         }.value
+    }
+}
+
+/// The "Looks like:" names for the photo in the tile editor. Only the newest photo's names show: a slow
+/// guess for a photo that was replaced, removed or swapped for a symbol is dropped.
+@MainActor
+@Observable
+final class PhotoNameIdeas {
+    private(set) var names: [String] = []
+    /// The picture the names are for (or being guessed for).
+    @ObservationIgnored private var picture: Data?
+
+    /// Every picture change. A symbol, a drawing or no picture has no ideas.
+    func pictureChanged(to data: Data?) {
+        picture = data
+        names = []
+    }
+
+    /// Guesses what's in `data`, the photo just set with `pictureChanged(to:)`, on this device.
+    func guess(_ data: Data, using classifier: any ObjectClassifying,
+               language: String? = Bundle.main.preferredLocalizations.first) async {
+        let ideas = await ObjectNamer.names(for: data, using: classifier, language: language)
+        // The parent may have picked another picture meanwhile.
+        if picture == data { names = ideas }
+    }
+
+    /// The phrase after the parent taps `name`: the name while the phrase is empty or still an earlier
+    /// guess. The parent's own words are kept.
+    func phrase(using name: String, instead phrase: String) -> String {
+        let trimmed = phrase.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty || names.contains(trimmed) ? name : phrase
     }
 }
 

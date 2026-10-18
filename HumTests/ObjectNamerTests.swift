@@ -69,3 +69,100 @@ struct ObjectNamerTests {
         #expect(ObjectNamer.broad.subtracting(known).isEmpty)
     }
 }
+
+/// Holds each guess until the test finishes it, so a test chooses which photo's guess ends first.
+private actor HeldClassifier: ObjectClassifying {
+    private var waiting: [Data: CheckedContinuation<[ObjectGuess], Never>] = [:]
+    private var ready: [Data: [ObjectGuess]] = [:]
+
+    func classify(_ imageData: Data) async -> [ObjectGuess] {
+        if let guesses = ready.removeValue(forKey: imageData) { return guesses }
+        return await withCheckedContinuation { waiting[imageData] = $0 }
+    }
+
+    func finish(_ imageData: Data, with identifiers: [String]) {
+        let guesses = identifiers.map { ObjectGuess(identifier: $0, confidence: 0.9) }
+        if let waiter = waiting.removeValue(forKey: imageData) {
+            waiter.resume(returning: guesses)
+        } else {
+            ready[imageData] = guesses
+        }
+    }
+}
+
+/// The tile editor's "Looks like:" row shows only the names for the photo on the tile right now.
+@MainActor
+@Suite("Photo name ideas in the tile editor")
+struct PhotoNameIdeasTests {
+    let older = Data([1])
+    let newer = Data([2])
+
+    @Test func aLateGuessForAnOlderPhotoIsDropped() async {
+        let ideas = PhotoNameIdeas()
+        let classifier = HeldClassifier()
+        ideas.pictureChanged(to: older)
+        let first = Task { await ideas.guess(older, using: classifier, language: "en") }
+        ideas.pictureChanged(to: newer)
+        let second = Task { await ideas.guess(newer, using: classifier, language: "en") }
+        await classifier.finish(newer, with: ["dog"])
+        await second.value
+        #expect(ideas.names == ["dog"])
+        await classifier.finish(older, with: ["cat"])
+        await first.value
+        #expect(ideas.names == ["dog"], "the older photo's guess came last and is dropped")
+    }
+
+    @Test func anEarlyGuessForAnOlderPhotoIsDroppedToo() async {
+        let ideas = PhotoNameIdeas()
+        let classifier = HeldClassifier()
+        ideas.pictureChanged(to: older)
+        let first = Task { await ideas.guess(older, using: classifier, language: "en") }
+        ideas.pictureChanged(to: newer)
+        let second = Task { await ideas.guess(newer, using: classifier, language: "en") }
+        await classifier.finish(older, with: ["cat"])
+        await first.value
+        #expect(ideas.names.isEmpty, "a newer photo is on the tile")
+        await classifier.finish(newer, with: ["dog"])
+        await second.value
+        #expect(ideas.names == ["dog"])
+    }
+
+    /// A symbol or drawing (a picture of its own), an emoji or "Remove photo" (no picture): no ideas, and
+    /// none arriving later for the photo they replaced.
+    @Test(arguments: [Data([9]), nil])
+    func anythingButAPhotoClearsTheIdeas(replacement: Data?) async {
+        let ideas = PhotoNameIdeas()
+        let classifier = HeldClassifier()
+        ideas.pictureChanged(to: older)
+        await classifier.finish(older, with: ["dog"])
+        await ideas.guess(older, using: classifier, language: "en")
+        #expect(ideas.names == ["dog"])
+        ideas.pictureChanged(to: replacement)
+        #expect(ideas.names.isEmpty)
+
+        ideas.pictureChanged(to: newer)
+        let late = Task { await ideas.guess(newer, using: classifier, language: "en") }
+        ideas.pictureChanged(to: replacement)
+        await classifier.finish(newer, with: ["cat"])
+        await late.value
+        #expect(ideas.names.isEmpty)
+    }
+
+    @Test func noIdeasInOtherLanguages() async {
+        let ideas = PhotoNameIdeas()
+        ideas.pictureChanged(to: older)
+        await ideas.guess(older, using: FakeClassifier(guesses: [guess("dog", 0.9)]), language: "fr")
+        #expect(ideas.names.isEmpty)
+    }
+
+    @Test func tappingAnIdeaKeepsTheParentsOwnWords() async {
+        let ideas = PhotoNameIdeas()
+        ideas.pictureChanged(to: older)
+        await ideas.guess(older, using: FakeClassifier(guesses: [guess("dog", 0.9), guess("puppy", 0.8)]), language: "en")
+        #expect(ideas.phrase(using: "dog", instead: "") == "dog")
+        #expect(ideas.phrase(using: "dog", instead: "  \n") == "dog")
+        #expect(ideas.phrase(using: "puppy", instead: "dog") == "puppy", "an earlier guess is replaced")
+        #expect(ideas.phrase(using: "puppy", instead: " dog ") == "puppy")
+        #expect(ideas.phrase(using: "puppy", instead: "Our dog Rex!") == "Our dog Rex!")
+    }
+}

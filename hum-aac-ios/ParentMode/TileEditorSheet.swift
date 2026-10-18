@@ -52,7 +52,7 @@ struct TileEditorSheet: View {
     /// The symbol set's credit while the picture is a symbol from it. Set only through `setPicture`.
     @State private var imageCredit: String?
     /// Names guessed from the current photo ("dog", "ball"). Only shown; nothing changes until the parent taps one.
-    @State private var objectIdeas: [String] = []
+    @State private var photoIdeas = PhotoNameIdeas()
     @State private var audioData: Data?
     @State private var recorder = PhraseRecorder()
     @State private var photoItem: PhotosPickerItem?
@@ -259,7 +259,7 @@ struct TileEditorSheet: View {
                     .accessibilityLabel("Picture credit: \(imageCredit)")
                     .accessibilityIdentifier("tileEditor.imageCredit")
             }
-            if imageData != nil, !objectIdeas.isEmpty {
+            if imageData != nil, !photoIdeas.names.isEmpty {
                 objectIdeasRow
             }
             if imageData == nil {
@@ -306,7 +306,7 @@ struct TileEditorSheet: View {
     }
 
     private var objectIdeaButtons: some View {
-        ForEach(objectIdeas, id: \.self) { name in
+        ForEach(photoIdeas.names, id: \.self) { name in
             Button { useObjectName(name) } label: {
                 Text(name).lineLimit(1).fixedSize()
             }
@@ -503,7 +503,7 @@ struct TileEditorSheet: View {
     private func setPicture(_ data: Data?, credit: String? = nil) {
         imageData = data
         imageCredit = data == nil ? nil : credit
-        objectIdeas = []
+        photoIdeas.pictureChanged(to: data)
     }
 
     /// A photo from the camera, Photos, a file, a drop or the clipboard. Hum guesses what's in it (on this
@@ -511,18 +511,13 @@ struct TileEditorSheet: View {
     private func setPhoto(_ data: Data?) {
         setPicture(data)
         guard let data else { return }
-        Task {
-            let ideas = await ObjectNamer.names(for: data, using: model.objectClassifier)
-            // The parent may have picked another picture meanwhile.
-            if imageData == data { objectIdeas = ideas }
-        }
+        Task { await photoIdeas.guess(data, using: model.objectClassifier) }
     }
 
     /// Fills the label, and the phrase too while it's empty or still an earlier guess. The parent's own
     /// words are kept.
     private func useObjectName(_ name: String) {
-        let phrase = spokenText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if phrase.isEmpty || objectIdeas.contains(phrase) { spokenText = name }
+        spokenText = photoIdeas.phrase(using: name, instead: spokenText)
         label = name
     }
 
