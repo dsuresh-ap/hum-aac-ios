@@ -12,8 +12,6 @@ struct NearbySendView: View {
     @State private var prepareError: String?
     /// The board to send on its own, or nil for all boards.
     @State private var onlyBoardID: UUID?
-    /// The code the parent reads on the other device.
-    @State private var typedCode = ""
 
     var body: some View {
         Form {
@@ -88,31 +86,16 @@ struct NearbySendView: View {
         case .confirming(let peer):
             // The parent types the code from the other screen, so it can't be skipped: nothing about the
             // boards is sent until it matches.
+            CodeEntry(prompt: "Type the code shown on “\(peer.name)”.", note: "Nothing is sent until the code matches.",
+                      actionTitle: "Send", actionImage: "paperplane", wrong: transfer.codeWasWrong) { transfer.confirm(code: $0) }
+            Button("Cancel", role: .cancel) { transfer.cancel() }
+        case .waitingForAnswer(let peer, let code):
             VStack(alignment: .leading, spacing: 8) {
-                Text("Type the code shown on “\(peer.name)”.")
-                TextField("Code", text: $typedCode)
-                    .font(.system(.title, design: .monospaced))
-                    #if os(iOS)
-                    .keyboardType(.numberPad)
-                    #endif
-                    .onSubmit(confirm)
-                    .onChange(of: typedCode) { _, code in
-                        if code.filter(\.isNumber).count == 6 { confirm() }
-                    }
-                    .accessibilityIdentifier("nearbyCode")
-                if transfer.codeWasWrong {
-                    Text("That code doesn't match. Check the code on the other device and type it again.")
-                        .foregroundStyle(.red)
-                }
-                Text("Nothing is sent until the code matches.")
+                Text("Type this code on “\(peer.name)” to let it accept:")
+                MatchingCode(code: code)
+                Text("Waiting for “\(peer.name)” to accept.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
-            .onAppear { typedCode = "" }
-            Button("Send", systemImage: "paperplane", action: confirm)
-                .disabled(typedCode.filter(\.isNumber).count != 6)
-            Button("Cancel", role: .cancel) { transfer.cancel() }
-        case .waitingForAnswer(let peer):
-            Text("Waiting for “\(peer.name)” to accept.")
             Button("Cancel", role: .cancel) { transfer.cancel() }
         case .transferring(let fraction):
             ProgressView(value: fraction) { Text("Sending…") }
@@ -126,10 +109,6 @@ struct NearbySendView: View {
         case .idle, .looking, .pairing, .asking, .received:
             EmptyView()
         }
-    }
-
-    private func confirm() {
-        if !transfer.confirm(code: typedCode) { typedCode = "" }
     }
 
     private var canChoose: Bool {
@@ -202,12 +181,19 @@ struct NearbyReceiveView: View {
         #endif
     }
 
-    /// Stops being findable while only waiting. A transfer under way carries on, and once a file has
-    /// arrived the screen never starts listening again by itself.
+    /// Stops being findable when Hum isn't in front. Only plain waiting starts again by itself; a code or
+    /// a question on screen is cancelled, and a transfer under way carries on.
     private func pause() {
-        guard let transfer, transfer.state == .looking else { return }
-        transfer.stop()
-        paused = true
+        guard let transfer else { return }
+        switch transfer.state {
+        case .looking:
+            transfer.stop()
+            paused = true
+        case .pairing, .asking:
+            transfer.cancel()
+        default:
+            break
+        }
     }
 
     private func resume() {
@@ -235,12 +221,11 @@ struct NearbyReceiveView: View {
             }
             Button("Cancel", role: .cancel) { transfer.cancel() }
         case .asking(let offer):
-            VStack(alignment: .leading, spacing: 8) {
-                Text("“\(offer.senderName)” wants to send “\(offer.fileName)” (\(Int64(offer.byteCount).formatted(.byteCount(style: .file)))).")
-                Text("Accept only if you're sending this from your own device right now.")
-                    .font(.footnote).foregroundStyle(.secondary)
-            }
-            Button("Accept", systemImage: "checkmark") { transfer.accept() }
+            Text("“\(offer.senderName)” wants to send “\(offer.fileName)” (\(Int64(offer.byteCount).formatted(.byteCount(style: .file)))).")
+            // The sender's code, so a stranger's device can't push boards in.
+            CodeEntry(prompt: "Type the code shown on “\(offer.senderName)”.",
+                      note: "Accept only if you're sending this from your own device right now.",
+                      actionTitle: "Accept", actionImage: "checkmark", wrong: transfer.codeWasWrong) { transfer.accept(code: $0) }
                 .accessibilityIdentifier("acceptNearby")
             Button("Decline", systemImage: "xmark", role: .destructive) { transfer.decline() }
         case .transferring(let fraction):
@@ -249,10 +234,13 @@ struct NearbyReceiveView: View {
         case .received:
             Label("Received. Choose how to add the boards.", systemImage: "checkmark.circle")
             Button("Receive another") { restart(transfer) }
+        case .declined:
+            Label("Stopped. Other devices can't find this one now.", systemImage: "xmark.circle")
+            Button("Receive again") { restart(transfer) }
         case .failed(let error):
             Label(error.message, systemImage: "exclamationmark.triangle")
             Button("Try again") { restart(transfer) }
-        case .connecting, .confirming, .waitingForAnswer, .sent, .declined:
+        case .connecting, .confirming, .waitingForAnswer, .sent:
             EmptyView()
         }
     }
@@ -260,6 +248,46 @@ struct NearbyReceiveView: View {
     private func restart(_ transfer: NearbyTransfer) {
         transfer.stop()
         transfer.start()
+    }
+}
+
+/// Where the parent types the six-digit code shown on the other device. It goes as soon as six digits
+/// are in; a wrong code clears the field.
+private struct CodeEntry: View {
+    let prompt: LocalizedStringKey
+    let note: LocalizedStringKey
+    let actionTitle: LocalizedStringKey
+    let actionImage: String
+    let wrong: Bool
+    let submit: (String) -> Bool
+    @State private var typed = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(prompt)
+            TextField("Code", text: $typed)
+                .font(.system(.title, design: .monospaced))
+                #if os(iOS)
+                .keyboardType(.numberPad)
+                #endif
+                .onSubmit(go)
+                .onChange(of: typed) { _, code in
+                    if nearbyCodeDigits(code).count == 6 { go() }
+                }
+                .accessibilityIdentifier("nearbyCode")
+            if wrong {
+                Text("That code doesn't match. Check the code on the other device and type it again.")
+                    .foregroundStyle(.red)
+            }
+            Text(note)
+                .font(.footnote).foregroundStyle(.secondary)
+        }
+        Button(actionTitle, systemImage: actionImage, action: go)
+            .disabled(nearbyCodeDigits(typed).count != 6)
+    }
+
+    private func go() {
+        if !submit(typed) { typed = "" }
     }
 }
 

@@ -112,7 +112,8 @@ public enum ZipArchive {
     /// Every size is checked against the limits before anything is unpacked, and no two entries may
     /// share bytes (a "zip bomb" points thousands of entries at the same data).
     public static func read(_ data: Data) throws -> [Entry] {
-        let bytes = [UInt8](data)
+        // Read in place (a received file is memory-mapped), never copied whole; indexes start at 0.
+        let bytes = data.startIndex == 0 ? data : Data(data)
         guard let end = findEndRecord(bytes) else { throw ReadError.notZip }
         let count = Int(bytes.u16(at: end + 10))
         guard count <= maxEntries else { throw ReadError.tooBig }
@@ -142,7 +143,7 @@ public enum ZipArchive {
             let commentLength = Int(bytes.u16(at: cursor + 32))
             let localOffset = Int(bytes.u32(at: cursor + 42))
             guard cursor + 46 + nameLength <= bytes.count else { throw ReadError.truncated }
-            let nameBytes = bytes[(cursor + 46)..<(cursor + 46 + nameLength)]
+            let nameBytes = bytes.subdata(in: (cursor + 46)..<(cursor + 46 + nameLength))
             let name = String(decoding: nameBytes, as: UTF8.self)
             cursor += 46 + nameLength + extraLength + commentLength
 
@@ -172,7 +173,7 @@ public enum ZipArchive {
 
         var entries: [Entry] = []
         for item in pending {
-            let raw = Data(bytes[item.start..<item.end])
+            let raw = bytes.subdata(in: item.start..<item.end)
             let content = item.method == 8 ? try inflate(raw, size: item.size) : raw
             guard content.count == item.size, CRC32.checksum(content) == item.crc else { throw ReadError.checksum(item.name) }
             entries.append(Entry(path: item.name, data: content))
@@ -203,7 +204,7 @@ public enum ZipArchive {
         }
     }
 
-    private static func findEndRecord(_ b: [UInt8]) -> Int? {
+    private static func findEndRecord(_ b: Data) -> Int? {
         guard b.count >= 22 else { return nil }
         let lowest = max(0, b.count - 22 - 0xFFFF)
         var i = b.count - 22
@@ -221,6 +222,18 @@ extension Data {
     mutating func appendLE(_ v: UInt16) { append(contentsOf: [UInt8(v & 0xFF), UInt8(v >> 8)]) }
     mutating func appendLE(_ v: UInt32) {
         append(contentsOf: [UInt8(v & 0xFF), UInt8((v >> 8) & 0xFF), UInt8((v >> 16) & 0xFF), UInt8(v >> 24)])
+    }
+}
+
+/// Little-endian reads that never trap: out of range reads as 0. `Data` here always starts at index 0.
+extension Data {
+    func u16(at i: Int) -> UInt16 {
+        guard i >= 0, i + 2 <= count else { return 0 }
+        return UInt16(self[i]) | UInt16(self[i + 1]) << 8
+    }
+    func u32(at i: Int) -> UInt32 {
+        guard i >= 0, i + 4 <= count else { return 0 }
+        return UInt32(self[i]) | UInt32(self[i + 1]) << 8 | UInt32(self[i + 2]) << 16 | UInt32(self[i + 3]) << 24
     }
 }
 

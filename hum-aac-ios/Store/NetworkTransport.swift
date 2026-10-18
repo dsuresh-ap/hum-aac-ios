@@ -50,7 +50,7 @@ final class NetworkTransport: NearbyTransport {
                 // (a device with a public IPv6 address could otherwise be reached from anywhere).
                 guard let self, let listener, self.listener === listener,
                       Self.isLocal(connection.endpoint) else { return connection.cancel() }
-                self.onEvent?(.incoming(NetworkChannel(connection)))
+                self.onEvent?(.incoming(NetworkChannel(connection, incoming: true)))
             }
         }
         self.listener = listener
@@ -101,7 +101,7 @@ final class NetworkTransport: NearbyTransport {
     }
 
     /// The name other devices see: the kind of device and a number picked for this screen, like
-    /// "iPad 47". Not the device's own name: a Mac's name is often its owner's, and everyone on the
+    /// "iPad 472". Not the device's own name: a Mac's name is often its owner's, and everyone on the
     /// network can read it.
     private static func deviceName() -> String {
         #if os(iOS)
@@ -109,7 +109,7 @@ final class NetworkTransport: NearbyTransport {
         #else
         let kind = "Mac"
         #endif
-        return "\(kind) \(Int.random(in: 10...99))"
+        return "\(kind) \(Int.random(in: 100...999))"
     }
 
     /// Link-local, private (RFC 1918), unique-local IPv6 or loopback: addresses that can't come from the
@@ -131,16 +131,25 @@ final class NetworkTransport: NearbyTransport {
             return false
         }
     }
+
+    /// VPN and other tunnels: their addresses can look local (10.x, fd00::) but the device at the other
+    /// end can be anywhere, so the receiver doesn't take connections through them.
+    nonisolated static func isTunnel(interfaceName name: String) -> Bool {
+        ["utun", "ipsec", "ppp", "tun", "tap", "gif", "stf"].contains { name.hasPrefix($0) }
+    }
 }
 
 /// A TCP connection to one device.
 final class NetworkChannel: NearbyChannel {
     var onEvent: ((NearbyChannelEvent) -> Void)?
     private let connection: NWConnection
+    /// A connection the listener accepted (checked for tunnels once it's ready).
+    private let incoming: Bool
     private var isClosed = false
 
-    init(_ connection: NWConnection) {
+    init(_ connection: NWConnection, incoming: Bool = false) {
         self.connection = connection
+        self.incoming = incoming
     }
 
     func start() {
@@ -149,6 +158,11 @@ final class NetworkChannel: NearbyChannel {
                 guard let self else { return }
                 switch state {
                 case .ready:
+                    // The interface this connection actually uses comes first.
+                    if self.incoming, let interface = self.connection.currentPath?.availableInterfaces.first,
+                       NetworkTransport.isTunnel(interfaceName: interface.name) {
+                        return self.finish()
+                    }
                     self.onEvent?(.ready)
                     self.receive()
                 // "Waiting" means it can't get through right now; give up rather than hang.

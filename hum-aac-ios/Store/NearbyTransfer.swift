@@ -8,11 +8,14 @@ import Observation
 /// Sending a Hum file straight to a nearby device (Share & sync → Send / Receive).
 ///
 /// Only the local network and Wi-Fi between devices, no internet and no servers. A parent opens
-/// Receive on one device and Send on the other, then picks the device. The receiving screen shows a
-/// six-digit code, and the parent types it on the sending device: nothing about the file leaves the sender
-/// until the code matches, so a look-alike device that answers first gets nothing. Then the receiver sees
-/// what is coming and taps Accept, and the file goes through the normal import preview, like a file from
-/// AirDrop: nothing changes until the parent chooses Merge or Replace.
+/// Receive on one device and Send on the other, then picks the device. Each side then shows a six-digit
+/// code that the parent types on the other one:
+/// - the receiver's code, typed on the sender: nothing about the file leaves the sender until it matches,
+///   so a look-alike device that answers first gets nothing;
+/// - the sender's code, typed on the receiver before Accept: a stranger's device can't push a file in.
+/// The file then goes through the normal import preview, like a file from AirDrop: nothing changes until
+/// the parent chooses Merge or Replace. When anything other than a finished transfer ends a try, the
+/// receiver stops listening until the parent taps to receive again.
 ///
 /// `NearbyTransfer` holds the steps, `NearbyLink` the encrypted conversation (`NearbyProtocol.swift`),
 /// and a `NearbyTransport` finds devices and carries bytes (Network framework in the app, a fake in tests).
@@ -30,11 +33,12 @@ final class NearbyTransfer {
         case connecting(NearbyPeer)
         /// Sender: connected; the parent types the code the other device shows.
         case confirming(NearbyPeer)
-        /// Sender: the code matched; the other device is asking its parent.
-        case waitingForAnswer(NearbyPeer)
+        /// Sender: the code matched. Shows `code` for the parent to type on the other device.
+        case waitingForAnswer(NearbyPeer, code: String)
         /// Receiver: a device connected. Shows the code to type on the sending device.
         case pairing(code: String)
-        /// Receiver: the sender typed the right code and wants to send this file. Accept or Decline.
+        /// Receiver: the sender typed the right code and wants to send this file. The parent types the
+        /// sender's code to accept, or declines.
         case asking(NearbyOffer)
         /// Sending or receiving, 0…1.
         case transferring(Double)
@@ -42,8 +46,9 @@ final class NearbyTransfer {
         case sent
         /// Receiver: the file arrived and its import preview is open.
         case received
-        /// Sender: the other device said no.
+        /// Sender: the other device said no. Receiver: the parent declined or cancelled; not listening.
         case declined
+        /// Receiver: not listening any more (see `failed` too) until the parent starts again.
         case failed(NearbyTransferError)
     }
 
@@ -53,19 +58,17 @@ final class NearbyTransfer {
     }
     /// Sender: devices with their Receive screen open.
     private(set) var peers: [NearbyPeer] = []
-    /// Sender: the last code typed didn't match.
+    /// The last code typed didn't match.
     private(set) var codeWasWrong = false
     /// This device's name, as other devices see it.
     var localName: String { transport.localName }
 
-    /// While bytes should be flowing (connecting, the handshake, the file): give up after this long
-    /// without any.
+    /// From connecting to a finished handshake: a device that can't manage it in this time is let go.
+    var handshakeTimeout: Duration = .seconds(10)
+    /// While a file is being sent: give up after this long without a whole frame.
     var idleTimeout: Duration = .seconds(30)
     /// While a person is reading or typing a code, or deciding: give up after this long.
     var personTimeout: Duration = .seconds(120)
-    /// Receiver: after a sender is turned away or gives up, other devices wait this long before the
-    /// next try, so nobody can fill the screen with prompts.
-    var cooldown: Duration = .seconds(2)
 
     private let transport: NearbyTransport
     /// Receiver: hands the received bytes to the import preview.
@@ -73,13 +76,13 @@ final class NearbyTransfer {
     /// Sender: the file to send, once it's made.
     private var file: (data: Data, name: String, digest: Data)?
     private var link: NearbyLink?
-    private var code: String?
+    private var keys: (code: String, senderCode: String)?
     private var offer: NearbyOffer?
     private var incoming: IncomingFile?
     private var sentBytes = 0
     private var phaseStarted = ContinuousClock.now
+    private var linkOpened = ContinuousClock.now
     private var lastActivity = ContinuousClock.now
-    private var quietUntil = ContinuousClock.now
 
     init(role: Role, transport: NearbyTransport, deliver: @escaping (Data, String) -> Void = { _, _ in }) {
         self.role = role
@@ -91,6 +94,7 @@ final class NearbyTransfer {
     /// Starts being found (receiver) or looking (sender).
     func start() {
         guard state == .idle else { return }
+        IncomingFile.removeLeftovers()
         state = .looking
         switch role {
         case .send: transport.browse()
@@ -133,43 +137,56 @@ final class NearbyTransfer {
     /// wants to send. A wrong code can be typed again; the other device's code doesn't change.
     @discardableResult
     func confirm(code typed: String) -> Bool {
-        guard role == .send, case .confirming(let peer) = state, let code, let file, let link else { return false }
-        guard typed.filter(\.isNumber) == code else {
+        guard role == .send, case .confirming(let peer) = state, let keys, let file, let link else { return false }
+        guard nearbyCodeDigits(typed) == keys.code else {
             codeWasWrong = true
             return false
         }
         codeWasWrong = false
         let offer = NearbyOffer(fileName: file.name, byteCount: file.data.count, senderName: transport.localName)
         self.offer = offer
-        state = .waitingForAnswer(peer)
+        state = .waitingForAnswer(peer, code: keys.senderCode)
         link.send(.offer(offer))
         return true
     }
 
-    /// Stops waiting or sending, and goes back to the list of devices (sender), or to waiting (receiver).
+    /// Stops what's happening. The sender goes back to the list of devices; the receiver stops listening
+    /// until the parent starts again.
     func cancel() {
         dropLink(tellingOtherSide: true)
-        state = .looking
+        switch role {
+        case .send: state = .looking
+        case .receive: endWithoutFile(.declined)
+        }
     }
 
     // MARK: Receiver
 
-    func accept() {
-        guard role == .receive, case .asking(let offer) = state, let link else { return }
+    /// Accepts the offer if `typed` is the code the sending device shows.
+    @discardableResult
+    func accept(code typed: String) -> Bool {
+        guard role == .receive, case .asking(let offer) = state, let keys, let link else { return false }
+        guard nearbyCodeDigits(typed) == keys.senderCode else {
+            codeWasWrong = true
+            return false
+        }
+        codeWasWrong = false
         do {
             incoming = try IncomingFile(expected: offer.byteCount)
         } catch {
-            return failLink(.unreadable)
+            failLink(.unreadable)
+            return false
         }
         state = .transferring(0)
         link.send(.accept)
+        return true
     }
 
     func decline() {
         guard role == .receive, case .asking = state, let link else { return }
         self.link = nil
         link.send(.decline) { _ in link.close() }
-        backToWaiting()
+        endWithoutFile(.declined)
     }
 
     // MARK: Events
@@ -181,26 +198,27 @@ final class NearbyTransfer {
             peers = found.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 
         case .incoming(let channel):
-            // One sender at a time, only while waiting, and not straight after the last one.
-            guard role == .receive, link == nil, state == .looking || isFailed, ContinuousClock.now >= quietUntil else {
+            // One sender at a time, and only while waiting.
+            guard role == .receive, link == nil, state == .looking else {
                 channel.close()
                 return
             }
             open(NearbyLink(channel: channel, isSender: false))
 
         case .failed(let error):
-            if state == .looking { state = .failed(error) }
+            if state == .looking {
+                if role == .receive { transport.stop() }
+                state = .failed(error)
+            }
         }
-    }
-
-    private var isFailed: Bool {
-        if case .failed = state { true } else { false }
     }
 
     private func open(_ link: NearbyLink) {
         self.link = link
-        code = nil
+        keys = nil
         offer = nil
+        codeWasWrong = false
+        linkOpened = .now
         lastActivity = .now
         link.onEvent = { [weak self, weak link] event in
             guard let self, let link, self.link === link else { return }
@@ -216,7 +234,7 @@ final class NearbyTransfer {
 
     /// Gives up on a link that has gone quiet, or a person who walked away.
     private func watch(_ link: NearbyLink) {
-        let tick = min(idleTimeout, personTimeout, .seconds(1)) / 4
+        let tick = min(handshakeTimeout, idleTimeout, personTimeout, .seconds(1)) / 4
         Task { [weak self, weak link] in
             while true {
                 try? await Task.sleep(for: tick)
@@ -228,36 +246,33 @@ final class NearbyTransfer {
 
     private func checkTimeouts(_ link: NearbyLink) {
         let now = ContinuousClock.now
-        let waitingForPerson: Bool
-        switch state {
-        case .confirming, .waitingForAnswer, .pairing, .asking: waitingForPerson = true
-        default: waitingForPerson = false
-        }
-        if waitingForPerson {
-            guard now - phaseStarted > personTimeout else { return }
-            if role == .receive { return walkAway() }
-            failLink(.timedOut)
-        } else {
-            guard now - max(lastActivity, link.lastActivity) > idleTimeout else { return }
-            switch state {
-            case .connecting: failLink(.couldNotConnect)
-            case .transferring: failLink(.lostConnection)
-            default: dropLink(tellingOtherSide: false)  // receiver: connected but never finished the handshake
+        if keys == nil {
+            // Still in the handshake (sender connecting, or receiver waiting for it): a few round trips.
+            guard now - linkOpened > handshakeTimeout else { return }
+            switch role {
+            case .send: failLink(.couldNotConnect)
+            case .receive: dropLink(tellingOtherSide: false)  // nothing was shown yet: keep waiting
             }
+            return
         }
-    }
-
-    /// Receiver: nobody answered (or the sender never typed the code): wait for a sender again.
-    private func walkAway() {
-        dropLink(tellingOtherSide: true)
-        backToWaiting()
+        switch state {
+        case .confirming, .waitingForAnswer, .pairing, .asking:
+            guard now - phaseStarted > personTimeout else { return }
+            failLink(.timedOut)
+        case .transferring:
+            // Only whole frames count, so a trickle of bytes can't hold the connection open.
+            guard now - max(lastActivity, link.lastActivity) > idleTimeout else { return }
+            failLink(.lostConnection)
+        default:
+            break
+        }
     }
 
     private func senderHandle(_ event: NearbyLink.Event) {
         switch event {
-        case .secured(let code):
+        case .secured(let code, let senderCode):
             guard case .connecting(let peer) = state else { return }
-            self.code = code
+            keys = (code, senderCode)
             codeWasWrong = false
             state = .confirming(peer)
 
@@ -320,15 +335,16 @@ final class NearbyTransfer {
 
     private func receiverHandle(_ event: NearbyLink.Event) {
         switch event {
-        case .secured(let code):
-            guard state == .looking || isFailed else { return failLink(.badData) }
-            self.code = code
+        case .secured(let code, let senderCode):
+            guard state == .looking else { return failLink(.badData) }
+            keys = (code, senderCode)
             state = .pairing(code: code)
 
         case .message(.offer(let offer)):
             // Only after the sender typed the code shown here.
             guard case .pairing = state, self.offer == nil else { return failLink(.badData) }
             self.offer = offer
+            codeWasWrong = false
             state = .asking(offer)
 
         case .message(.chunk(let bytes)):
@@ -354,40 +370,32 @@ final class NearbyTransfer {
             deliver(data, offer.fileName)
 
         case .message(.cancel):
-            if case .transferring = state {
-                failLink(.stopped)
-            } else {
-                // The sender gave up before this device answered.
-                dropLink(tellingOtherSide: false)
-                backToWaiting()
+            switch state {
+            case .looking: dropLink(tellingOtherSide: false)
+            default: failLink(.stopped)
             }
 
         case .message:
             failLink(.badData)
 
         case .closed(let error):
-            if case .transferring = state {
-                failLink(error ?? .lostConnection)
-            } else {
-                dropLink(tellingOtherSide: false)
-                switch state {
-                case .pairing, .asking: backToWaiting()
-                default: break
-                }
+            switch state {
+            case .looking: dropLink(tellingOtherSide: false)  // gone before the handshake finished
+            default: failLink(error ?? .lostConnection)
             }
         }
     }
 
-    /// Receiver: wait for a sender again, after a short quiet time.
-    private func backToWaiting() {
-        quietUntil = .now + cooldown
-        state = .looking
+    /// Receiver: any ending other than a finished transfer stops listening. Starting again takes a tap,
+    /// so nobody can keep putting prompts on the screen.
+    private func endWithoutFile(_ state: State) {
+        if role == .receive { transport.stop() }
+        self.state = state
     }
 
     private func failLink(_ error: NearbyTransferError) {
         dropLink(tellingOtherSide: true)
-        if role == .receive { quietUntil = .now + cooldown }
-        state = .failed(error)
+        endWithoutFile(.failed(error))
     }
 
     private func dropLink(tellingOtherSide: Bool) {
@@ -396,7 +404,7 @@ final class NearbyTransfer {
         guard let link else { return }
         self.link = nil
         offer = nil
-        code = nil
+        keys = nil
         if tellingOtherSide {
             link.send(.cancel) { _ in link.close() }
         } else {
@@ -409,6 +417,7 @@ final class NearbyTransfer {
 /// against the size and SHA-256 the sender promised.
 @MainActor
 final class IncomingFile {
+    private static let folderPrefix = "Nearby-"
     private let url: URL
     private let handle: FileHandle
     private let expected: Int
@@ -417,11 +426,28 @@ final class IncomingFile {
 
     init(expected: Int) throws {
         self.expected = expected
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Nearby-\(UUID().uuidString)", isDirectory: true)
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(Self.folderPrefix + UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         url = folder.appendingPathComponent("received.hum")
-        guard FileManager.default.createFile(atPath: url.path, contents: nil) else { throw NearbyTransferError.unreadable }
+        // Unreadable while the device is locked (iOS).
+        guard FileManager.default.createFile(atPath: url.path, contents: nil,
+                                             attributes: [.protectionKey: FileProtectionType.complete]) else {
+            throw NearbyTransferError.unreadable
+        }
         handle = try FileHandle(forWritingTo: url)
+    }
+
+    private static var cleanedUp = false
+
+    /// Partial files from a transfer that never finished (Hum was closed in the middle). Once per launch.
+    static func removeLeftovers() {
+        guard !cleanedUp else { return }
+        cleanedUp = true
+        let temporary = FileManager.default.temporaryDirectory
+        let items = (try? FileManager.default.contentsOfDirectory(at: temporary, includingPropertiesForKeys: nil)) ?? []
+        for item in items where item.lastPathComponent.hasPrefix(folderPrefix) {
+            try? FileManager.default.removeItem(at: item)
+        }
     }
 
     var fraction: Double { Double(count) / Double(expected) }
@@ -452,15 +478,17 @@ final class IncomingFile {
 @MainActor
 final class NearbyLink {
     enum Event {
-        /// The handshake is done. The receiver shows `code`; the sender checks what the parent types.
-        case secured(code: String)
+        /// The handshake is done. The receiver shows `code` and the sender checks it; the sender shows
+        /// `senderCode` and the receiver checks it.
+        case secured(code: String, senderCode: String)
         case message(NearbyMessage)
         /// The connection ended (`nil`: closed normally by the other side).
         case closed(NearbyTransferError?)
     }
 
     var onEvent: ((Event) -> Void)?
-    /// When bytes last arrived (the handshake sends no events of its own).
+    /// When a whole frame last arrived (the handshake sends no events of its own). Bytes that never
+    /// make a frame don't count.
     private(set) var lastActivity = ContinuousClock.now
 
     private let channel: NearbyChannel
@@ -504,9 +532,9 @@ final class NearbyLink {
         case .ready:
             if isSender { sendPlain(handshake.hello()) }
         case .received(let bytes):
-            lastActivity = .now
             do {
                 for frame in try frames.append(bytes) {
+                    lastActivity = .now
                     try handleFrame(frame)
                     if isClosed { return }
                 }
@@ -527,11 +555,11 @@ final class NearbyLink {
             let (reveal, keys) = try handshake.finishAsSender(receiverHello: frame)
             sendPlain(reveal)
             self.keys = keys
-            onEvent?(.secured(code: keys.code))
+            onEvent?(.secured(code: keys.code, senderCode: keys.senderCode))
         } else if let senderHello {
             let keys = try handshake.finishAsReceiver(senderHello: senderHello, reveal: frame)
             self.keys = keys
-            onEvent?(.secured(code: keys.code))
+            onEvent?(.secured(code: keys.code, senderCode: keys.senderCode))
         } else {
             guard frame.count == NearbyHandshake.helloBytes else { throw NearbyTransferError.badData }
             senderHello = frame

@@ -11,8 +11,10 @@ import CryptoKit
 //    six-digit code. The sender commits to its key before it sees the receiver's, so a device in the
 //    middle can't choose keys that give both sides the same code.
 // 2. The receiver shows the code and the parent types it on the sender. Only then is anything about the
-//    file sent. Every frame from here is sealed (ChaChaPoly, a key and a counter for each direction):
-//    the offer, Accept or Decline, the file in pieces, a check of the whole file, and "got it".
+//    file sent. Then the sender shows a second code and the parent types that on the receiver before
+//    Accept, so each side knows the other is the parent's own device. Every frame after the handshake is
+//    sealed (ChaChaPoly, a key and a counter for each direction): the offer, Accept or Decline, the file
+//    in pieces, a check of the whole file, and "got it".
 
 /// Frames on a byte stream: 4 bytes of length (big-endian), then that many bytes.
 nonisolated struct NearbyFrames {
@@ -181,18 +183,24 @@ nonisolated struct NearbyHandshake {
         }
         let toReceiver = derive("hum nearby v1 sender to receiver")
         let toSender = derive("hum nearby v1 receiver to sender")
-        let number = derive("hum nearby v1 code").withUnsafeBytes { $0.prefix(4).reduce(UInt32(0)) { $0 << 8 | UInt32($1) } }
-        let code = String(format: "%06u", number % 1_000_000)
+        func code(_ info: String) -> String {
+            let number = derive(info).withUnsafeBytes { $0.prefix(4).reduce(UInt32(0)) { $0 << 8 | UInt32($1) } }
+            return String(format: "%06u", number % 1_000_000)
+        }
         return NearbyKeys(sealer: NearbySealer(key: isSender ? toReceiver : toSender),
-                          opener: NearbyOpener(key: isSender ? toSender : toReceiver), code: code)
+                          opener: NearbyOpener(key: isSender ? toSender : toReceiver),
+                          code: code("hum nearby v1 code"), senderCode: code("hum nearby v1 sender code"))
     }
 }
 
 nonisolated struct NearbyKeys {
     var sealer: NearbySealer
     var opener: NearbyOpener
-    /// Six digits, the same on both devices only if nobody is in the middle.
+    /// Six digits, the same on both devices only if nobody is in the middle. The receiver shows it and the
+    /// parent types it on the sender.
     let code: String
+    /// A second code: the sender shows it and the parent types it on the receiver.
+    let senderCode: String
 }
 
 /// Seals outgoing frames. The nonce is a counter, so frames can't be replayed, dropped or reordered.
@@ -231,4 +239,9 @@ nonisolated struct NearbyOpener {
 
 private nonisolated func nearbyNonce(_ counter: UInt64) throws -> ChaChaPoly.Nonce {
     try ChaChaPoly.Nonce(data: Data(repeating: 0, count: 4) + withUnsafeBytes(of: counter.bigEndian) { Data($0) })
+}
+
+/// What a parent typed as a six-digit code: just the digits, in any script ("١٢٣ ٤٥٦" is "123456").
+nonisolated func nearbyCodeDigits(_ typed: String) -> String {
+    String(typed.compactMap { $0.isNumber ? $0.wholeNumberValue.map { Character(String($0)) } : nil })
 }

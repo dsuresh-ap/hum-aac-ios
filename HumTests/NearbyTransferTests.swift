@@ -158,7 +158,6 @@ struct NearbyTransferTests {
         let pair = Pair(network: network, sender: NearbyTransfer(role: .send, transport: senderTransport),
                         receiver: NearbyTransfer(role: .receive, transport: receiverTransport, deliver: deliver),
                         senderTransport: senderTransport, receiverTransport: receiverTransport)
-        pair.receiver.cooldown = .zero
         pair.receiver.start()
         pair.sender.start()
         network.run()
@@ -178,6 +177,15 @@ struct NearbyTransferTests {
         return code
     }
 
+    /// The receiving parent types the code the sending device shows, like a parent would, to accept.
+    func accept(_ pair: Pair) {
+        guard case .waitingForAnswer(_, let code) = pair.sender.state else {
+            Issue.record("sender should show its code, is \(pair.sender.state)")
+            return
+        }
+        #expect(pair.receiver.accept(code: code))
+    }
+
     @Test func aWholeSetupArrivesInTheImportPreviewUntouched() throws {
         let from = makeModel()
         let to = makeModel(starter: false)
@@ -195,7 +203,7 @@ struct NearbyTransferTests {
         #expect(offer.byteCount == file.count)
         #expect(to.pendingImport == nil, "nothing arrives before Accept")
 
-        pair.receiver.accept()
+        accept(pair)
         pair.network.run()
         #expect(pair.sender.state == .sent)
         #expect(pair.receiver.state == .received)
@@ -212,7 +220,7 @@ struct NearbyTransferTests {
         let to = makeModel(starter: false)
         let pair = makePair { data, name in to.requestImport(data: data, fileName: name) }
         try offer(pair, file: Data("this is not a Hum file".utf8))
-        pair.receiver.accept()
+        accept(pair)
         pair.network.run()
         #expect(pair.receiver.state == .received)
         #expect(to.pendingImport == nil)
@@ -225,7 +233,7 @@ struct NearbyTransferTests {
         let pair = makePair { received.files.append(($0, $1)) }
         let file = Data((0..<300_000).map { UInt8($0 % 251) })
         try offer(pair, file: file)
-        pair.receiver.accept()
+        accept(pair)
         pair.network.run()
         #expect(received.files.count == 1)
         #expect(received.files.first?.data == file)
@@ -240,11 +248,14 @@ struct NearbyTransferTests {
         pair.receiver.decline()
         pair.network.run()
         #expect(pair.sender.state == .declined)
-        #expect(pair.receiver.state == .looking)
-        #expect(pair.receiverTransport.isAdvertising, "still waiting for the right sender")
+        #expect(pair.receiver.state == .declined)
+        #expect(!pair.receiverTransport.isAdvertising, "can't be found until the parent starts again")
         #expect(received.files.isEmpty)
 
         // The parent can try again.
+        pair.receiver.stop()
+        pair.receiver.start()
+        pair.network.run()
         try offer(pair, file: Data(count: 100))
         #expect({ if case .asking = pair.receiver.state { true } else { false } }())
     }
@@ -255,20 +266,22 @@ struct NearbyTransferTests {
         pair.sender.cancel()
         pair.network.run()
         #expect(pair.sender.state == .looking)
-        #expect(pair.receiver.state == .looking)
+        #expect(pair.receiver.state == .failed(.stopped))
+        #expect(!pair.receiverTransport.isAdvertising)
     }
 
     @Test func receiverCancelsHalfway() throws {
         let received = Received()
         let pair = makePair { received.files.append(($0, $1)) }
         try offer(pair, file: Data(count: 1_000_000))
-        pair.receiver.accept()
+        accept(pair)
         pair.network.run(limit: 12)
         #expect({ if case .transferring = pair.receiver.state { true } else { false } }())
         pair.receiver.cancel()
         pair.network.run()
         #expect(pair.sender.state == .failed(.stopped))
-        #expect(pair.receiver.state == .looking)
+        #expect(pair.receiver.state == .declined)
+        #expect(!pair.receiverTransport.isAdvertising)
         #expect(received.files.isEmpty)
     }
 
@@ -289,7 +302,7 @@ struct NearbyTransferTests {
         try offer(pair, file: Data(count: 100))
         // The sender's file changes after the offer: the receiver must not take more than it agreed to.
         try pair.sender.setFile(Data(count: 200_000), name: "x.hum")
-        pair.receiver.accept()
+        accept(pair)
         pair.network.run()
         #expect(pair.receiver.state == .failed(.unreadable))
         #expect(received.files.isEmpty)
@@ -308,7 +321,7 @@ struct NearbyTransferTests {
                 return data
             }
         }
-        pair.receiver.accept()
+        accept(pair)
         pair.network.run()
         #expect(pair.receiver.state == .failed(.badData))
         #expect(received.files.isEmpty)
@@ -330,7 +343,7 @@ struct NearbyTransferTests {
 
     @Test func aDeviceThatNeverOffersIsLetGo() async throws {
         let pair = makePair { _, _ in }
-        pair.receiver.idleTimeout = .milliseconds(20)
+        pair.receiver.handshakeTimeout = .milliseconds(20)
         // Something connects and says nothing.
         let silent = pair.senderTransport.connect(to: try #require(pair.sender.peers.first))
         silent.start()
@@ -397,9 +410,10 @@ struct NearbyTransferTests {
         pair.receiver.personTimeout = .milliseconds(40)
         try offer(pair, file: Data(count: 100))
         #expect({ if case .asking = pair.receiver.state { true } else { false } }())
-        try await eventually(pair) { pair.receiver.state == .looking && pair.sender.state == .declined }
-        #expect(pair.receiver.state == .looking)
+        try await eventually(pair) { pair.receiver.state == .failed(.timedOut) && pair.sender.state == .declined }
+        #expect(pair.receiver.state == .failed(.timedOut))
         #expect(pair.sender.state == .declined)
+        #expect(!pair.receiverTransport.isAdvertising, "stops listening until the parent starts again")
     }
 
     @Test func aCodeNobodyTypesGoesAway() async throws {
@@ -408,9 +422,10 @@ struct NearbyTransferTests {
         try pair.sender.setFile(Data(count: 100), name: "x.hum")
         pair.sender.send(to: try #require(pair.sender.peers.first))
         pair.network.run()
-        try await eventually(pair) { pair.receiver.state == .looking && pair.sender.state == .declined }
-        #expect(pair.receiver.state == .looking)
+        try await eventually(pair) { pair.receiver.state == .failed(.timedOut) && pair.sender.state == .declined }
+        #expect(pair.receiver.state == .failed(.timedOut))
         #expect(pair.sender.state == .declined)
+        #expect(!pair.receiverTransport.isAdvertising, "stops listening until the parent starts again")
     }
 
     @Test func aStalledTransferGivesUp() async throws {
@@ -418,7 +433,7 @@ struct NearbyTransferTests {
         pair.sender.idleTimeout = .milliseconds(40)
         pair.receiver.idleTimeout = .milliseconds(40)
         try offer(pair, file: Data(count: 1_000_000))
-        pair.receiver.accept()
+        accept(pair)
         pair.network.run(limit: 5)
         // Nothing more arrives on either side.
         try await eventually(pair, runNetwork: false) {
@@ -436,15 +451,85 @@ struct NearbyTransferTests {
         }
     }
 
-    @Test func afterADeclineOthersWaitABit() throws {
+    @Test func afterADeclineNobodyElseGetsIn() throws {
+        // A stranger can't keep putting prompts on the screen: after any ending but a finished transfer,
+        // the receiver stops listening until the parent taps to receive again.
         let pair = makePair { _, _ in }
-        pair.receiver.cooldown = .seconds(60)
         try offer(pair, file: Data(count: 100))
         pair.receiver.decline()
         pair.network.run()
+        #expect(pair.sender.peers.isEmpty, "it has gone from every list")
+        #expect(try offer(pair, file: Data(count: 100)) == nil)
+        #expect(pair.receiver.state == .declined)
+    }
+
+    // MARK: The sender's code (second review, finding A)
+
+    @Test func aStrangersOfferNeedsTheSendersCode() throws {
+        let received = Received()
+        let pair = makePair { received.files.append(($0, $1)) }
         try offer(pair, file: Data(count: 100))
-        #expect(pair.sender.state == .failed(.couldNotConnect))
-        #expect(pair.receiver.state == .looking)
+        guard case .waitingForAnswer(_, let code) = pair.sender.state else {
+            Issue.record("sender should show its code, is \(pair.sender.state)")
+            return
+        }
+        // Someone who can't see the sending screen can't accept for it.
+        let wrong = String(code.map { $0 == "9" ? "0" : Character(String(($0.wholeNumberValue ?? 0) + 1)) })
+        #expect(!pair.receiver.accept(code: wrong))
+        #expect(pair.receiver.codeWasWrong)
+        pair.network.run()
+        #expect({ if case .asking = pair.receiver.state { true } else { false } }())
+        #expect({ if case .waitingForAnswer = pair.sender.state { true } else { false } }())
+        #expect(pair.receiver.accept(code: code))
+        pair.network.run()
+        #expect(received.files.count == 1)
+    }
+
+    @Test func theTwoCodesDiffer() throws {
+        let pair = makePair { _, _ in }
+        let receiverCode = try #require(try offer(pair, file: Data(count: 100)))
+        guard case .waitingForAnswer(_, let senderCode) = pair.sender.state else {
+            Issue.record("sender should show its code")
+            return
+        }
+        // Equal by chance once in a million.
+        #expect(senderCode != receiverCode)
+        #expect(!pair.receiver.accept(code: receiverCode))
+    }
+
+    @Test func digitsFromAnyKeyboardCount() {
+        #expect(nearbyCodeDigits("١٢٣ ٤٥٦") == "123456")   // Arabic-Indic
+        #expect(nearbyCodeDigits("１２３４５６") == "123456")  // full-width
+        #expect(nearbyCodeDigits("12a-34 56") == "123456")
+    }
+
+    // MARK: Trickled bytes (second review, finding D)
+
+    @Test func bytesThatNeverMakeAFrameDontKeepTheReceiverBusy() async throws {
+        let pair = makePair { _, _ in }
+        pair.receiver.handshakeTimeout = .milliseconds(40)
+        // Something connects and drips a byte at a time of a frame it never finishes.
+        let dripper = pair.senderTransport.connect(to: try #require(pair.sender.peers.first))
+        dripper.start()
+        pair.network.run()
+        dripper.send(Data([0, 1])) { _ in }   // a frame header that promises 64 KB…
+        var asking = false
+        for _ in 0..<100 where !asking {
+            dripper.send(Data([7])) { _ in }  // …and never delivers it
+            try await Task.sleep(for: .milliseconds(20))
+            pair.network.run()
+            try offer(pair, file: Data(count: 100))
+            asking = { if case .asking = pair.receiver.state { true } else { false } }()
+        }
+        #expect(asking, "the dripping device was let go and a real sender got through")
+    }
+
+    @Test func tunnelsAreRecognized() {
+        #expect(NetworkTransport.isTunnel(interfaceName: "utun3"))
+        #expect(NetworkTransport.isTunnel(interfaceName: "ipsec0"))
+        #expect(!NetworkTransport.isTunnel(interfaceName: "en0"))
+        #expect(!NetworkTransport.isTunnel(interfaceName: "awdl0"))
+        #expect(!NetworkTransport.isTunnel(interfaceName: "lo0"))
     }
 
     // MARK: Local addresses only (finding 4)
@@ -630,8 +715,11 @@ struct NearbyLiveTests {
         }
         #expect(sender.confirm(code: code))
         try await waitUntil { if case .asking = receiver.state { true } else { false } }
-
-        receiver.accept()
+        guard case .waitingForAnswer(_, let senderCode) = sender.state else {
+            Issue.record("sender \(sender.state)")
+            return
+        }
+        #expect(receiver.accept(code: senderCode))
         try await waitUntil { sender.state == .sent && received.files.count == 1 }
         #expect(received.files.first?.data == file)
         #expect(received.files.first?.name == "Live.hum")
@@ -640,7 +728,8 @@ struct NearbyLiveTests {
 
     /// Sends a small setup to Hum on another device or simulator whose Receive screen is open, named by
     /// HUM_LIVE_NEARBY_PEER. A person writes the code that device shows into the file named by
-    /// HUM_LIVE_NEARBY_CODE_FILE, then taps Accept there, within 90 seconds each.
+    /// HUM_LIVE_NEARBY_CODE_FILE, then types the code this test prints on that device and taps Accept,
+    /// within 90 seconds each.
     @Test(.enabled(if: ProcessInfo.processInfo.environment["HUM_LIVE_NEARBY_PEER"] != nil), .timeLimit(.minutes(4)))
     func sendsToAnotherDevice() async throws {
         let environment = ProcessInfo.processInfo.environment
@@ -657,9 +746,10 @@ struct NearbyLiveTests {
         var typed = ""
         try await waitUntil(seconds: 90) {
             typed = (try? String(contentsOf: codeFile, encoding: .utf8)) ?? ""
-            return typed.filter(\.isNumber).count == 6
+            return nearbyCodeDigits(typed).count == 6
         }
         #expect(sender.confirm(code: typed))
+        print("Nearby live: on the other device, type \(sender.state)")
         try await waitUntil(seconds: 90) { sender.state == .sent }
     }
 

@@ -20151,6 +20151,47 @@
         }
       }
     },
+    "Receive again" : {
+      "comment" : "A button: listen for a sending device again.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibir de nuevo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recevoir à nouveau"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut empfangen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receber de novo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricevi di nuovo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新接收"
+          }
+        }
+      }
+    },
     "Receive another" : {
       "comment" : "A button after a file arrived.",
       "localizations" : {
@@ -23506,6 +23547,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "停止显示去 %@ 的路"
+          }
+        }
+      }
+    },
+    "Stopped. Other devices can't find this one now." : {
+      "comment" : "Receiving screen after the parent declined or cancelled.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detenido. Los otros dispositivos ya no pueden encontrar este."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrêté. Les autres appareils ne peuvent plus trouver celui-ci."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestoppt. Andere Geräte können dieses jetzt nicht mehr finden."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parado. Os outros dispositivos não conseguem mais encontrar este."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interrotto. Gli altri dispositivi non possono più trovare questo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已停止。其他设备现在找不到这台设备。"
           }
         }
       }
@@ -27669,6 +27751,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按孩子的说法输入完整的短语，即使它来自动画片或歌曲。保持完整，不要拆成单个的词。"
+          }
+        }
+      }
+    },
+    "Type this code on “%@” to let it accept:" : {
+      "comment" : "Sending device: the argument is the receiving device's name, like iPad 472.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe este código en «%@» para que pueda aceptar:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapez ce code sur « %@ » pour qu'il puisse accepter :"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib diesen Code auf „%@“ ein, damit es annehmen kann:"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite este código em “%@” para ele poder aceitar:"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci questo codice su «%@» per permettergli di accettare:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“%@”上输入这个代码，让它可以接受："
           }
         }
       }
