@@ -327,20 +327,46 @@ struct ImportService {
 
     // MARK: Backups
 
-    static var backupsDirectory: URL {
+    /// How many "Before import" backups are kept (the newest).
+    nonisolated static let backupsToKeep = 3
+
+    nonisolated static var backupsDirectory: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Backups", isDirectory: true)
     }
 
-    /// Saves the current setup before "Replace everything". Keeps the 10 newest backups.
-    func writeBackup() throws {
-        let dir = Self.backupsDirectory
+    /// Saves the current setup before "Replace everything". Keeps the newest `backupsToKeep`.
+    func writeBackup(in dir: URL = Self.backupsDirectory) throws {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let stamp = Date.now.formatted(.iso8601).replacingOccurrences(of: ":", with: "-")
         try exportData().write(to: dir.appendingPathComponent("Before import \(stamp).hum"), options: .atomic)
-        let files = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? []
-        for old in files.sorted(by: { $0.lastPathComponent > $1.lastPathComponent }).dropFirst(10) {
+        Self.pruneBackups(in: dir)
+    }
+
+    /// The backups, newest first (their names start with the date and time).
+    nonisolated static func backups(in dir: URL = backupsDirectory) -> [URL] {
+        let files = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey])) ?? []
+        return files.filter { $0.pathExtension == "hum" }.sorted { $0.lastPathComponent > $1.lastPathComponent }
+    }
+
+    /// Removes all but the newest `keep` backups (after a backup, and once at launch).
+    nonisolated static func pruneBackups(keep: Int = backupsToKeep, in dir: URL = backupsDirectory) {
+        for old in backups(in: dir).dropFirst(keep) {
             try? FileManager.default.removeItem(at: old)
+        }
+    }
+
+    /// How many backups there are and how big they are together (Share & sync).
+    nonisolated static func backupsSummary(in dir: URL = backupsDirectory) -> (count: Int, bytes: Int64) {
+        let files = backups(in: dir)
+        let bytes = files.reduce(Int64(0)) { $0 + Int64((try? $1.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) }
+        return (files.count, bytes)
+    }
+
+    /// "Delete backups" in Share & sync. The boards themselves aren't touched.
+    nonisolated static func deleteBackups(in dir: URL = backupsDirectory) throws {
+        for file in backups(in: dir) {
+            try FileManager.default.removeItem(at: file)
         }
     }
 }

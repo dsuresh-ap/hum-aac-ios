@@ -18,7 +18,7 @@ final class PhraseRecorder {
     @ObservationIgnored private var recorder: AVAudioRecorder?
     @ObservationIgnored private var timer: Task<Void, Never>?
     @ObservationIgnored private var player: AVAudioPlayer?
-    @ObservationIgnored private let url = FileManager.default.temporaryDirectory.appendingPathComponent("hum-recording.m4a")
+    @ObservationIgnored private let url = HumTemporaryFiles.directory.appendingPathComponent(HumTemporaryFiles.recordingName)
 
     static let maxDuration: TimeInterval = 15
 
@@ -68,6 +68,8 @@ final class PhraseRecorder {
         #if os(iOS)
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
         #endif
+        // The recording lives on in the tile; the temporary file (a parent's voice) goes now.
+        defer { try? FileManager.default.removeItem(at: url) }
         return try? Data(contentsOf: url)
     }
 

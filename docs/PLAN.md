@@ -253,6 +253,54 @@ AVAudioEngine (started once, kept running while foreground)
 - Every picture is flattened onto white before JPEG encoding (symbol PNGs are transparent; JPEG would
   turn the background black).
 
+## 8c. Nearby transfer (local, parent-started device-to-device) — added 2026-10-18 at the owner's request
+
+- **Send with AirDrop…** (Share & sync) is a `ShareLink` holding the setup as a `.hum` file that is made
+  only when a destination asks for it. AirDrop is Apple's; Hum adds no network code for it. On arrival,
+  "Open in Hum" ends in `AppModel.requestImport` like any file.
+- **Send to / Receive from a nearby device** sends the `.hum` file straight to Hum on another iPad,
+  iPhone or Mac. Network framework only: Bonjour (`_hum-setup._tcp`) on the local network plus
+  peer-to-peer Wi-Fi (`includePeerToPeer`). No internet, no servers, no accounts. MultipeerConnectivity
+  isn't used: it is deprecated in the iOS/macOS 27 SDKs.
+- Parent mode only (Share & sync is behind the grown-up lock); child mode never touches it. A device can
+  be found only while its **Receive** screen is open, it is waiting, and Hum is the app in front. Any
+  ending other than a finished transfer (Decline, Cancel, a timeout, an error, Hum leaving the front
+  while a code or question is showing) stops the listener until the parent taps "Receive again", so
+  nobody can keep putting prompts on the screen. It never restarts by itself once a file has arrived.
+  Every ending says why on both screens (`cancel` carries a reason: Cancel, timeout, Hum left the
+  front), with "Try again" on the sender and a prominent "Receive again" on the receiver; code fields
+  start empty on every try. "Send with AirDrop…" shows "Preparing…" with Cancel while the file is made;
+  zipping runs off the main actor (`ImportService.exportPackage`).
+- Devices appear under a label made for each Receive screen, like "iPad 472" or "Mac 138", never the
+  device's own name (a Mac's name is often its owner's). Labels are not proof of anything; the codes are.
+  The listener accepts only link-local, private (RFC 1918), unique-local IPv6 and loopback addresses,
+  never cellular, and not through a VPN or other tunnel (utun, ipsec, ppp…), so a device with a public
+  address or a VPN peer can't reach it.
+- Each transfer starts with an X25519 key exchange (CryptoKit). The sender commits to its key (sends a
+  hash) before it sees the receiver's, then both derive ChaChaPoly keys and a **six-digit code**. The
+  receiving screen shows the code and the parent **types it on the sending device** (passkey entry, as
+  in Bluetooth pairing). Nothing about the file, not even its name, is sent until it matches, so a
+  look-alike device that answers first gets nothing, and a device in the middle has a one-in-a-million
+  chance. Then the sender shows a **second code** (derived the same way) and the parent types it on the
+  receiver to **Accept**, so a stranger's device on the same Wi-Fi can't push a setup in either.
+- Every frame after the handshake is sealed with a counter nonce (no replay, reorder or tampering); the
+  file is also checked against its size and SHA-256 and written to a temporary file as it arrives.
+  Limits: 200 MB per file (older iPads must import it in memory), 128 KB per frame, 1 KB per offer.
+  The zip reader works on the mapped file in place. Timeouts: 10 s to finish the handshake; 30 s
+  without a whole frame while sending (a trickle of bytes doesn't count); 2 minutes for a person to
+  type a code or answer. Partial files left by a transfer that never finished are deleted at the next
+  start, and are unreadable while the device is locked (iOS file protection).
+- The received bytes go to `AppModel.requestImport(data:fileName:)`, the same validator, preview and
+  Merge/Replace as every import. Nothing changes until the parent chooses. The zip reader refuses more
+  than 20 000 files, more than 600 MB unpacked, impossible compression ratios and overlapping entries
+  before it unpacks anything (`ZipArchive.read`), which protects every import path. The import itself
+  still runs on the main actor, like every import (moving it off is a separate change to ImportService).
+- People on the same network can see that Hum is on its Send or Receive screen (the Bonjour service
+  name) and roughly how big a file is. Security review: 2026-10-18; findings and fixes in PR #15.
+- Needs `NSLocalNetworkUsageDescription` and `NSBonjourServices`, and on macOS the sandbox's incoming
+  connections (server) entitlement for the listener. Code: `Store/NearbyProtocol.swift`,
+  `Store/NearbyTransfer.swift`, `Store/NetworkTransport.swift`, `ParentMode/NearbyTransferView.swift`.
+
 ## 9. Privacy manifest
 
 `PrivacyInfo.xcprivacy`: `NSPrivacyTracking = false`, no tracking domains, no collected data types.

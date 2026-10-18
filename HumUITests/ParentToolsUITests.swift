@@ -89,6 +89,47 @@ final class ParentToolsUITests: XCTestCase {
         XCTAssertTrue(opened, "Export opens the share sheet (AirDrop, Messages, Save to Files…), not only Files")
     }
 
+    /// Scenario: Send with AirDrop opens the share sheet in one tap, with the boards already in it.
+    @MainActor
+    func testSendWithAirDropOpensTheShareSheet() {
+        let app = launchHum(["-skipFirstRun", "-startInParent"])
+        tapToolbar(app, "setupSharing", label: "Share & sync")
+        el(app, "sendAirDrop").tap()
+        let sheet = app.otherElements["ActivityListView"].firstMatch
+        let saveToFiles = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Save to Files'")).firstMatch
+        let opened = sheet.waitForExistence(timeout: 15) || saveToFiles.exists
+        shot(app, "send with airdrop")
+        XCTAssertTrue(opened, "One tap opens the share sheet (AirDrop first), no export step")
+    }
+
+    /// Scenario: Send with AirDrop shows "Preparing…" at once (the file takes a moment), and it can be
+    /// cancelled. The export is slowed down on purpose for this test.
+    @MainActor
+    func testSendWithAirDropShowsPreparingAtOnce() {
+        let app = launchHum(["-skipFirstRun", "-startInParent", "-uiTestingSlowExport"])
+        tapToolbar(app, "setupSharing", label: "Share & sync")
+        let send = el(app, "sendAirDrop")
+        send.tap()
+        let preparing = el(app, "airDropPreparing")
+        XCTAssertTrue(preparing.waitForExistence(timeout: 1), "Preparing shows right away, the screen doesn't freeze")
+        XCTAssertFalse(send.isEnabled, "no second tap while it's preparing")
+        shot(app, "send with airdrop preparing")
+        el(app, "airDropCancel").tap()
+        XCTAssertTrue(send.waitForExistence(timeout: 2) && send.isEnabled)
+        XCTAssertFalse(preparing.exists)
+    }
+
+    /// Scenario: Receive from a nearby device waits for a sender and names this device.
+    @MainActor
+    func testReceiveFromANearbyDeviceWaits() {
+        let app = launchHum(["-skipFirstRun", "-startInParent"])
+        tapToolbar(app, "setupSharing", label: "Share & sync")
+        el(app, "receiveNearby").tap()
+        let waiting = app.staticTexts["Waiting for a device…"]
+        XCTAssertTrue(waiting.waitForExistence(timeout: 10), "The Receive screen waits for a sender")
+        shot(app, "receive from a nearby device")
+    }
+
     /// Scenario: Settings has no developer screens or jargon (HUM-022).
     @MainActor
     func testSettingsHaveNoDeveloperSection() {

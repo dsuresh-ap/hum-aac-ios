@@ -96,15 +96,40 @@ public enum ZipArchive {
 
     public enum ReadError: Error, Equatable {
         case notZip, truncated, unsupported(String), checksum(String)
+        /// Over the limits below: too many files, too big once unpacked, or packed impossibly tight.
+        case tooBig
     }
 
+    /// Limits that keep a broken or hostile file from using up memory. A real Hum setup is far below
+    /// them (a few thousand files, a few hundred MB of photos and recordings).
+    public static let maxEntries = 20_000
+    public static let maxTotalSize = 600 * 1024 * 1024
+    /// DEFLATE can't pack data tighter than about 1032 to 1, so a file that claims more is lying.
+    static let maxRatio = 1100
+
     /// Reads every file entry (directories are skipped). Throws on corrupt input; never traps.
+    ///
+    /// Every size is checked against the limits before anything is unpacked, and no two entries may
+    /// share bytes (a "zip bomb" points thousands of entries at the same data).
     public static func read(_ data: Data) throws -> [Entry] {
-        let bytes = [UInt8](data)
+        // Read in place (a received file is memory-mapped), never copied whole; indexes start at 0.
+        let bytes = data.startIndex == 0 ? data : Data(data)
         guard let end = findEndRecord(bytes) else { throw ReadError.notZip }
         let count = Int(bytes.u16(at: end + 10))
+        guard count <= maxEntries else { throw ReadError.tooBig }
         var cursor = Int(bytes.u32(at: end + 16))
-        var entries: [Entry] = []
+
+        struct Pending {
+            var name: String
+            var method: UInt16
+            var crc: UInt32
+            var size: Int
+            var header: Int
+            var start: Int
+            var end: Int
+        }
+        var pending: [Pending] = []
+        var total = 0
 
         for _ in 0..<count {
             guard cursor + 46 <= bytes.count, bytes.u32(at: cursor) == centralHeaderSignature else { throw ReadError.truncated }
@@ -118,27 +143,40 @@ public enum ZipArchive {
             let commentLength = Int(bytes.u16(at: cursor + 32))
             let localOffset = Int(bytes.u32(at: cursor + 42))
             guard cursor + 46 + nameLength <= bytes.count else { throw ReadError.truncated }
-            let nameBytes = bytes[(cursor + 46)..<(cursor + 46 + nameLength)]
+            let nameBytes = bytes.subdata(in: (cursor + 46)..<(cursor + 46 + nameLength))
             let name = String(decoding: nameBytes, as: UTF8.self)
             cursor += 46 + nameLength + extraLength + commentLength
 
             if name.hasSuffix("/") { continue }  // directory
             if flags & 0x1 != 0 { throw ReadError.unsupported("encrypted file '\(name)'") }
             if compressedSize == 0xFFFF_FFFF || size == 0xFFFF_FFFF { throw ReadError.unsupported("ZIP64") }
+            switch method {
+            case 0: guard size == compressedSize else { throw ReadError.checksum(name) }
+            case 8: guard size <= compressedSize * maxRatio + 1024 else { throw ReadError.tooBig }
+            default: throw ReadError.unsupported("compression method \(method) in '\(name)'")
+            }
+            total += size
+            guard total <= maxTotalSize else { throw ReadError.tooBig }
 
             guard localOffset + 30 <= bytes.count, bytes.u32(at: localOffset) == localHeaderSignature else { throw ReadError.truncated }
             let start = localOffset + 30 + Int(bytes.u16(at: localOffset + 26)) + Int(bytes.u16(at: localOffset + 28))
             guard start + compressedSize <= bytes.count else { throw ReadError.truncated }
-            let raw = Data(bytes[start..<(start + compressedSize)])
+            pending.append(Pending(name: name, method: method, crc: crc, size: size,
+                                   header: localOffset, start: start, end: start + compressedSize))
+        }
 
-            let content: Data
-            switch method {
-            case 0: content = raw
-            case 8: content = try inflate(raw, size: size)
-            default: throw ReadError.unsupported("compression method \(method) in '\(name)'")
-            }
-            guard content.count == size, CRC32.checksum(content) == crc else { throw ReadError.checksum(name) }
-            entries.append(Entry(path: name, data: content))
+        // No two entries may overlap.
+        let byPosition = pending.sorted { $0.header < $1.header }
+        for (previous, next) in zip(byPosition, byPosition.dropFirst()) where next.header < previous.end {
+            throw ReadError.unsupported("overlapping files")
+        }
+
+        var entries: [Entry] = []
+        for item in pending {
+            let raw = bytes.subdata(in: item.start..<item.end)
+            let content = item.method == 8 ? try inflate(raw, size: item.size) : raw
+            guard content.count == item.size, CRC32.checksum(content) == item.crc else { throw ReadError.checksum(item.name) }
+            entries.append(Entry(path: item.name, data: content))
         }
         return entries
     }
@@ -166,7 +204,7 @@ public enum ZipArchive {
         }
     }
 
-    private static func findEndRecord(_ b: [UInt8]) -> Int? {
+    private static func findEndRecord(_ b: Data) -> Int? {
         guard b.count >= 22 else { return nil }
         let lowest = max(0, b.count - 22 - 0xFFFF)
         var i = b.count - 22
@@ -184,6 +222,18 @@ extension Data {
     mutating func appendLE(_ v: UInt16) { append(contentsOf: [UInt8(v & 0xFF), UInt8(v >> 8)]) }
     mutating func appendLE(_ v: UInt32) {
         append(contentsOf: [UInt8(v & 0xFF), UInt8((v >> 8) & 0xFF), UInt8((v >> 16) & 0xFF), UInt8(v >> 24)])
+    }
+}
+
+/// Little-endian reads that never trap: out of range reads as 0. `Data` here always starts at index 0.
+extension Data {
+    func u16(at i: Int) -> UInt16 {
+        guard i >= 0, i + 2 <= count else { return 0 }
+        return UInt16(self[i]) | UInt16(self[i + 1]) << 8
+    }
+    func u32(at i: Int) -> UInt32 {
+        guard i >= 0, i + 4 <= count else { return 0 }
+        return UInt32(self[i]) | UInt32(self[i + 1]) << 8 | UInt32(self[i + 2]) << 16 | UInt32(self[i + 3]) << 24
     }
 }
 

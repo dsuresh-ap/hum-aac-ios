@@ -22,6 +22,11 @@ Hum is a free, open-source AAC (communication) app. We built it to collect nothi
 - **The history box** (what was said recently) stays on the device. It is never synced or exported.
   You can clear it in Settings.
 - **Settings** (voice, display, lock) stay on the device.
+- **Backups:** before "Replace everything", Hum saves a backup of your boards on the device and keeps
+  the 3 newest. You can delete them in Share & sync → Delete backups.
+- **Temporary files** made while sharing, receiving from a nearby device or recording are deleted as
+  soon as they're done, and any left behind (if Hum was closed in the middle) are deleted the next
+  time Hum opens.
 
 ## Features that use the network (all off until a grown-up uses them)
 
@@ -29,6 +34,7 @@ Hum is a free, open-source AAC (communication) app. We built it to collect nothi
 |---|---|---|---|
 | **iCloud sync** | Your boards, tiles, photos and recordings | Your own private iCloud database (Apple) | Only you, on your Apple Account. We can't. |
 | **AI helper** | The text you type and the words on your tiles. Never photos or recordings. | Your device, or Apple Private Cloud Compute | Apple processes the request and doesn't keep it. We never receive it. |
+| **Send to a nearby device** | Your boards, photos and recordings (the same as an exported file), encrypted | Your other iPad, iPhone or Mac nearby, over your local network or Wi-Fi between the two devices. Never the internet. | Only the device you choose: you type the six-digit code it shows on the sending device, then the sending device's code on it to accept. People on the same network can see that Hum is open on its Send or Receive screen, and roughly how big the file is. |
 | **Symbol search** | Only the word you search for (and, like any web request, your IP address) | ARASAAC (`api.arasaac.org`, Government of Aragón, Spain) or Global Symbols (`globalsymbols.com`, for Mulberry symbols) | That service. No account, cookie or device ID is sent. The symbol you pick is saved in the tile, so the child's board never uses the network. |
 
 The symbol services have their own privacy policies. Hum sends them nothing that identifies you or

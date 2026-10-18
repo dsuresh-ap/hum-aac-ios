@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased: send boards to your other devices
+
+- **Send with AirDrop…** in Share & sync opens the share sheet with your boards already in it: no
+  separate export step. On the other device, Hum opens the file in its import preview.
+- **Send to / Receive from a nearby device.** Open Receive on one device and Send on the other, pick the
+  device, and type the six-digit code it shows. Then type the code the sending device shows on the
+  receiving one to accept. Nothing is sent until the first code matches, and nothing is accepted until
+  the second one does. You can send all boards or only the one you're editing. The boards arrive in the usual
+  import preview (Merge or Replace), so nothing changes until you choose. Local network only, never the
+  internet; a device can only be found while its Receive screen is open. Works between iPad, iPhone and Mac.
+- **Nothing left lying around.** Files made while sharing, receiving or recording are deleted as soon as
+  they're done (and at the next launch if Hum was closed in the middle). Hum keeps the 3 newest
+  "Replace everything" backups instead of 10, and Share & sync shows how many there are with a
+  **Delete backups** button.
+- **Safer file imports.** Hum refuses a file that would unpack to more than 600 MB or more than 20 000
+  files before opening it, so a broken or hostile file can't make Hum run out of memory.
+
 ## Unreleased: "What's this?" camera
 
 - **"What's this?" camera for the child** (Settings → What's this?, off at first). A small camera button

@@ -400,7 +400,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7V795ZVY5R;
 				ENABLE_APP_SANDBOX = YES;
-				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
@@ -421,6 +421,7 @@
 				"INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=iphonesimulator*]" = NO;
 				"INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=macosx*]" = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo of the real thing for a tile, or let your child ask “What's this?”. Photos stay on this device.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Send boards straight between your iPad, iPhone and Mac when they're near each other, only when you choose to. Nothing goes through the internet.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record a tile's phrase in your own voice. Recordings stay on this device.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -466,7 +467,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7V795ZVY5R;
 				ENABLE_APP_SANDBOX = YES;
-				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
@@ -487,6 +488,7 @@
 				"INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=iphonesimulator*]" = NO;
 				"INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=macosx*]" = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo of the real thing for a tile, or let your child ask “What's this?”. Photos stay on this device.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Send boards straight between your iPad, iPhone and Mac when they're near each other, only when you choose to. Nothing goes through the internet.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record a tile's phrase in your own voice. Recordings stay on this device.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

@@ -23,5 +23,6 @@ Use the Xcode MCP tools (`mcp__xcode__*`) for the app, not raw `xcodebuild`:
   change to a tile's board needs its own undo (BUGS.md, HUM-052).
 - AI tests use a fake model. The real on-device model test only runs with `HUM_LIVE_AI=1`
   (`TEST_RUNNER_HUM_LIVE_AI=1` through xcodebuild).
-- Network: only parent-started iCloud sync, Private Cloud Compute and the symbol search (ARASAAC,
-  Mulberry via Global Symbols; see `docs/PLAN.md` §8b). Ask before adding any other network use.
+- Network: only parent-started iCloud sync, Private Cloud Compute, the symbol search (ARASAAC,
+  Mulberry via Global Symbols; see `docs/PLAN.md` §8b) and parent-started local device-to-device
+  transfer (§8c: local network only, never the internet). Ask before adding any other network use.

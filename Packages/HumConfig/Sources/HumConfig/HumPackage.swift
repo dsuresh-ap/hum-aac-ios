@@ -25,6 +25,8 @@ public enum HumPackage {
         let entries: [ZipArchive.Entry]
         do {
             entries = try ZipArchive.read(data)
+        } catch ZipArchive.ReadError.tooBig {
+            throw HumConfigError.badPackage(.tooBig)
         } catch {
             throw HumConfigError.badPackage(.damaged)
         }

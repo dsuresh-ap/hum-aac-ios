@@ -5,7 +5,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import HumConfig
 
-/// Export, import, and (later) iCloud sync and the AI helper.
+/// Sending to other devices, export, import, iCloud sync and the AI helper.
 struct SetupSharingView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -21,14 +21,59 @@ struct SetupSharingView: View {
     @State private var sharedCopy: SharedFile?
     #endif
     @State private var showImporter = false
+    /// The "Before import" backups on this device (Application Support/Backups).
+    @State private var backups: (count: Int, bytes: Int64) = (0, 0)
+    @State private var confirmDeleteBackups = false
     @State private var errorMessage: String?
     @State private var showAI = false
     /// True while the export file is being made (a big setup takes a few seconds).
     @State private var preparingExport = false
+    /// Making the file for "Send with AirDrop…", so it can be cancelled.
+    @State private var airDropTask: Task<Void, Never>?
+    #if os(macOS)
+    /// The AirDrop in progress, kept until it ends so its file can be deleted then.
+    @State private var macAirDrop: MacAirDrop?
+    #endif
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Button("Send with AirDrop…", systemImage: "square.and.arrow.up", action: sendWithAirDrop)
+                        .disabled(airDropTask != nil)
+                        .accessibilityIdentifier("sendAirDrop")
+                    if airDropTask != nil {
+                        HStack(spacing: 8) {
+                            ProgressView().controlSize(.small)
+                            Text("Preparing your boards…").foregroundStyle(.secondary)
+                                .accessibilityIdentifier("airDropPreparing")
+                            Spacer()
+                            Button("Cancel", role: .cancel) {
+                                airDropTask?.cancel()
+                                airDropTask = nil
+                            }
+                            .buttonStyle(.borderless)  // its own button, not the whole row
+                            .accessibilityIdentifier("airDropCancel")
+                        }
+                    }
+                    NavigationLink {
+                        NearbySendView()
+                    } label: {
+                        Label("Send to a nearby device", systemImage: "dot.radiowaves.up.forward")
+                    }
+                    .accessibilityIdentifier("sendNearby")
+                    NavigationLink {
+                        NearbyReceiveView()
+                    } label: {
+                        Label("Receive from a nearby device", systemImage: "square.and.arrow.down")
+                    }
+                    .accessibilityIdentifier("receiveNearby")
+                } header: {
+                    Text("Send to your other devices")
+                } footer: {
+                    Text("Sends all your boards to an iPad, iPhone or Mac near you. To send without AirDrop, first open “Receive from a nearby device” in Hum on the other device. Nothing goes through the internet.")
+                }
+
                 Section {
                     Button("Export all boards…", systemImage: "square.and.arrow.up") { export(boardID: nil) }
                         .accessibilityIdentifier("exportAll")
@@ -80,6 +125,28 @@ struct SetupSharingView: View {
                     Text("You'll see what changes before anything happens. Tiles already on your boards never move.")
                 }
 
+                Section {
+                    LabeledContent("Backups") {
+                        if backups.count == 0 {
+                            Text("None")
+                        } else {
+                            Text(verbatim: "\(backups.count) · \(backups.bytes.formatted(.byteCount(style: .file)))")
+                        }
+                    }
+                    .accessibilityIdentifier("backupsSummary")
+                    Button("Delete backups", systemImage: "trash", role: .destructive) { confirmDeleteBackups = true }
+                        .disabled(backups.count == 0)
+                        .accessibilityIdentifier("deleteBackups")
+                } footer: {
+                    Text("Before “Replace everything”, Hum saves a backup of your boards on this device and keeps the \(ImportService.backupsToKeep) newest.")
+                }
+                .confirmationDialog("Delete all backups?", isPresented: $confirmDeleteBackups, titleVisibility: .visible) {
+                    Button("Delete", role: .destructive, action: deleteBackups)
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("You can't undo this.")
+                }
+
                 // Hidden entirely on devices without Apple Intelligence.
                 if AIHelper.isSupportedOnThisDevice {
                     Section {
@@ -104,9 +171,12 @@ struct SetupSharingView: View {
             }
             .sheet(isPresented: $showAI) { AIHelperView() }
             .task(id: model.iCloudActive) { if model.iCloudActive { await model.sync.refreshAccount() } }
+            // Again after an import ("Replace everything" adds a backup).
+            .task(id: model.lastImport) { await refreshBackups() }
             #if os(iOS)
+            // The temporary copy goes when sharing ends (sent or cancelled), and when the sheet closes.
             .sheet(item: $shareFile, onDismiss: { sharedCopy?.remove(); sharedCopy = nil }) { file in
-                ShareSheet(url: file.url).ignoresSafeArea()
+                ShareSheet(url: file.url, finished: file.remove).ignoresSafeArea()
             }
             #endif
             .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: .humPackage, defaultFilename: exportName) { result in
@@ -130,6 +200,51 @@ struct SetupSharingView: View {
         .modifier(ImportPreviewHost(isActive: true))
         .onAppear { model.importHostedBySheet = true }
         .onDisappear { model.importHostedBySheet = false }
+    }
+
+    private func refreshBackups() async {
+        backups = await Task.detached(priority: .utility) { ImportService.backupsSummary() }.value
+    }
+
+    /// Deletes every backup, off the main actor. The boards themselves aren't touched.
+    private func deleteBackups() {
+        Task {
+            do {
+                try await Task.detached(priority: .userInitiated) { try ImportService.deleteBackups() }.value
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            await refreshBackups()
+        }
+    }
+
+    /// Shows "Preparing your boards…" at once, makes the file without freezing the screen, then opens the
+    /// share sheet (iOS) or AirDrop itself (Mac).
+    private func sendWithAirDrop() {
+        guard airDropTask == nil else { return }
+        airDropTask = Task {
+            defer { airDropTask = nil }
+            do {
+                let data = try await ImportService(model: model).exportPackage()
+                let file = try await SharedFile.write(data, name: ImportService.exportFileName())
+                guard !Task.isCancelled else { return file.remove() }
+                #if os(iOS)
+                sharedCopy = file
+                shareFile = file
+                #else
+                if let airDrop = MacAirDrop(file: file) {
+                    macAirDrop = airDrop
+                    airDrop.start()
+                } else {
+                    file.remove()
+                    errorMessage = String(localized: "AirDrop isn't available on this Mac. Check that Wi-Fi and Bluetooth are on, or use Export instead.")
+                }
+                #endif
+            } catch is CancellationError {
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
     }
 
     /// Reads the boards here, then zips them in the background with "Preparing your boards…" showing.
@@ -158,18 +273,26 @@ struct SetupSharingView: View {
     }
 }
 
-#if os(iOS)
 /// An export written to a temporary folder for the share sheet, under its real name
 /// ("Hum setup 2026-10-12.hum"), so AirDrop and Messages show that name and Hum opens it on arrival.
-struct SharedFile: Identifiable {
+nonisolated struct SharedFile: Identifiable, Sendable {
     let url: URL
     var id: URL { url }
 
-    init(data: Data, name: String) throws {
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Export-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    init(data: Data, name: String, in directory: URL = HumTemporaryFiles.directory) throws {
+        let folder = try HumTemporaryFiles.makeFolder(prefix: HumTemporaryFiles.exportPrefix, in: directory)
         url = folder.appendingPathComponent(name)
-        try data.write(to: url, options: .atomic)
+        do {
+            try data.write(to: url, options: .atomic)
+        } catch {
+            try? FileManager.default.removeItem(at: folder)
+            throw error
+        }
+    }
+
+    /// Writes it off the main actor (a big setup takes a moment).
+    static func write(_ data: Data, name: String) async throws -> SharedFile {
+        try await Task.detached(priority: .userInitiated) { try SharedFile(data: data, name: name) }.value
     }
 
     /// Deletes the temporary copy once the share sheet has closed.
@@ -178,15 +301,48 @@ struct SharedFile: Identifiable {
     }
 }
 
-/// The system share sheet for one file.
+#if os(iOS)
+
+/// The system share sheet for one file. `finished` runs when sharing ends, sent or cancelled.
 struct ShareSheet: UIViewControllerRepresentable {
     let url: URL
+    var finished: () -> Void = {}
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        let finished = finished
+        controller.completionWithItemsHandler = { _, _, _, _ in finished() }
+        return controller
     }
 
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+}
+#endif
+
+#if os(macOS)
+/// AirDrop on the Mac for one exported file, which is deleted when AirDrop ends (sent, failed or
+/// cancelled). AppKit calls the delegate on the main thread.
+final class MacAirDrop: NSObject, NSSharingServiceDelegate {
+    private let file: SharedFile
+    private let service: NSSharingService
+
+    init?(file: SharedFile) {
+        guard let service = NSSharingService(named: .sendViaAirDrop), service.canPerform(withItems: [file.url]) else { return nil }
+        self.file = file
+        self.service = service
+        super.init()
+        service.delegate = self
+    }
+
+    func start() { service.perform(withItems: [file.url]) }
+
+    nonisolated func sharingService(_ sharingService: NSSharingService, didShareItems items: [Any]) {
+        file.remove()
+    }
+
+    nonisolated func sharingService(_ sharingService: NSSharingService, didFailToShareItems items: [Any], error: Error) {
+        file.remove()
+    }
 }
 #endif
 
