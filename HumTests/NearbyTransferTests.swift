@@ -187,7 +187,7 @@ struct NearbyTransferTests {
         #expect(pair.receiver.accept(code: code))
     }
 
-    @Test func aWholeSetupArrivesInTheImportPreviewUntouched() throws {
+    @Test func aWholeSetupArrivesInTheImportPreviewUntouched() async throws {
         let from = makeModel()
         let to = makeModel(starter: false)
         let file = try ImportService(model: from).exportData()
@@ -209,6 +209,7 @@ struct NearbyTransferTests {
         #expect(pair.sender.state == .sent)
         #expect(pair.receiver.state == .received)
         #expect(!pair.receiverTransport.isAdvertising, "can't be found once the file is in")
+        await to.waitForImportCheck()
 
         // The normal preview: nothing has changed until the parent chooses Merge or Replace.
         let pending = try #require(to.pendingImport)
@@ -217,13 +218,14 @@ struct NearbyTransferTests {
         #expect(Set(pending.loaded.document.boards.map(\.id)) == Set(from.store.boards().map(\.id)))
     }
 
-    @Test func anInvalidFileIsRejectedByTheValidator() throws {
+    @Test func anInvalidFileIsRejectedByTheValidator() async throws {
         let to = makeModel(starter: false)
         let pair = makePair { data, name in to.requestImport(data: data, fileName: name) }
         try offer(pair, file: Data("this is not a Hum file".utf8))
         accept(pair)
         pair.network.run()
         #expect(pair.receiver.state == .received)
+        await to.waitForImportCheck()
         #expect(to.pendingImport == nil)
         #expect(to.importError != nil)
         #expect(to.store.boards().isEmpty)

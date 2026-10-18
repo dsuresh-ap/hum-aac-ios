@@ -39,7 +39,7 @@ final class ImportUITests: XCTestCase {
         let summary = el(app, "importSummary")
         XCTAssertTrue(summary.waitForExistence(timeout: 30))
         // 1,866 tiles from the file, plus the folder tile on Home that opens the file's Home (HUM-001).
-        XCTAssertEqual(summary.label, "115 new boards, 1867 new tiles, 0 changed tiles, 0 removed. No tiles will move. "
+        XCTAssertEqual(summary.label, "115 new folders, 1,867 new tiles, 0 changed tiles, 0 removed. No tiles will move. "
                        + "The file's Home becomes a folder called “Express2-v2” on your Home.")
         // HUM-011: folder tiles say so, instead of empty quotes; the list says how many more there are.
         XCTAssertFalse(app.staticTexts["Chat: “”"].exists)
