@@ -45,9 +45,8 @@ struct EditGateButton: View {
     /// iPadOS holds touches back for its own gestures (about 0.8 s in the simulator), so a 3-second hold
     /// used to need much longer (BUGS.md, HUM-044).
     private func beginHold(touchedAt: Date) {
-        let held = min(Self.secondsSinceTouch(touchedAt), Self.holdDuration - 0.2)
-        let remaining = Self.holdDuration - held
-        progress = held / Self.holdDuration
+        let remaining = Self.remainingHold(touchedAt: touchedAt)
+        progress = 1 - remaining / Self.holdDuration
         withAnimation(.linear(duration: remaining)) { progress = 1 }
         holdTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(remaining))
@@ -56,6 +55,11 @@ struct EditGateButton: View {
             progress = 0
             onUnlock()
         }
+    }
+
+    /// How much longer the finger must stay down. At least 0.2 s, so the ring is always seen filling.
+    static func remainingHold(touchedAt: Date) -> TimeInterval {
+        holdDuration - min(secondsSinceTouch(touchedAt), holdDuration - 0.2)
     }
 
     /// A gesture's `time` is the touch's timestamp: seconds since the device started, stored as a date
