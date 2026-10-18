@@ -313,7 +313,6 @@ private struct SentenceStrip: View {
     }
 }
 
-/// What was said recently, newest first. Tapping an entry says it again. Off by default.
 /// A phrase as a sentence for VoiceOver: "Hi!" stays "Hi!", "All done" becomes "All done." (no "Hi!.").
 enum HistoryBoxSentence {
     static func make(_ phrase: String) -> String {
@@ -323,11 +322,16 @@ enum HistoryBoxSentence {
     }
 }
 
+/// What was said recently, oldest on the leading edge and newest on the trailing edge, like a sentence
+/// being built. Tapping an entry says it again. Off by default.
 private struct HistoryBox: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The first scroll to the newest entry jumps there; later ones glide.
+    @State private var scrolledOnce = false
 
     var body: some View {
-        let recent = model.history.recent(12)
+        let recent = model.history.latest(12)
         HStack(spacing: 10) {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 18, weight: .semibold))
@@ -339,25 +343,37 @@ private struct HistoryBox: View {
                     .foregroundStyle(Theme.ink.opacity(0.45))
                 Spacer()
             } else {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
-                        ForEach(Array(recent.enumerated()), id: \.element.id) { index, entry in
-                            Button {
-                                model.replay(entry)
-                            } label: {
-                                Text(entry.spokenText)
-                                    .font(.system(.body, design: .rounded, weight: index == 0 ? .semibold : .regular))
-                                    .foregroundStyle(Theme.tileInk(function: entry.function, hex: entry.colorHex).opacity(index == 0 ? 1 : 0.7))
-                                    .lineLimit(1)
-                                    .padding(.horizontal, 12).padding(.vertical, 7)
-                                    .background(Theme.tileColor(function: entry.function, hex: entry.colorHex).opacity(index == 0 ? 1 : 0.6), in: .capsule)
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 8) {
+                            ForEach(recent) { entry in
+                                let newest = entry.id == recent.last?.id
+                                Button {
+                                    model.replay(entry)
+                                } label: {
+                                    Text(entry.spokenText)
+                                        .font(.system(.body, design: .rounded, weight: newest ? .semibold : .regular))
+                                        .foregroundStyle(Theme.tileInk(function: entry.function, hex: entry.colorHex).opacity(newest ? 1 : 0.7))
+                                        .lineLimit(1)
+                                        .padding(.horizontal, 12).padding(.vertical, 7)
+                                        .background(Theme.tileColor(function: entry.function, hex: entry.colorHex).opacity(newest ? 1 : 0.6), in: .capsule)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Said: \(HistoryBoxSentence.make(entry.spokenText)) Say it again.")
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Said: \(HistoryBoxSentence.make(entry.spokenText)) Say it again.")
                         }
                     }
+                    .scrollIndicators(.hidden)
+                    // Keep the newest entry in view, on first show and when something new is said.
+                    // Older entries scroll off the leading edge.
+                    .task(id: recent.last) {
+                        guard let id = recent.last?.id else { return }
+                        withAnimation(scrolledOnce && !reduceMotion ? .easeOut(duration: 0.2) : nil) {
+                            proxy.scrollTo(id, anchor: .trailing)
+                        }
+                        scrolledOnce = true
+                    }
                 }
-                .scrollIndicators(.hidden)
             }
         }
         .padding(.horizontal, 12)

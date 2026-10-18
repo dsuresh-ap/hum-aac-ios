@@ -196,14 +196,25 @@ final class ChildModeUITests: XCTestCase {
         XCTAssertTrue(el(app, "exitParentMode").waitForExistence(timeout: 3), "A 3.5 s hold opens grown-up mode")
     }
 
-    /// Scenario: the child's history box shows what was said, newest first, and replays on tap.
+    /// Scenario: the child's history box reads like a sentence (oldest first, newest at the trailing
+    /// end, kept in view) and replays on tap.
     @MainActor
     func testHistoryBox() {
         let app = launchHum(["-skipFirstRun", "-demoHistory"])
         let newest = app.buttons["Said: Let's have crackers! Say it again."]
         XCTAssertTrue(newest.waitForExistence(timeout: 5))
+        let older = app.buttons["Said: Look at that! Say it again."]
+        XCTAssertLessThan(older.frame.maxX, newest.frame.minX, "Older entries sit before newer ones")
+        XCTAssertTrue(newest.isHittable, "The newest entry is in view")
+        // HUM-021: no doubled punctuation ("Hi!."). The demo history may already show a "Hi!"; the new one is last.
+        let saidHi = app.buttons.matching(NSPredicate(format: "label == %@", "Said: Hi! Say it again."))
+        let before = saidHi.count
         el(app, "tile.hi").tap()
-        // HUM-021: no doubled punctuation ("Hi!.").
-        XCTAssertTrue(app.buttons["Said: Hi! Say it again."].waitForExistence(timeout: 3))
+        let added = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count > %d", before), object: saidHi)
+        XCTAssertEqual(XCTWaiter.wait(for: [added], timeout: 3), .completed)
+        let newHi = saidHi.element(boundBy: saidHi.count - 1)
+        XCTAssertGreaterThan(newHi.frame.minX, newest.frame.maxX, "A new entry is added at the end")
+        let inView = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: newHi)
+        XCTAssertEqual(XCTWaiter.wait(for: [inView], timeout: 3), .completed, "The bar scrolls to show the new entry")
     }
 }
