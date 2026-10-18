@@ -69,6 +69,8 @@ final class AppModel {
     let sync = SyncMonitor()
     /// Guesses what's in a new tile photo (Vision, on this device). UI tests swap in a fake.
     @ObservationIgnored var objectClassifier: any ObjectClassifying = VisionObjectClassifier()
+    /// UI tests: the "What's this?" camera shows a still picture instead of a real camera (-fakeCamera).
+    @ObservationIgnored var usesFakeCamera = false
 
     private(set) var snapshot: BoardSnapshot?
     private(set) var currentBoardID: UUID?
@@ -416,6 +418,16 @@ final class AppModel {
     }
 
     func noteTouch() { lastTouch = .now }
+
+    /// The child tapped a word the "What's this?" camera guessed. It speaks and goes into history like a
+    /// tile, but it isn't a tile: no board, sentence strip or folder changes.
+    func sayGuess(_ word: String, tapTime: UInt64 = mach_absolute_time()) {
+        lastTouch = .now
+        let text = word.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        speech.speak(text, tapTime: tapTime)
+        history.add(label: text, spokenText: text, function: nil, colorHex: nil)
+    }
 
     // MARK: Word finder
 

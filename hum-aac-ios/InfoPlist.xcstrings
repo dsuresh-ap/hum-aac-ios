@@ -151,43 +151,43 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Take a photo of the real thing for a tile. Photos stay on this device."
+            "value" : "Take a photo of the real thing for a tile, or let your child ask “What's this?”. Photos stay on this device."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Haz una foto de la cosa real para una casilla. Las fotos se quedan en este dispositivo."
+            "value" : "Haz una foto de la cosa real para una casilla, o deja que tu hijo pregunte «¿Qué es esto?». Las fotos se quedan en este dispositivo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prenez en photo l'objet réel pour une case. Les photos restent sur cet appareil."
+            "value" : "Prenez en photo l'objet réel pour une case, ou laissez votre enfant demander « C'est quoi ? ». Les photos restent sur cet appareil."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mach ein Foto vom echten Gegenstand für ein Feld. Fotos bleiben auf diesem Gerät."
+            "value" : "Mach ein Foto vom echten Gegenstand für ein Feld, oder lass dein Kind fragen: „Was ist das?“. Fotos bleiben auf diesem Gerät."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tire uma foto da coisa real para um cartão. As fotos ficam neste dispositivo."
+            "value" : "Tire uma foto da coisa real para um cartão, ou deixe seu filho perguntar “O que é isso?”. As fotos ficam neste dispositivo."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scatta una foto dell'oggetto reale per una casella. Le foto restano su questo dispositivo."
+            "value" : "Scatta una foto dell'oggetto reale per una casella, o lascia che tuo figlio chieda «Che cos'è?». Le foto restano su questo dispositivo."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "为卡片拍一张实物照片。照片只保存在这台设备上。"
+            "value" : "为卡片拍一张实物照片，或让孩子问“这是什么？”。照片只保存在这台设备上。"
           }
         }
       }

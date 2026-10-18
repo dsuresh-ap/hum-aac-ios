@@ -37,6 +37,9 @@ final class DeviceSettings {
     var showHistory: Bool { didSet { defaults.set(showHistory, forKey: Keys.showHistory) } }
     /// A magnifier in child mode that shows the way to a tile (the word finder). Off by default.
     var showWordFinder: Bool { didSet { defaults.set(showWordFinder, forKey: Keys.wordFinder) } }
+    /// A camera button in child mode: the child points it at something and taps a word Hum guesses
+    /// (WhatsThisCamera.swift). Off by default; a parent turns it on, which asks for the camera then.
+    var whatsThisCamera: Bool { didSet { defaults.set(whatsThisCamera, forKey: Keys.whatsThis) } }
     /// After a tile inside a folder speaks, go back to Home automatically. Off by default.
     var returnHomeAfterFolderTap: Bool { didSet { defaults.set(returnHomeAfterFolderTap, forKey: Keys.returnHome) } }
     /// Grid size for new boards.
@@ -69,6 +72,7 @@ final class DeviceSettings {
         appearance = defaults.string(forKey: Keys.appearance).flatMap(HumSettings.Appearance.init) ?? .system
         showHistory = defaults.bool(forKey: Keys.showHistory)
         showWordFinder = defaults.bool(forKey: Keys.wordFinder)
+        whatsThisCamera = defaults.bool(forKey: Keys.whatsThis)
         returnHomeAfterFolderTap = defaults.bool(forKey: Keys.returnHome)
         newBoardRows = defaults.object(forKey: Keys.newRows) as? Int ?? 3
         newBoardColumns = defaults.object(forKey: Keys.newColumns) as? Int ?? 4
@@ -103,6 +107,7 @@ final class DeviceSettings {
         static let sentenceStrip = "display.sentenceStrip", appearance = "display.appearance"
         static let editGate = "parent.editGate", setupDone = "parent.setupDone", guidedAccessTip = "parent.guidedAccessTip"
         static let showHistory = "display.showHistory", returnHome = "nav.returnHome", wordFinder = "display.wordFinder"
+        static let whatsThis = "child.whatsThisCamera"
         static let newRows = "grid.newRows", newColumns = "grid.newColumns"
         static let iCloud = "sync.iCloud", ai = "ai.enabled", aiPCC = "ai.privateCloud"
     }
