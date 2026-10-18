@@ -14,6 +14,8 @@ import ImagePlayground
 /// Picture → What it says → Label → Folder. Color, hide and delete wait under "More options".
 struct TileEditorSheet: View {
     let request: TileEditorRequest
+    /// Guesses what's in a new photo, to offer names for the tile.
+    var classifier: any ObjectClassifying = VisionObjectClassifier()
 
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -51,6 +53,8 @@ struct TileEditorSheet: View {
     @State private var imageData: Data?
     /// The symbol set's credit while the picture is a symbol from it. Set only through `setPicture`.
     @State private var imageCredit: String?
+    /// Names guessed from the current photo ("dog", "ball"). Only shown; nothing changes until the parent taps one.
+    @State private var objectIdeas: [String] = []
     @State private var audioData: Data?
     @State private var recorder = PhraseRecorder()
     @State private var photoItem: PhotosPickerItem?
@@ -141,7 +145,7 @@ struct TileEditorSheet: View {
                 guard let item else { return }
                 Task {
                     if let data = try? await item.loadTransferable(type: Data.self) {
-                        setPicture(ImageProcessing.tileImageData(from: data))
+                        setPhoto(ImageProcessing.tileImageData(from: data))
                     }
                 }
             }
@@ -149,7 +153,7 @@ struct TileEditorSheet: View {
                 guard case .success(let url) = result else { return }
                 let access = url.startAccessingSecurityScopedResource()
                 defer { if access { url.stopAccessingSecurityScopedResource() } }
-                if let data = try? Data(contentsOf: url) { setPicture(ImageProcessing.tileImageData(from: data)) }
+                if let data = try? Data(contentsOf: url) { setPhoto(ImageProcessing.tileImageData(from: data)) }
             }
             .sheet(isPresented: $showEmojiPicker) {
                 EmojiPickerView(selection: Binding(get: { shownSymbol }, set: {
@@ -169,7 +173,7 @@ struct TileEditorSheet: View {
             .fullScreenCover(isPresented: $showCamera) {
                 // Cancel (nil) keeps the photo the tile already has.
                 CameraPicker { data in
-                    if let photo = data.flatMap(ImageProcessing.tileImageData(from:)) { setPicture(photo) }
+                    if let photo = data.flatMap(ImageProcessing.tileImageData(from:)) { setPhoto(photo) }
                 }
                     .ignoresSafeArea()
             }
@@ -211,7 +215,7 @@ struct TileEditorSheet: View {
                 .clipShape(.rect(cornerRadius: 14))
                 .dropDestination(for: ImagePayload.self) { items, _ in
                     guard let data = items.first?.data, let processed = ImageProcessing.tileImageData(from: data) else { return false }
-                    setPicture(processed)
+                    setPhoto(processed)
                     return true
                 }
                 .accessibilityLabel(pictureAccessibilityLabel)
@@ -230,7 +234,7 @@ struct TileEditorSheet: View {
                     #endif
                     PasteButton(payloadType: ImagePayload.self) { items in
                         if let data = items.first?.data, let processed = ImageProcessing.tileImageData(from: data) {
-                            setPicture(processed)
+                            setPhoto(processed)
                         }
                     }
                     .labelStyle(.titleAndIcon)
@@ -257,6 +261,9 @@ struct TileEditorSheet: View {
                     .accessibilityLabel("Picture credit: \(imageCredit)")
                     .accessibilityIdentifier("tileEditor.imageCredit")
             }
+            if imageData != nil, !objectIdeas.isEmpty {
+                objectIdeasRow
+            }
             if imageData == nil {
                 let ideas = EmojiSuggester.suggestions(label: label, spokenText: spokenText, limit: 6)
                 if !ideas.isEmpty {
@@ -282,6 +289,25 @@ struct TileEditorSheet: View {
             Text(imageData == nil
                  ? "Hum picks an emoji from the words until you add a photo. Real photos often work better than drawings. You can also drag a picture onto the square."
                  : "Real photos often work better than drawings.")
+        }
+    }
+
+    /// "Looks like: dog · puppy": Hum's guesses for a new photo. A tap fills in the words; the parent still saves.
+    private var objectIdeasRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Looks like:").font(.callout).foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                ForEach(objectIdeas, id: \.self) { name in
+                    Button(name) { useObjectName(name) }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .accessibilityHint("Uses this word for the tile")
+                        .accessibilityIdentifier("tileEditor.objectIdea")
+                }
+            }
+            Text("Hum's guess from the photo, made on this device. Tap one to use it, or type your own words.")
+                .font(.footnote).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -471,6 +497,27 @@ struct TileEditorSheet: View {
     private func setPicture(_ data: Data?, credit: String? = nil) {
         imageData = data
         imageCredit = data == nil ? nil : credit
+        objectIdeas = []
+    }
+
+    /// A photo from the camera, Photos, a file, a drop or the clipboard. Hum guesses what's in it (on this
+    /// device), to offer names. Symbols and created images already come from words, so they skip this.
+    private func setPhoto(_ data: Data?) {
+        setPicture(data)
+        guard let data else { return }
+        Task {
+            let ideas = await ObjectNamer.names(for: data, using: classifier)
+            // The parent may have picked another picture meanwhile.
+            if imageData == data { objectIdeas = ideas }
+        }
+    }
+
+    /// Fills the label, and the phrase too while it's empty or still an earlier guess. The parent's own
+    /// words are kept.
+    private func useObjectName(_ name: String) {
+        let phrase = spokenText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if phrase.isEmpty || objectIdeas.contains(phrase) { spokenText = name }
+        label = name
     }
 
     /// Return in a text field saves, when there's enough to save.
