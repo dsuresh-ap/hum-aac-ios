@@ -110,7 +110,8 @@ public enum ZipArchive {
     /// Reads every file entry (directories are skipped). Throws on corrupt input; never traps.
     ///
     /// Every size is checked against the limits before anything is unpacked, and no two entries may
-    /// share bytes (a "zip bomb" points thousands of entries at the same data).
+    /// share bytes (a "zip bomb" points thousands of entries at the same data). Run inside a task, it
+    /// stops with `CancellationError` between entries once the task is cancelled.
     public static func read(_ data: Data) throws -> [Entry] {
         // Read in place (a received file is memory-mapped), never copied whole; indexes start at 0.
         let bytes = data.startIndex == 0 ? data : Data(data)
@@ -173,6 +174,7 @@ public enum ZipArchive {
 
         var entries: [Entry] = []
         for item in pending {
+            try Task.checkCancellation()
             let raw = bytes.subdata(in: item.start..<item.end)
             let content = item.method == 8 ? try inflate(raw, size: item.size) : raw
             guard content.count == item.size, CRC32.checksum(content) == item.crc else { throw ReadError.checksum(item.name) }

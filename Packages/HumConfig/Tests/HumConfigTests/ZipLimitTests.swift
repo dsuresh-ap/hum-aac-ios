@@ -49,6 +49,20 @@ struct ZipLimitTests {
         #expect(throws: HumConfigError.badPackage(.tooBig)) { try HumPackage.read(zip) }
     }
 
+    @Test func aCancelledReadStopsInsteadOfUnpacking() async throws {
+        let zip = ZipArchive.write([ZipArchive.Entry(path: "hum.json", data: Data(#"{"formatVersion": 1}"#.utf8)),
+                                    ZipArchive.Entry(path: "media/a.jpg", data: Data(count: 1000))])
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return [Result { try ZipArchive.read(zip) }.isCancelled,
+                    Result { try HumPackage.read(zip) }.isCancelled,
+                    Result { try HumConfigLoader.load(zip) }.isCancelled]
+        }
+        #expect(await task.value == [true, true, true], "never \"damaged\": the app stopped reading")
+        // Outside a cancelled task (the command-line tool) nothing changes.
+        #expect(try ZipArchive.read(zip).count == 2)
+    }
+
     @Test func normalPackagesStillOpen() throws {
         let entries = [ZipArchive.Entry(path: "hum.json", data: json("{}")),
                        ZipArchive.Entry(path: "media/a.jpg", data: Data((0..<50_000).map { UInt8($0 % 251) }))]
@@ -56,6 +70,13 @@ struct ZipLimitTests {
         let deflated = craftZip([RawEntry(name: "a.bin", method: 8, data: zeroBomb(repeats: 10), size: 2581,
                                           crc: CRC32.checksum(Data(count: 2581)))])
         #expect(try ZipArchive.read(deflated) == [ZipArchive.Entry(path: "a.bin", data: Data(count: 2581))])
+    }
+}
+
+extension Result where Failure == any Error {
+    var isCancelled: Bool {
+        if case .failure(let error) = self { return error is CancellationError }
+        return false
     }
 }
 
