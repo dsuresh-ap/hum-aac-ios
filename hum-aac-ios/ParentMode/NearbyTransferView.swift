@@ -124,7 +124,7 @@ struct NearbySendView: View {
     @ViewBuilder private func ending(_ message: String, systemImage: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Label(message, systemImage: systemImage)
-            Text("To try again, tap “Receive again” on the other device (or open “Receive from a nearby device”), then pick it below.")
+            Text("To try again, on the other device tap “Receive again” or open “Receive from a nearby device”. Then pick that device in the list below.")
                 .font(.footnote).foregroundStyle(.secondary)
         }
         Button("Try again", systemImage: "arrow.clockwise") { transfer.restart() }
@@ -235,9 +235,9 @@ struct NearbyReceiveView: View {
                 .foregroundStyle(.secondary)
         case .pairing(let code):
             VStack(alignment: .leading, spacing: 8) {
-                Text("A device wants to send you boards. Type this code on it:")
+                Text("A device wants to send you boards. On that device, type this code:")
                 MatchingCode(code: code)
-                Text("Only type it on your own device, the one where you just tapped it in the list.")
+                Text("Type the code only on your own device, the one where you just tapped this device in the list.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             Button("Cancel", role: .cancel) { transfer.cancel() }

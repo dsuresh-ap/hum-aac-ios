@@ -345,7 +345,7 @@ struct TileEditorSheet: View {
         } footer: {
             Text(folderFirst
                  ? "Leave empty to just open the folder."
-                 : "Type the whole phrase, just the way your child says it, even if it's from a show or a song. Keep it whole. Don't split it into single words.")
+                 : "Type the full phrase, just the way your child says it, even if it's from a show or a song. Keep it in one piece. Don't split it into single words.")
         }
     }
 
@@ -361,7 +361,7 @@ struct TileEditorSheet: View {
         } footer: {
             Text(folderFirst
                  ? "Shown on the folder tile and at the top of the folder."
-                 : "The short words printed on the tile. Filled in from the phrase; change it if you like.")
+                 : "The short words printed on the tile. Hum fills them in from the phrase. You can change them if you like.")
         }
     }
 

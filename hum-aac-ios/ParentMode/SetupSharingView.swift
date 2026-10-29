@@ -95,9 +95,9 @@ struct SetupSharingView: View {
                     Text("Move boards to another device")
                 } footer: {
                     #if os(iOS)
-                    Text("Makes a Hum file with your boards and photos. AirDrop it, send it, or save it to Files, iCloud Drive, Google Drive or Dropbox, then open it in Hum on the other device.")
+                    Text("Makes a Hum file with your boards and photos. You can AirDrop it, send it, or save it to Files, iCloud Drive, Google Drive or Dropbox. Then open it in Hum on the other device.")
                     #else
-                    Text("Saves a Hum file with your boards and photos. Put it in iCloud Drive, Google Drive or Dropbox, or AirDrop it, then open it in Hum on the other device.")
+                    Text("Saves a Hum file with your boards and photos. You can AirDrop it, or put it in iCloud Drive, Google Drive or Dropbox. Then open it in Hum on the other device.")
                     #endif
                 }
 
@@ -138,7 +138,7 @@ struct SetupSharingView: View {
                         .disabled(backups.count == 0)
                         .accessibilityIdentifier("deleteBackups")
                 } footer: {
-                    Text("Before “Replace everything”, Hum saves a backup of your boards on this device and keeps the \(ImportService.backupsToKeep) newest.")
+                    Text("Before “Replace everything”, Hum saves a backup of your boards on this device. It keeps the \(ImportService.backupsToKeep) newest backups.")
                 }
                 .confirmationDialog("Delete all backups?", isPresented: $confirmDeleteBackups, titleVisibility: .visible) {
                     Button("Delete", role: .destructive, action: deleteBackups)
@@ -152,7 +152,7 @@ struct SetupSharingView: View {
                     Section {
                         Button("Help me set up", systemImage: "sparkles") { showAI = true }
                     } footer: {
-                        Text("Describe what your child needs, or paste phrases they say, and get suggested tiles to preview. Off until you turn it on.")
+                        Text("Describe what your child needs, or paste phrases they say. Hum suggests tiles for you to preview. This stays off until you turn it on.")
                     }
                 }
 
@@ -161,7 +161,7 @@ struct SetupSharingView: View {
                         openURL(HumLinks.configGuide)
                     }
                 } footer: {
-                    Text("Hum files use an open format, so you (or an AI assistant) can write boards on a computer, then import them here. The guide opens in your web browser.")
+                    Text("Anyone can learn how Hum files are written. So you, or an AI assistant, can write boards on a computer, then import them here. The guide opens in your web browser.")
                 }
             }
             .formStyle(.grouped)
@@ -372,7 +372,7 @@ private struct SyncStatusRows: View {
         if !model.iCloudActive {
             Label {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Sync is on, but iCloud isn't available, so boards are only on this device for now.")
+                    Text("Sync is on, but iCloud isn't available. For now, your boards are only on this device.")
                     Text(FileManager.default.ubiquityIdentityToken == nil
                          ? "This device isn't signed in to iCloud (or iCloud Drive is off)."
                          : "Try turning sync off and on again.")

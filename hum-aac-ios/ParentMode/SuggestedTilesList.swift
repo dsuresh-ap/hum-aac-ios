@@ -72,7 +72,7 @@ struct PastePhrasesSheet: View {
                 } header: {
                     Text("One phrase per line")
                 } footer: {
-                    Text("Type or paste the phrases your child says, exactly as they say them. Each line becomes one tile, kept whole.")
+                    Text("Type or paste the phrases your child says, exactly as they say them. Each line becomes one tile with the full phrase.")
                 }
 
                 if !result.tiles.isEmpty || !result.notes.isEmpty {

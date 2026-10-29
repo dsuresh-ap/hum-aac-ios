@@ -34,7 +34,7 @@ struct AddTileIntent: AppIntent {
         let text = phrase.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { throw IntentError.message("The tile needs a phrase to say.") }
         if GLPRules.discouragedPhrase(in: text) != nil {
-            throw IntentError.message("Hum tiles are the child's own voice, so praise and instruction phrases aren't added.")
+            throw IntentError.message("Hum tiles are your child's own voice, so Hum doesn't add phrases that praise or give instructions.")
         }
         let document = try await MainActor.run { try IntentSupport.documentAddingTile(text: text, label: label, boardName: boardName) }
         try PendingChanges.enqueue(try document.encodedJSON(), name: String(localized: "From Shortcuts: add “\(text)”") + ".json")
@@ -44,7 +44,7 @@ struct AddTileIntent: AppIntent {
 
 struct ImportHumConfigIntent: AppIntent {
     static let title: LocalizedStringResource = "Import Hum Boards"
-    static let description = IntentDescription("Gets a Hum file ready to import. A grown-up sees a preview in Hum and chooses to add it to their boards or replace everything.")
+    static let description = IntentDescription("Gets a Hum file ready to import. A grown-up sees a preview in Hum. Then they choose to add it to their boards or replace everything.")
 
     // Type identifiers (not UTTypes) so this works on iOS 17 / macOS 14.
     @Parameter(title: "Hum file", supportedTypeIdentifiers: ["com.dhananjaysuresh.hum-aac.hum", "public.json", "public.zip-archive"])

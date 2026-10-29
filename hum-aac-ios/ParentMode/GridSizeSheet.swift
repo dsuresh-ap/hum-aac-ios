@@ -70,11 +70,11 @@ struct GridSizeSheet: View {
 
     private var footer: String {
         var text = moving > 0
-            ? String(localized: "\(moving) tiles move so every tile keeps its place in the order (left to right, top to bottom). Your child may need time to find them again.")
+            ? String(localized: "\(moving) tiles move. The order stays the same: left to right, then top to bottom. Your child may need time to find them again.")
             : String(localized: "No tiles move.")
         // The grid is shared by every device. iPhone shows boards wider than 4 tiles as pages.
         if AppModel.isPhone && columns > PhoneLayout.columns {
-            text += " " + String(localized: "On iPhone, boards more than \(PhoneLayout.columns) tiles across are shown as pages.")
+            text += " " + String(localized: "On iPhone, boards wider than \(PhoneLayout.columns) tiles are shown as pages.")
         }
         return text
     }
@@ -176,7 +176,7 @@ private struct ScreenPreview: View {
         var text = String(localized: "\(columns) tiles across.") + " " + String(localized: "\(rows) rows.")
         if layout.scrolls, area != .zero {
             let visible = GridMetrics.visibleRows(in: area, rows: rows, columns: columns, spacing: Theme.gridSpacing)
-            text += " " + String(localized: "\(visible) rows fit on the screen. The rest are reached by scrolling.")
+            text += " " + String(localized: "\(visible) rows fit on the screen. Your child scrolls to reach the rest.")
         }
         return text
     }

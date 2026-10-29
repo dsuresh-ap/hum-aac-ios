@@ -103,7 +103,7 @@ struct AIHelperView: View {
             .labelsHidden()
             switch feature {
             case .describe:
-                TextField("e.g. My child loves trains and says “all aboard!” when they want to go.", text: $describeText, axis: .vertical)
+                TextField("For example, my child loves trains and says “all aboard!” when they want to go.", text: $describeText, axis: .vertical)
                     .lineLimit(3...8)
                     .focused($focus, equals: .describe)
             case .capture:
@@ -149,7 +149,7 @@ struct AIHelperView: View {
         } footer: {
             Text(feature == .describe
                  ? "Put the phrases your child really says in quotes, so they're kept exactly."
-                 : "Each line becomes one tile, kept whole. Don't need suggestions? Use Add → Paste phrases instead.")
+                 : "Each line becomes one tile with the full phrase. Don't need suggestions? Use Add → Paste phrases instead.")
         }
     }
 

@@ -140,7 +140,7 @@ enum AIHelper {
         let checked = ProposalChecker.check(result.tiles, parentPhrases: parentPhrases, existing: existing)
         var notes = checked.notes.map(\.localizedText)
         if result.usedOnDeviceFallback {
-            notes.insert(String(localized: "Private Cloud Compute couldn't be reached, so these suggestions were made on this device instead."), at: 0)
+            notes.insert(String(localized: "Private Cloud Compute couldn't be reached. Hum made these suggestions on this device instead."), at: 0)
         }
         return Proposal(tiles: checked.tiles, notes: notes, parentPhrases: parentPhrases)
     }
@@ -205,7 +205,7 @@ enum AIHelper {
                     return String(localized: "You've used today's Private Cloud Compute requests. They refresh \(date.formatted(.relative(presentation: .named))). You can switch to “On this device” now.")
                 }
                 return String(localized: "You've used today's Private Cloud Compute requests. You can switch to “On this device” now.")
-            case .cloudUnreachable: return String(localized: "Private Cloud Compute couldn't be reached, and the helper on this device isn't available either. Check your internet connection and try again.")
+            case .cloudUnreachable: return String(localized: "Private Cloud Compute couldn't be reached. The helper on this device isn't available either. Check your internet connection and try again.")
             case .other: return String(localized: "Something went wrong. Please try again, or ask for less at once.")
             }
         }

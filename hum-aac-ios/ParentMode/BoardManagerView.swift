@@ -84,7 +84,7 @@ struct BoardManagerView: View {
                 } header: {
                     Text("New folder")
                 } footer: {
-                    Text("Adds a folder tile to \(hostBoard?.name ?? String(localized: "Home")) in its first empty spot, then opens the new folder so you can fill it.")
+                    Text("Adds a folder tile to \(hostBoard?.name ?? String(localized: "Home")) in its first empty spot. Then Hum opens the new folder, so you can fill it.")
                 }
             }
             .formStyle(.grouped)

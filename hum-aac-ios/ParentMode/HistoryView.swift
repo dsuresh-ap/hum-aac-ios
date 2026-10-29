@@ -18,7 +18,7 @@ struct HistoryView: View {
                 Section {
                     Toggle("Show the history box on the child's screen", isOn: $settings.showHistory)
                 } footer: {
-                    Text("A small row above the tiles showing what was said last, so you can catch up if you missed it. Tapping a phrase there says it again.")
+                    Text("A small row above the tiles shows what was said last, so you can catch up if you missed it. Tapping a phrase there says it again.")
                 }
 
                 if model.history.entries.isEmpty {
