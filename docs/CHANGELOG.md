@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased: plainer words
+
+- 46 longer texts for grown-ups (settings footers, sharing and nearby-transfer messages, import problems,
+  AI helper notes) now use shorter sentences and plainer words. The facts are the same. Their translations
+  are kept but marked “needs review” in `Localizable.xcstrings`, so a translator can match the new English.
+
 ## Unreleased: fixes
 
 - Setups with a tall board (a tile below row 8) open again. Their exports, backups and transfers were

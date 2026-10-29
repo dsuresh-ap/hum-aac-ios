@@ -662,11 +662,11 @@ nonisolated enum NearbyTransferError: Error, Equatable, Sendable {
         case .stopped: String(localized: "The other device stopped.")
         case .otherCancelled: String(localized: "Cancel was tapped on the other device.")
         case .otherTimedOut: String(localized: "The other device waited too long for the code, so it stopped.")
-        case .otherLeftFront: String(localized: "Hum on the other device was closed or went to the background.")
+        case .otherLeftFront: String(localized: "Hum on the other device was closed or is no longer on the screen.")
         case .leftFront: String(localized: "Hum stopped because it wasn't the app in front.")
         case .youCancelled: String(localized: "You tapped Cancel, so other devices can't find this one now.")
         case .youDeclined: String(localized: "You tapped Decline, so other devices can't find this one now.")
-        case .couldNotConnect: String(localized: "Hum couldn't reach nearby devices. Check that Wi-Fi is on, and that Hum is allowed to use the local network in Settings.")
+        case .couldNotConnect: String(localized: "Hum couldn't reach nearby devices. Check that Wi-Fi is on. Also check that Hum is allowed to use the local network in Settings.")
         case .timedOut: String(localized: "Nothing happened for a while, so Hum stopped. Try again when both devices are ready.")
         }
     }

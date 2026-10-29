@@ -232,7 +232,7 @@ struct FirstRunView: View {
         guard rows < 5 || columns < 4, rows * columns < 20 else {
             return String(localized: "18 whole phrases like “Let's go!”, “All done” and “Too loud”. Replace the pictures with real photos later.")
         }
-        return String(localized: "A 5 × 4 board with 18 whole phrases like “Let's go!”, “All done” and “Too loud”. Replace the pictures with real photos later. New folders use your \(rows) × \(columns) size.")
+        return String(localized: "A 5 × 4 board with 18 whole phrases, like “Let's go!”, “All done” and “Too loud”. Replace the pictures with real photos later. New folders use the size you picked: \(rows) × \(columns).")
     }
 
     private func useChosenSizeForNewFolders() {

@@ -45,7 +45,7 @@ struct SettingsView: View {
                 } header: {
                     Text("How it sounds")
                 } footer: {
-                    Text("“Younger” makes any voice higher and a little slower. Apple doesn't include children's voices; for a real child's voice, ask an older sibling or cousin to record tiles (edit a tile → Record your voice).")
+                    Text("“Younger” makes any voice higher and a little slower. Apple doesn't include children's voices. For a real child's voice, ask an older sibling or cousin to record tiles: edit a tile, then tap “Record your voice”.")
                 }
 
                 Section {
@@ -100,7 +100,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Tapping")
                 } footer: {
-                    Text("Every tap always makes a sound, even very fast repeated taps. Repeated tapping is communication too. On a board that scrolls, tiles speak when the finger lifts, so scrolling never speaks.")
+                    Text("Every tap always makes a sound, even very fast repeated taps. Repeated tapping is communication too. On a board that scrolls, a tile speaks when the finger lifts. That way, scrolling never makes a tile speak.")
                 }
 
                 Section {
@@ -122,7 +122,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Tiles")
                 } footer: {
-                    Text("The sentence strip collects tapped tiles so your child can play them together; it's for when your child starts mixing words into new sentences. The history box shows what was said recently, so you can catch up if you missed it. The word finder looks up a word and lights up the way to its tile, without saying it, so the path is learned. All three are off at first, and each tile always speaks on its own.")
+                    Text("The sentence strip collects tapped tiles, so your child can play them together. Use it when your child starts mixing words into new sentences. The history box shows what was said recently, so you can catch up if you missed it. The word finder looks up a word and lights up the way to its tile, without saying it. This helps your child learn the path. All three are off at first. Each tile always speaks on its own.")
                 }
 
                 whatsThisSection
@@ -138,7 +138,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Folders and boards")
                 } footer: {
-                    Text("To change the tile size on a board you already have, open it in edit mode and tap the size button at the top right.")
+                    Text("To change the tile size on a board you already have, open it in edit mode. Then tap the size button at the top right.")
                 }
 
                 Section {
@@ -151,7 +151,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Grown-up lock")
                 } footer: {
-                    Text("For a full lock-down on iPad or iPhone, use Guided Access: Settings → Accessibility → Guided Access.")
+                    Text("To keep your child in Hum on iPad or iPhone, turn on Guided Access. Go to Settings → Accessibility → Guided Access.")
                 }
 
                 Section {
@@ -202,7 +202,7 @@ struct SettingsView: View {
                 .accessibilityIdentifier("whatsThisToggle")
             switch availability {
             case .notInEnglish:
-                Text("Only in English for now. The words come from Apple's picture recognition on this device, which knows English words.")
+                Text("Only in English for now. The words come from Apple's picture recognition on this device. It only knows English words.")
                     .font(.footnote).foregroundStyle(.secondary)
             case .noCamera:
                 Text("This device has no camera.").font(.footnote).foregroundStyle(.secondary)
@@ -220,7 +220,7 @@ struct SettingsView: View {
         } header: {
             Text("What's this?")
         } footer: {
-            Text("Adds a camera button at the top of your child's board. Your child points it at something, and Hum shows up to three words for it. A word speaks only when your child taps it. The guesses are made on this device and can be wrong. Pictures aren't kept.")
+            Text("Adds a camera button at the top of your child's board. Your child points the camera at something. Hum shows up to three words for it. A word speaks only when your child taps it. Hum makes the guesses on this device, and they can be wrong. Pictures aren't kept.")
         }
     }
 
@@ -328,16 +328,16 @@ struct NaturalVoicesCard: View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Get a more natural voice", systemImage: "waveform.badge.plus")
                 .font(.headline)
-            Text("This device only has the basic voices, which can sound robotic. Apple's natural voices are free; download one once and Hum switches to it automatically.")
+            Text("This device only has the basic voices, which can sound robotic. Apple's natural voices are free. Download one once, and Hum switches to it automatically.")
                 .font(.callout)
             #if os(macOS)
-            Text("System Settings → Accessibility → Read & Speak (Spoken Content on older Macs) → System voice → Manage Voices… → pick a voice marked Premium or Enhanced, such as Zoe, Ava or Evan.")
+            Text("System Settings → Accessibility → Read & Speak (Spoken Content on older Macs) → System voice. Choose Manage Voices…, then pick a voice marked Premium or Enhanced, such as Zoe, Ava or Evan.")
                 .font(.callout).foregroundStyle(.secondary)
             Button("Open Accessibility settings") {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.Accessibility-Settings.extension") { openURL(url) }
             }
             #else
-            Text("Settings → Accessibility → Read & Speak (Spoken Content on older versions) → Voices → your language → pick a voice marked Premium or Enhanced, such as Zoe, Ava or Evan, and tap download. Use Wi-Fi: premium voices are large.")
+            Text("Settings → Accessibility → Read & Speak (Spoken Content on older versions) → Voices → your language. Pick a voice marked Premium or Enhanced, such as Zoe, Ava or Evan. Tap download. Use Wi-Fi, because premium voices are large.")
                 .font(.callout).foregroundStyle(.secondary)
             #endif
         }

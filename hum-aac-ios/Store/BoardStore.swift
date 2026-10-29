@@ -698,9 +698,9 @@ enum StoreError: LocalizedError, Equatable {
         case .wouldCutOff(let labels):
             let names = labels.prefix(3).map { String(localized: "“\($0)”", comment: "Words in quotes.") }
             if labels.count > 3 {
-                return String(localized: "The board can't get smaller yet: \(names.formatted(.list(type: .and))) and others wouldn't fit. Move or remove those tiles first, so nothing moves by itself.")
+                return String(localized: "The board can't get smaller yet. \(names.formatted(.list(type: .and))) and others wouldn't fit. Move or remove those tiles first, so nothing moves by itself.")
             }
-            return String(localized: "The board can't get smaller yet: \(names.formatted(.list(type: .and))) wouldn't fit. Move or remove those tiles first, so nothing moves by itself.")
+            return String(localized: "The board can't get smaller yet. \(names.formatted(.list(type: .and))) wouldn't fit. Move or remove those tiles first, so nothing moves by itself.")
         }
     }
 }

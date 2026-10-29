@@ -52,7 +52,7 @@ struct ImportPreviewSheet: View {
                     .pickerStyle(.segmented)
                 } footer: {
                     Text(mode == .merge
-                         ? "Adds new tiles and updates matching ones. Nothing already on your boards moves or is deleted."
+                         ? "Adds new tiles and updates your tiles that are also in this file. Nothing already on your boards moves or is deleted."
                          : "Your boards become exactly what's in this file. Hum saves a backup of your current boards first.")
                 }
 
@@ -95,7 +95,7 @@ struct ImportPreviewSheet: View {
             .confirmationDialog("Replace all your boards?", isPresented: $confirmReplace, titleVisibility: .visible) {
                 Button("Replace everything", role: .destructive) { apply() }
             } message: {
-                Text("\(pending.replace.summary.localizedSentence) A backup of your current boards is saved first, and you can undo.")
+                Text("\(pending.replace.summary.localizedSentence) Hum saves a backup of your current boards first. You can undo this.")
             }
             .alert("Import didn't work", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK", role: .cancel) {}

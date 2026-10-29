@@ -476,7 +476,7 @@ private struct EditGrid: View {
                         }
                         Button("Duplicate", systemImage: "plus.square.on.square") {
                             if model.store.duplicate(tile)?.row == nil {
-                                errorMessage = String(localized: "\(board.name) is full, so the copy is waiting below the board for a spot.")
+                                errorMessage = String(localized: "\(board.name) is full. The new copy is waiting below the board for a spot.")
                             }
                         }
                         Button(tile.isHidden ? "Show tile" : "Hide tile", systemImage: tile.isHidden ? "eye" : "eye.slash") {
@@ -789,7 +789,7 @@ private struct EditBand: View {
                             .font(.footnote).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
                     }
                 } else {
-                    Text("Tap a tile to change it, or an empty spot to add one. Drag to move; drop a tile on a folder's Open button to put it inside. Your child sees changes when you tap Done.")
+                    Text("Tap a tile to change it. Tap an empty spot to add one. To move a tile, drag it. To put a tile inside a folder, drop it on the folder's Open button. Your child sees changes when you tap Done.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
