@@ -27,6 +27,8 @@ final class SpeechService {
     @ObservationIgnored private var queue: [SpeechKey] = []
     @ObservationIgnored private var queued: Set<SpeechKey> = []
     @ObservationIgnored private var renderTask: Task<Void, Never>?
+    /// The current voice, looked up ahead of time so a tap doesn't wait for the speech service.
+    @ObservationIgnored private var liveVoice: AVSpeechSynthesisVoice?
     /// Recorded audio clips, decoded when the board loads (keyed by tile ID + data size as a cheap version).
     @ObservationIgnored private var recordings: [String: PCMClip] = [:]
 
@@ -34,15 +36,19 @@ final class SpeechService {
     private(set) var pendingRenders = 0
     private(set) var voice: VoiceSettings
 
+    /// With no voice, speech starts in the system voice (an empty identifier) until `update(voice:)`.
+    /// Finding the best voice can block for seconds after a reboot, so it never happens here.
     init(voice: VoiceSettings? = nil) {
-        self.voice = voice ?? VoiceSettings(identifier: SpeechService.defaultVoiceIdentifier(), rate: 0.5, pitch: 1, volume: 1)
+        self.voice = voice ?? VoiceSettings(identifier: "", rate: 0.5, pitch: 1, volume: 1)
+        lookUpLiveVoice()
     }
 
-    /// The most natural voice installed for the device's language (see `VoiceCatalog`).
-    static func defaultVoiceIdentifier() -> String {
-        VoiceCatalog.best()?.identifier
-            ?? AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode())?.identifier
-            ?? ""
+    private func lookUpLiveVoice() {
+        let identifier = voice.identifier
+        Task {
+            let found = await SpeechRenderer.voice(identifier)
+            if voice.identifier == identifier { liveVoice = found }
+        }
     }
 
     func start() { engine.start() }
@@ -56,8 +62,15 @@ final class SpeechService {
     /// Changing voice, rate or pitch changes every cache key, so the current board re-renders.
     func update(voice newVoice: VoiceSettings) {
         guard newVoice != voice else { return }
+        let otherVoice = newVoice.identifier != voice.identifier
         voice = newVoice
+        if otherVoice { liveVoice = nil; lookUpLiveVoice() }
         engine.volume = Float(newVoice.volume)
+        // Clips still waiting in the old voice won't be used: drop them so the new ones come sooner.
+        let stale = Set(queue.filter { $0 != key(for: $0.text) })
+        queue.removeAll(where: stale.contains)
+        queued.subtract(stale)
+        pendingRenders = queue.count
     }
 
     func key(for text: String) -> SpeechKey {
@@ -94,7 +107,10 @@ final class SpeechService {
     private func speakLive(_ key: SpeechKey, tapTime: UInt64) {
         engine.sampler.stopAll()
         if retrigger != .overlap, liveSynth.isSpeaking { liveSynth.stopSpeaking(at: .immediate) }
-        let utterance = SpeechRenderer.utterance(for: key)
+        // Just after a voice change the lookup may not be back yet: then look it up here.
+        let synthVoice = key.voiceIdentifier.isEmpty || liveVoice?.identifier == key.voiceIdentifier
+            ? liveVoice : AVSpeechSynthesisVoice(identifier: key.voiceIdentifier)
+        let utterance = SpeechRenderer.utterance(for: key, voice: synthVoice)
         utterance.volume = Float(voice.volume)
         liveSynth.speak(utterance)
         latency.recordUncached(tapTime: tapTime)

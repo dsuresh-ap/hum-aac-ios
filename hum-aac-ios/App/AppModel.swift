@@ -275,10 +275,10 @@ final class AppModel {
     // MARK: Launch
 
     func launch() {
+        Task { await upgradeVoiceIfBetterInstalled() }
         speech.start()
         observeRemoteChanges()
         observeVoiceChanges()
-        upgradeVoiceIfBetterInstalled()
         if !needsFirstRun, ((try? context.fetchCount(FetchDescriptor<Board>())) ?? 0) == 0 {
             // Every board was deleted outside first run: never leave the child with nothing.
             try? loadStarterBoard()
@@ -339,16 +339,26 @@ final class AppModel {
         voicesObserver = NotificationCenter.default.addObserver(
             forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.upgradeVoiceIfBetterInstalled() }
+            Task { @MainActor in await self?.upgradeVoiceIfBetterInstalled() }
         }
     }
 
+    /// The voice "Device default" uses, once `upgradeVoiceIfBetterInstalled` has found it. Until then
+    /// tiles speak in the system voice.
+    private(set) var defaultVoiceIdentifier: String?
+
     /// "Device default" follows the best installed voice; a chosen voice moves to its Premium/Enhanced
-    /// version of the same name when one appears. Clips are re-rendered for the new voice.
-    func upgradeVoiceIfBetterInstalled() {
-        if let chosen = settings.voiceIdentifier, let better = VoiceCatalog.upgrade(for: chosen) {
-            settings.voiceIdentifier = better.identifier
-        }
+    /// version of the same name when one appears. Clips are re-rendered for the new voice. The lookup
+    /// runs off the main actor: right after a reboot Apple's speech service can take many seconds to
+    /// answer, and asking it at launch left a blank screen.
+    func upgradeVoiceIfBetterInstalled() async {
+        let chosen = settings.voiceIdentifier
+        let (best, better) = await Task.detached(priority: .userInitiated) {
+            (VoiceCatalog.defaultIdentifier(), chosen.flatMap { VoiceCatalog.upgrade(for: $0)?.identifier })
+        }.value
+        defaultVoiceIdentifier = best
+        // The parent may have picked another voice while Hum was looking.
+        if let better, settings.voiceIdentifier == chosen { settings.voiceIdentifier = better }
         let before = speech.voice
         applySpeechSettings()
         if speech.voice != before { rebuildSnapshot() }
@@ -356,7 +366,7 @@ final class AppModel {
 
     func applySpeechSettings() {
         speech.update(voice: .init(
-            identifier: settings.voiceIdentifier ?? SpeechService.defaultVoiceIdentifier(),
+            identifier: settings.voiceIdentifier ?? defaultVoiceIdentifier ?? "",
             rate: settings.rate, pitch: settings.pitch, volume: settings.volume))
         switch settings.retrigger {
         case .restart: speech.retrigger = .restart

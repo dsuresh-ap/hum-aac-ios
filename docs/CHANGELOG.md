@@ -13,7 +13,9 @@
   that fit.
 - Scroll bars never show on the tiles, the editor or the history, even on a Mac with a mouse.
 - Brighter dark-mode app icon: the keys keep their colors on a near-black teal.
-- Plainer wording in a few settings footers and tile editor hints.
+- Plainer wording in a few settings footers and tile editor hints, and in the camera and local network
+  permission prompts.
+- The AI helper can use Private Cloud Compute: Hum now has Apple's Private Cloud Compute entitlement.
 
 ## Unreleased: plainer words
 
@@ -23,6 +25,9 @@
 
 ## Unreleased: fixes
 
+- Hum no longer opens to a blank white screen right after the device restarts. It used to wait for
+  Apple's speech service before showing anything; now it finds the best voice in the background, and a
+  tile tapped before then speaks in the system voice.
 - Setups with a tall board (a tile below row 8) open again. Their exports, backups and transfers were
   refused on import before.
 

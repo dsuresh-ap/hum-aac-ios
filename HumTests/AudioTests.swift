@@ -190,6 +190,27 @@ struct SpeechCacheTests {
         #expect(!speech.isReady("Hi!"))
     }
 
+    @Test func startsInTheSystemVoiceWithoutALookup() {
+        #expect(SpeechService().voice.identifier.isEmpty)
+    }
+
+    @Test func voiceChangeDropsClipsQueuedForTheOldVoice() {
+        let speech = SpeechService(voice: .init(identifier: "a", rate: 0.5, pitch: 1, volume: 1))
+        speech.prepare(["one", "two", "three"])
+        #expect(speech.pendingRenders == 3)
+        speech.update(voice: .init(identifier: "b", rate: 0.5, pitch: 1, volume: 1))
+        #expect(speech.pendingRenders == 0)
+    }
+
+    @Test func defaultVoiceIsFoundAfterLaunchAndApplied() async {
+        let model = makeModel()
+        model.settings.voiceIdentifier = nil
+        model.applySpeechSettings()
+        await model.upgradeVoiceIfBetterInstalled()
+        #expect(model.defaultVoiceIdentifier == VoiceCatalog.defaultIdentifier())
+        #expect(model.speech.voice.identifier == model.defaultVoiceIdentifier ?? "")
+    }
+
     @Test func engineSurvivesRestarts() {
         let engine = AudioEngine()
         engine.start()

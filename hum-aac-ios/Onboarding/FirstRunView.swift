@@ -43,6 +43,7 @@ struct FirstRunView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background)
         .onAppear(perform: setDefaults)
+        .task { voices = await VoiceCatalog.load() }
     }
 
     // MARK: Welcome
@@ -120,7 +121,7 @@ struct FirstRunView: View {
         }) {
             stepTitle("Pick a voice")
             Text("Tap ▶ to listen. You can change this any time.").foregroundStyle(.secondary)
-            if VoiceCatalog.onlyCompactVoicesInstalled {
+            if VoiceCatalog.onlyCompact(voices) {
                 NaturalVoicesCard()
                     .fixedSize(horizontal: false, vertical: true)  // all the steps, never "…"
                     .padding(14)
@@ -132,7 +133,7 @@ struct FirstRunView: View {
                 }
             }
             styleChoice
-            if !VoiceCatalog.onlyCompactVoicesInstalled {
+            if !voices.isEmpty && !VoiceCatalog.onlyCompact(voices) {
                 DisclosureGroup("Where to get more voices") {
                     MoreVoicesSteps()
                         .fixedSize(horizontal: false, vertical: true)
@@ -146,7 +147,7 @@ struct FirstRunView: View {
 
     private func voiceRow(_ voice: AVSpeechSynthesisVoice) -> some View {
         // With no choice yet, the voice Hum would use is the one marked.
-        let selected = (model.settings.voiceIdentifier ?? SpeechService.defaultVoiceIdentifier()) == voice.identifier
+        let selected = (model.settings.voiceIdentifier ?? model.defaultVoiceIdentifier) == voice.identifier
         return HStack {
             Button {
                 model.settings.voiceIdentifier = voice.identifier
@@ -443,9 +444,10 @@ struct FirstRunView: View {
     }
 
     /// Says `text` with the chosen voice (or the one Hum would pick) and the chosen style.
+    /// Looks the voice up off the main actor, like the board does (HUM-056).
     private func say(_ text: String) {
-        let id = model.settings.voiceIdentifier ?? SpeechService.defaultVoiceIdentifier()
-        speak(text, voice: AVSpeechSynthesisVoice(identifier: id))
+        let id = model.settings.voiceIdentifier ?? model.defaultVoiceIdentifier ?? ""
+        Task { speak(text, voice: await SpeechRenderer.voice(id)) }
     }
 
     private func speak(_ text: String, voice: AVSpeechSynthesisVoice?) {
@@ -464,7 +466,6 @@ struct FirstRunView: View {
         #else
         (rows, columns) = (4, 5)
         #endif
-        voices = VoiceCatalog.voices()
     }
 
     /// The starter board is 5 × 4. If the parent picked a bigger grid, grow Home (growing never moves tiles),
