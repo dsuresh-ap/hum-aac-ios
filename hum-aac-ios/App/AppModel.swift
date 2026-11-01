@@ -353,9 +353,12 @@ final class AppModel {
     /// answer, and asking it at launch left a blank screen.
     func upgradeVoiceIfBetterInstalled() async {
         let chosen = settings.voiceIdentifier
-        let (best, better) = await Task.detached(priority: .userInitiated) {
+        // Tiles speak in the system voice meanwhile, so this can wait a long time. No answer at all:
+        // keep the system voice until the next voice change notice.
+        guard let found = await VoiceCatalog.lookUp(within: .seconds(60), {
             (VoiceCatalog.defaultIdentifier(), chosen.flatMap { VoiceCatalog.upgrade(for: $0)?.identifier })
-        }.value
+        }) else { return }
+        let (best, better) = found
         defaultVoiceIdentifier = best
         // The parent may have picked another voice while Hum was looking.
         if let better, settings.voiceIdentifier == chosen { settings.voiceIdentifier = better }

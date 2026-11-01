@@ -28,6 +28,10 @@
 - Hum no longer opens to a blank white screen right after the device restarts. It used to wait for
   Apple's speech service before showing anything; now it finds the best voice in the background, and a
   tile tapped before then speaks in the system voice.
+- Hum asks Apple's speech service one question at a time, on one background queue, and stops waiting
+  after a time limit. Asking from several threads at once could stall for good on a slow, freshly
+  started simulator: the CI unit tests hung for 6 hours. CI now stops a stuck test run after 25 minutes
+  and prints where the test app is stuck.
 - Setups with a tall board (a tile below row 8) open again. Their exports, backups and transfers were
   refused on import before.
 

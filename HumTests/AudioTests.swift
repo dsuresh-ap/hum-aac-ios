@@ -207,7 +207,8 @@ struct SpeechCacheTests {
         model.settings.voiceIdentifier = nil
         model.applySpeechSettings()
         await model.upgradeVoiceIfBetterInstalled()
-        #expect(model.defaultVoiceIdentifier == VoiceCatalog.defaultIdentifier())
+        let expected = await VoiceCatalog.lookUp { VoiceCatalog.defaultIdentifier() } ?? nil
+        #expect(model.defaultVoiceIdentifier == expected)
         #expect(model.speech.voice.identifier == model.defaultVoiceIdentifier ?? "")
     }
 
@@ -237,8 +238,8 @@ struct VoiceTests {
         #expect(younger.rate < natural.rate)
     }
 
-    @Test func catalogNeverOffersNoveltyVoicesAndPutsBestFirst() {
-        let voices = VoiceCatalog.voices()
+    @Test func catalogNeverOffersNoveltyVoicesAndPutsBestFirst() async {
+        let voices = await VoiceCatalog.load()
         #expect(!voices.contains { $0.voiceTraits.contains(.isNoveltyVoice) })
         let qualities = voices.map(\.quality.rawValue)
         #expect(qualities == qualities.sorted(by: >))
