@@ -12,7 +12,7 @@ import AVFoundation
 /// extensions) appear here too.
 ///
 /// Right after a reboot Apple's speech service can take many seconds to answer, so the main actor never
-/// asks it directly: use `load()`, or call these from a background task.
+/// asks it directly: use `load()`, or wrap the call in `lookUp`.
 nonisolated enum VoiceCatalog {
     /// Voices for the device's language, best first. Novelty voices ("Bubbles", "Jester") and the old
     /// robotic MacinTalk voices ("Fred", "Junior", "Kathy", "Ralph"), which aren't flagged as novelty,
@@ -47,10 +47,27 @@ nonisolated enum VoiceCatalog {
         return a.name < b.name
     }
 
-    /// `voices()` off the main actor.
+    /// `voices()` off the main actor. Empty if the speech service doesn't answer in time.
     static func load() async -> [AVSpeechSynthesisVoice] {
-        await Task.detached(priority: .userInitiated) { voices() }.value
+        await lookUp { voices() } ?? []
     }
+
+    /// Asks the speech service on one background queue, one question at a time, and gives up after
+    /// `limit` (nil). Right after a reboot the service can take many seconds to answer, and questions
+    /// asked from several threads at once then could stall each other for good (CI hung for hours).
+    static func lookUp<T: Sendable>(within limit: Duration = .seconds(20),
+                                    _ work: @escaping @Sendable () -> T) async -> T? {
+        await withCheckedContinuation { continuation in
+            let once = OnceFlag()
+            lookups.async { let value = work(); if once.claim() { continuation.resume(returning: value) } }
+            Task {
+                try? await Task.sleep(for: limit)
+                if once.claim() { continuation.resume(returning: nil) }
+            }
+        }
+    }
+
+    private static let lookups = DispatchQueue(label: "Hum.voice-lookups", qos: .userInitiated)
 
     static func best(language: String = AVSpeechSynthesisVoice.currentLanguageCode()) -> AVSpeechSynthesisVoice? {
         voices(language: language).first
