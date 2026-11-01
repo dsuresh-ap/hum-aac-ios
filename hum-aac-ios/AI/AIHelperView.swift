@@ -76,7 +76,7 @@ struct AIHelperView: View {
                     .font(.title3.weight(.semibold))
                 Text("Tell the helper about your child, or paste phrases they say. It suggests whole-phrase tiles, and you choose which ones to add.")
                 VStack(alignment: .leading, spacing: 8) {
-                    Label("Only your words and your tiles' text are used. Never photos or recordings.", systemImage: "text.bubble")
+                    Label("Only your words and your tiles' text are used, never photos or recordings.", systemImage: "text.bubble")
                     Label("Runs on this device by default.", systemImage: "lock")
                     Label("It only suggests. Nothing changes until you tap Add.", systemImage: "hand.tap")
                 }

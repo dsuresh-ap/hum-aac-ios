@@ -70,12 +70,11 @@ final class ImportUITests: XCTestCase {
         XCTAssertEqual(homes.count, 1, "Only one board is called Home")
     }
 
-    /// Scenario: "Replace everything" asks first, then the child's Home is the file's Home, shown in
-    /// pages on iPhone, and its folders open.
+    /// Scenario: "Replace everything" asks first, then the child's Home is the file's Home, and its
+    /// folders open.
     @MainActor
     func testReplaceEverythingThenUndo() throws {
-        // UI-test launches turn the iPhone page layout off unless asked for.
-        let app = launchHum(["-skipFirstRun", "-startInParent", "-importFile", try bigFixture()] + (isPad ? [] : ["-phoneLayout"]))
+        let app = launchHum(["-skipFirstRun", "-startInParent", "-importFile", try bigFixture()])
         XCTAssertTrue(el(app, "importSummary").waitForExistence(timeout: 30))
         app.buttons["Replace everything"].firstMatch.tap()
         el(app, "applyImport").tap()
@@ -88,9 +87,6 @@ final class ImportUITests: XCTestCase {
         let chat = el(app, "tile.Chat")
         XCTAssertTrue(chat.waitForExistence(timeout: 10), "The file's Home is now the child's Home")
         shot(app, "child home after replace")
-        if !isPad {
-            XCTAssertGreaterThanOrEqual(chat.frame.width, 88, "On iPhone the 6 × 8 Home is shown in pages with big tiles")
-        }
         chat.tap()
         XCTAssertTrue(el(app, "back").waitForExistence(timeout: 3))
         XCTAssertTrue(el(app, "back").isHittable, "A folder opened")

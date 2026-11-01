@@ -140,8 +140,7 @@ struct ParentEditorView: View {
             errorMessage = String(localized: "\(board.name) is full. Make the tiles smaller (the size button at the top right) or hide a tile you don't need.")
             return
         }
-        editor = TileEditorRequest(kind: .new(boardID: board.id, row: spot.row, column: spot.column), startsAsFolder: folder,
-                                   phoneSpot: model.showsPhoneLayout(board) ? PhoneLayout.firstFreeSpot(on: board) : nil)
+        editor = TileEditorRequest(kind: .new(boardID: board.id, row: spot.row, column: spot.column), startsAsFolder: folder)
     }
 
     @ToolbarContentBuilder
@@ -252,8 +251,6 @@ struct TileEditorRequest: Identifiable {
     let kind: Kind
     /// "New folder": the sheet asks for a name first and makes the folder on Save.
     var startsAsFolder = false
-    /// Added from an iPhone's phone layout: the phone spot that was tapped.
-    var phoneSpot: PhoneLayout.Spot? = nil
 }
 
 /// A short message after a move, e.g. "Moved “juice” into Food." with a button to open the folder.
@@ -300,47 +297,31 @@ private struct EditGrid: View {
     /// The tile whose "Delete tile" was chosen from the long-press menu, waiting for the parent to confirm.
     @State private var confirmDelete: Tile?
 
-    /// True on iPhone for boards too big for its screen: the editor shows and edits the phone layout.
-    private var phone: Bool { model.showsPhoneLayout(board) }
     /// The board's rows plus a spare empty row to add tiles in (`BoardStore.editorRows`).
-    private var rows: Int { phone ? PhoneLayout.rows : BoardStore.editorRows(board) }
-    private var columns: Int { phone ? PhoneLayout.columns : board.columns }
-    /// The phone pages, plus an empty one after them when the parent turned to it to add tiles there.
-    private var pageCount: Int { max(PhoneLayout.pageCount(board), model.editingPage + 1) }
-    private var page: Int { phone ? min(model.editingPage, pageCount - 1) : 0 }
+    private var rows: Int { BoardStore.editorRows(board) }
+    private var columns: Int { board.columns }
 
     var body: some View {
         VStack(spacing: 8) {
-            if phone { pageBar }
             GeometryReader { geo in
-                let spacing = phone ? 8 : Theme.gridSpacing
+                let spacing = Theme.gridSpacing
                 // Edit tiles never get smaller than this. When the board doesn't fit, the editor scrolls
                 // instead of squeezing tiles on top of each other (iPhone in landscape, tall boards).
-                // Off the phone layout, tiles get the same shape as on the child's board, which scrolls too.
+                // Tiles get the same shape as on the child's board, which scrolls too.
                 let fitWidth = GridMetrics.tileWidth(across: geo.size.width, columns: columns, spacing: spacing)
-                let fitHeight = phone
-                    ? (geo.size.height - spacing * CGFloat(rows - 1)) / CGFloat(rows)
-                    : GridMetrics.layout(in: geo.size, rows: board.rows, columns: columns, spacing: spacing).tileHeight
+                let fitHeight = GridMetrics.layout(in: geo.size, rows: board.rows, columns: columns, spacing: spacing).tileHeight
                 let width = max(fitWidth, Self.minimumTile)
                 let height = max(fitHeight, Self.minimumTile)
                 let tallerThanScreen = height * CGFloat(rows) + spacing * CGFloat(rows - 1) > geo.size.height + 0.5
                 let axes: Axis.Set = [fitWidth < Self.minimumTile ? .horizontal : [], tallerThanScreen ? .vertical : []]
-                let byPosition: [String: Tile] = phone
-                    ? Dictionary(uniqueKeysWithValues: PhoneLayout.tiles(on: board, page: page).map { ("\($0.key.row),\($0.key.column)", $0.value) })
-                    : Dictionary(board.placedTiles.map { ("\($0.row!),\($0.column!)", $0) }, uniquingKeysWith: { a, _ in a })
+                let byPosition = Dictionary(board.placedTiles.map { ("\($0.row!),\($0.column!)", $0) }, uniquingKeysWith: { a, _ in a })
                 let grid = VStack(spacing: spacing) {
                     ForEach(0..<rows, id: \.self) { row in
                         HStack(spacing: spacing) {
                             ForEach(0..<columns, id: \.self) { column in
-                                Group {
-                                    if phone && PhoneLayout.isMoreSpot(row: row, column: column) {
-                                        moreSlot
-                                    } else {
-                                        slot(tile: byPosition["\(row),\(column)"], row: row, column: column,
-                                             roomy: height >= 120 && width >= 120)
-                                    }
-                                }
-                                .frame(width: width, height: height)
+                                slot(tile: byPosition["\(row),\(column)"], row: row, column: column,
+                                     roomy: height >= 120 && width >= 120)
+                                    .frame(width: width, height: height)
                                 .id(byPosition["\(row),\(column)"]?.id)
                             }
                         }
@@ -358,7 +339,7 @@ private struct EditGrid: View {
                     // Dragging a tile near an edge scrolls, so far spots can still be reached.
                     ScrollViewReader { proxy in
                         ScrollView(axes) { grid }
-                            .scrollIndicators(.visible)
+                            .scrollIndicators(.never)
                             .accessibilityIdentifier("editGridScroll")
                             // A tile found with Find may be off screen.
                             .task(id: model.editorHighlightID) {
@@ -369,8 +350,6 @@ private struct EditGrid: View {
             }
         }
         .onGeometryChange(for: CGSize.self) { $0.size } action: { model.editorBoardArea = $0 }
-        // New tiles (added on a Mac, or from an import) get a phone spot before they're shown here.
-        .task(id: "\(board.id)-\(board.placedTiles.count)") { model.arrangePhoneLayout(board) }
         // Every delete asks first, like the tile editor's.
         .confirmationDialog("Delete this tile?", isPresented: Binding(get: { confirmDelete != nil }, set: { if !$0 { confirmDelete = nil } }),
                             titleVisibility: .visible, presenting: confirmDelete) { tile in
@@ -382,46 +361,9 @@ private struct EditGrid: View {
 
     /// How many rows the child sees before scrolling, or nil when the whole board shows (or isn't known yet).
     private var childFold: Int? {
-        guard !phone, model.boardArea != .zero else { return nil }
+        guard model.boardArea != .zero else { return nil }
         let visible = GridMetrics.visibleRows(in: model.boardArea, rows: board.rows, columns: columns, spacing: Theme.gridSpacing)
         return visible < rows ? visible : nil
-    }
-
-    /// "Page 1 of 2" with arrows, for boards shown in their phone layout.
-    private var pageBar: some View {
-        HStack {
-            Button { model.editingPage = page - 1 } label: { Image(systemName: "chevron.left") }
-                .disabled(page == 0)
-                .accessibilityLabel("Previous page")
-                .help("Previous page")
-            Spacer()
-            Text("Page \(page + 1) of \(pageCount)")
-                .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
-                .accessibilityIdentifier("phonePage")
-            Spacer()
-            Button { model.editingPage = page + 1 } label: { Image(systemName: "chevron.right") }
-                .accessibilityLabel(page + 1 < pageCount ? "Next page" : "New page")
-                .help(page + 1 < pageCount ? "Next page" : "New page")
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.small)
-    }
-
-    /// The bottom-right spot of a phone page: "More" opens the next page (for the child too).
-    private var moreSlot: some View {
-        Button { model.editingPage = page + 1 } label: {
-            RoundedRectangle(cornerRadius: Theme.tileCorner, style: .continuous)
-                .fill(Theme.ink.opacity(0.06))
-                .overlay {
-                    VStack(spacing: 4) {
-                        Image(systemName: "arrow.right.circle")
-                        Text(page + 1 < PhoneLayout.pageCount(board) ? "More" : "New page").font(.caption.weight(.semibold))
-                    }
-                    .foregroundStyle(Theme.ink.opacity(0.55))
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("phoneMore")
     }
 
     /// Folders a tile could move into: every board except this one and the folder the tile itself opens.
@@ -493,31 +435,14 @@ private struct EditGrid: View {
         .dropDestination(for: String.self) { items, _ in
             guard let id = items.first.flatMap(UUID.init(uuidString:)),
                   let dragged = (board.tiles ?? []).first(where: { $0.id == id }) else { return false }
-            if phone {
-                // Only the phone layout changes; iPad and Mac keep their spots.
-                if !model.store.movePhone(dragged, to: PhoneLayout.Spot(page: page, row: row, column: column), on: board) {
-                    errorMessage = String(localized: "\(board.name) is full on iPad and Mac. Make its tiles smaller there first.")
-                }
-            } else {
-                model.store.move(dragged, to: row, column: column, on: board)
-            }
+            model.store.move(dragged, to: row, column: column, on: board)
             return true
         }
     }
 
-    /// A new tile or folder in this spot. On the phone layout it also needs a spot on the board's own grid
-    /// (iPad and Mac): the first empty one.
+    /// A new tile or folder in this spot.
     private func add(row: Int, column: Int, folder: Bool) {
-        guard phone else {
-            editor = TileEditorRequest(kind: .new(boardID: board.id, row: row, column: column), startsAsFolder: folder)
-            return
-        }
-        guard let bigSpot = model.store.firstEmptySpot(on: board) else {
-            errorMessage = String(localized: "\(board.name) is full on iPad and Mac. Make its tiles smaller there first.")
-            return
-        }
-        editor = TileEditorRequest(kind: .new(boardID: board.id, row: bigSpot.row, column: bigSpot.column), startsAsFolder: folder,
-                                   phoneSpot: PhoneLayout.Spot(page: page, row: row, column: column))
+        editor = TileEditorRequest(kind: .new(boardID: board.id, row: row, column: column), startsAsFolder: folder)
     }
 }
 
@@ -854,6 +779,7 @@ private struct UnplacedTray: View {
                     }
                 }
             }
+            .scrollIndicators(.never)
         }
         .padding(Theme.gridPadding)
         .background(Theme.chrome)

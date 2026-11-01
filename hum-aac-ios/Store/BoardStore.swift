@@ -184,39 +184,6 @@ final class BoardStore {
         }
     }
 
-    /// Moves a tile in the phone layout. If another tile is there, the two swap. The big layout
-    /// (`row`/`column`, used by iPad and Mac) is untouched, except that a tile coming from the tray or
-    /// another board takes the first empty spot there. Returns false (and changes nothing) when it needs
-    /// that spot and the board is full.
-    @discardableResult
-    func movePhone(_ tile: Tile, to spot: PhoneLayout.Spot, on board: Board) -> Bool {
-        guard !PhoneLayout.isMoreSpot(row: spot.row, column: spot.column) else { return false }
-        let needsBigSpot = tile.board?.id != board.id || tile.row == nil || tile.column == nil
-        let bigSpot = needsBigSpot ? firstEmptySpot(on: board) : nil
-        if needsBigSpot && bigSpot == nil { return false }
-        if !needsBigSpot && PhoneLayout.spot(of: tile) == spot { return true }
-        change("Move Tile") {
-            let from = needsBigSpot ? nil : PhoneLayout.spot(of: tile)
-            if let other = PhoneLayout.tiles(on: board, page: spot.page)[spot], other.id != tile.id {
-                // Swap. A tile with nowhere to go gets a free spot the next time the phone shows the board.
-                other.phonePage = from?.page
-                other.phoneRow = from?.row
-                other.phoneColumn = from?.column
-            }
-            if let bigSpot {
-                tile.board = board
-                tile.row = bigSpot.row
-                tile.column = bigSpot.column
-                tile.positionUpdatedAt = .now
-            }
-            tile.phonePage = spot.page
-            tile.phoneRow = spot.row
-            tile.phoneColumn = spot.column
-            board.updatedAt = .now
-        }
-        return true
-    }
-
     /// The first empty spot, reading left to right, top to bottom. Nil when the board is full.
     func firstEmptySpot(on board: Board) -> (row: Int, column: Int)? {
         let taken = Set(board.placedTiles.map { "\($0.row!),\($0.column!)" })
@@ -244,9 +211,6 @@ final class BoardStore {
             tile.board = target
             tile.row = spot?.row
             tile.column = spot?.column
-            tile.phonePage = nil  // its phone spot was on the old board; it gets a new one there
-            tile.phoneRow = nil
-            tile.phoneColumn = nil
             tile.positionUpdatedAt = now
             target.updatedAt = now
         }
@@ -333,16 +297,12 @@ final class BoardStore {
 
     /// Adds a new tile from the tile editor, and its folder board if asked. One undo step.
     @discardableResult
-    func addTile(to board: Board, row: Int, column: Int, phoneSpot: PhoneLayout.Spot? = nil, newFolderName: String? = nil,
+    func addTile(to board: Board, row: Int, column: Int, newFolderName: String? = nil,
                  rows: Int = 3, columns: Int = 3, _ edit: (Tile) -> Void) -> Tile {
         let tile = Tile(label: "", spokenText: "", row: row, column: column)
         change(newFolderName == nil ? "Add Tile" : "New Folder") {
             context.insert(tile)
             tile.board = board
-            // Added on a phone: it goes where the parent tapped there, too.
-            tile.phonePage = phoneSpot?.page
-            tile.phoneRow = phoneSpot?.row
-            tile.phoneColumn = phoneSpot?.column
             growRows(board, toFit: row)
             edit(tile)
             if let newFolderName {
@@ -555,7 +515,7 @@ struct SavedTile {
     var functionRaw, colorHex, symbol: String?
     var linkedBoardID: UUID?
     var isHidden: Bool
-    var row, column, phonePage, phoneRow, phoneColumn: Int?
+    var row, column: Int?
     var positionUpdatedAt, createdAt: Date
     var imageData, audioData, extraJSON: Data?
     var imageCredit: String?
@@ -573,9 +533,6 @@ struct SavedTile {
         isHidden = tile.isHidden
         row = tile.row
         column = tile.column
-        phonePage = tile.phonePage
-        phoneRow = tile.phoneRow
-        phoneColumn = tile.phoneColumn
         positionUpdatedAt = tile.positionUpdatedAt
         createdAt = tile.createdAt
         imageData = tile.imageData
@@ -592,9 +549,6 @@ struct SavedTile {
         tile.symbol = symbol
         tile.linkedBoardID = linkedBoardID
         tile.isHidden = isHidden
-        tile.phonePage = phonePage
-        tile.phoneRow = phoneRow
-        tile.phoneColumn = phoneColumn
         tile.positionUpdatedAt = positionUpdatedAt
         tile.createdAt = createdAt
         tile.imageData = imageData
@@ -645,7 +599,6 @@ private struct TileState {
     let label: String, spokenText: String, functionRaw: String?, colorHex: String?
     let linkedBoardID: UUID?, isHidden: Bool, symbol: String?, extraJSON: Data?
     let row: Int?, column: Int?, positionUpdatedAt: Date
-    let phonePage: Int?, phoneRow: Int?, phoneColumn: Int?
     let updatedAt: Date
     let media: (image: Data?, credit: String?, audio: Data?)?
 
@@ -654,7 +607,6 @@ private struct TileState {
         label = tile.label; spokenText = tile.spokenText; functionRaw = tile.functionRaw; colorHex = tile.colorHex
         linkedBoardID = tile.linkedBoardID; isHidden = tile.isHidden; symbol = tile.symbol; extraJSON = tile.extraJSON
         row = tile.row; column = tile.column; positionUpdatedAt = tile.positionUpdatedAt
-        phonePage = tile.phonePage; phoneRow = tile.phoneRow; phoneColumn = tile.phoneColumn
         updatedAt = tile.updatedAt
         media = keepMedia ? (tile.imageData, tile.imageCredit, tile.audioData) : nil
     }
@@ -664,7 +616,6 @@ private struct TileState {
         tile.label = label; tile.spokenText = spokenText; tile.functionRaw = functionRaw; tile.colorHex = colorHex
         tile.linkedBoardID = linkedBoardID; tile.isHidden = isHidden; tile.symbol = symbol; tile.extraJSON = extraJSON
         tile.row = row; tile.column = column; tile.positionUpdatedAt = positionUpdatedAt
-        tile.phonePage = phonePage; tile.phoneRow = phoneRow; tile.phoneColumn = phoneColumn
         tile.updatedAt = updatedAt
         if let media { tile.imageData = media.image; tile.imageCredit = media.credit; tile.audioData = media.audio }
     }

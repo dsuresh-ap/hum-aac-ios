@@ -18,14 +18,15 @@ func rgb(_ hex: UInt32, _ a: CGFloat = 1) -> CGColor {
     CGColor(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: a)
 }
 
-// Hum palette (see Theme.swift). Background: teal (light), deep slate (dark), black (tinted, iOS tints it).
-let mist: UInt32 = tinted ? 0x000000 : dark ? 0x1B2228 : (variant == "wave" ? 0x3A7F83 : 0xE9EDF0)
-let mistDeep: UInt32 = tinted ? 0x000000 : dark ? 0x0F1317 : (variant == "wave" ? 0x255A5E : 0xD3DCE2)
+// Hum palette (see Theme.swift). Background: teal (light), near-black teal (dark), black (tinted, iOS tints it).
+// Dark keeps the keys bright: muted keys on a dark background look dull on the Home Screen.
+let mist: UInt32 = tinted ? 0x000000 : dark ? 0x14282B : (variant == "wave" ? 0x3A7F83 : 0xE9EDF0)
+let mistDeep: UInt32 = tinted ? 0x000000 : dark ? 0x081214 : (variant == "wave" ? 0x255A5E : 0xD3DCE2)
 let teal: UInt32 = 0x2F6F73
 let faces: [(UInt32, UInt32)] = tinted
     ? [(0xD8D8D8, 0x8A8A8A), (0xC8C8C8, 0x7E7E7E), (0xF2F2F2, 0x9A9A9A), (0xB8B8B8, 0x747474)]
     : dark
-    ? [(0x3F5A3B, 0x2A3D27), (0x34536A, 0x243A4A), (0x6A403A, 0x4A2B27), (0x5F5133, 0x433922)]
+    ? [(0xA8D296, 0x6E9A5E), (0x96CBE6, 0x5D93B0), (0xF2A898, 0xB8695A), (0xF5CB86, 0xBE9149)]
     : [(0xCFE4C6, 0xA9C79C), (0xC5DFEC, 0x99BFD3), (0xF2CBC2, 0xD9A497), (0xF6DCB4, 0xDDB985)] // moss, sky, rosehip, apricot
 
 let S = CGFloat(size)

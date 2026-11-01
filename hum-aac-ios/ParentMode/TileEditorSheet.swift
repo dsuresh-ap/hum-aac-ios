@@ -345,7 +345,7 @@ struct TileEditorSheet: View {
         } footer: {
             Text(folderFirst
                  ? "Leave empty to just open the folder."
-                 : "Type the full phrase, just the way your child says it, even if it's from a show or a song. Keep it in one piece. Don't split it into single words.")
+                 : "Type the full phrase, just the way your child says it, even if it's from a show or a song. Don't split it into single words.")
         }
     }
 
@@ -415,7 +415,7 @@ struct TileEditorSheet: View {
         } header: {
             Text("Folder")
         } footer: {
-            Text("A folder tile opens another page of tiles, like \"Food\" or \"Outside\". Your child comes back with the Back or Home button.")
+            Text("A folder tile opens another page of tiles, like “Food” or “Outside”. Your child comes back with the Back or Home button.")
         }
     }
 
@@ -440,7 +440,7 @@ struct TileEditorSheet: View {
                     ColorPicker("Tile color", selection: $customColor, supportsOpacity: false)
                 }
                 Toggle("Hide for now", isOn: $isHidden)
-                Text("\"What is it for?\" only sets the color. A hidden tile keeps its spot as empty space, so nothing else moves.")
+                Text("“What is it for?” only sets the color. A hidden tile keeps its spot as empty space, so nothing else moves.")
                     .font(.footnote).foregroundStyle(.secondary)
                 if existing != nil {
                     Button("Delete tile", systemImage: "trash", role: .destructive) { confirmDelete = true }
@@ -555,7 +555,7 @@ struct TileEditorSheet: View {
         switch request.kind {
         case .new(let boardID, let row, let column):
             guard let board = model.store.board(boardID) else { break }
-            saved = model.store.addTile(to: board, row: row, column: column, phoneSpot: request.phoneSpot, newFolderName: folderName,
+            saved = model.store.addTile(to: board, row: row, column: column, newFolderName: folderName,
                                         rows: rows, columns: columns, apply)
         case .edit:
             if let tile = existing {

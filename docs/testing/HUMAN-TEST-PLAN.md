@@ -70,7 +70,7 @@ in Files / iCloud Drive / AirDrop.
 | 4.1 | Drag a tile to an empty spot; onto another tile. | Moves / swaps only those two. Undo puts them back. |
 | 4.2 | Drag a tile onto a folder tile's “Open” chip. | Chip says “Put inside”; the tile moves into the folder; banner offers Open folder. |
 | 4.3 | Shrink a grid so tiles go to “needs a spot”, then drag them back from the tray. | Each lands where dropped; the tray empties. |
-| 4.4 | iPhone phone layout: drag tiles between phone pages. | Only the phone layout changes; the iPad/Mac layout (check on another device or after sync) doesn't. |
+| 4.4 | iPhone, a board wider than 4 tiles: drag a tile to a new spot. | All the board's tiles show on one screen (no “More” tile), and the move shows on iPad and Mac after sync. |
 | 4.5 | Undo after: add, edit, delete, hide, move, move to folder, duplicate, grid size, paste phrases, AI add, merge import, replace import. | Each undoes exactly one step. Delete and Replace everything (HUM-002, HUM-038) bring back exactly what was there; after one of those, older steps can't be undone any more (by design, see BUGS.md). |
 | 4.6 | iPhone 17e / SE: open the editor on the starter board. | Pencil/camera badges don't hide pictures (HUM-007); folder tiles can be tapped to edit (HUM-006). |
 | 4.7 | Type a very long phrase (200 characters) and a label with one long word (“Entertainment”). | The child's tile shows the label without breaking mid-word (HUM-043); VoiceOver reads the whole phrase. |

@@ -3,7 +3,7 @@
 
 import XCTest
 
-/// The rest of grown-up mode: Paste phrases, the AI helper, export, the Guided Access tip and Settings.
+/// The rest of grown-up mode: Paste phrases, the AI helper, export, Guided Access and Settings.
 final class ParentToolsUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -51,27 +51,22 @@ final class ParentToolsUITests: XCTestCase {
         XCTAssertTrue(mayBeWrong.exists, "The helper says suggestions can be wrong and nothing is added until chosen")
     }
 
-    /// Scenario: the first time a parent opens grown-up mode on iPhone/iPad, Hum explains Guided Access,
-    /// once.
+    /// Scenario: setup explains Guided Access on iPhone/iPad, so grown-up mode doesn't repeat it.
     @MainActor
-    func testGuidedAccessTipShowsOnce() {
+    func testGuidedAccessIsExplainedOnce() {
         let app = launchHum()
         el(app, "firstRun.start").tap()
-        app.buttons["Next"].firstMatch.tap()
+        for _ in 0..<3 { app.buttons["Next"].firstMatch.tap() }
+        let card = app.staticTexts["Keep your child in Hum"]
+        scrollTo(app, card)
+        XCTAssertTrue(card.exists, "The Extras step explains Guided Access")
         app.buttons["Next"].firstMatch.tap()
         el(app, "firstRun.starter").tap()
         XCTAssertTrue(el(app, "editGate").waitForExistence(timeout: 5))
         el(app, "editGate").press(forDuration: 5)
-        let tip = app.alerts["Tip: lock the app with Guided Access"]
-        let shown = tip.waitForExistence(timeout: 5)
-        shot(app, "first time in grown-up mode")
-        XCTAssertTrue(shown, "The tip explains Guided Access the first time (HUM-041)")
-        guard shown else { return }
-        tip.buttons["Got it"].tap()
-        finishEditing(app)
-        el(app, "editGate").press(forDuration: 5)
         XCTAssertTrue(el(app, "exitParentMode").waitForExistence(timeout: 5))
-        XCTAssertFalse(tip.waitForExistence(timeout: 2), "The tip shows only once")
+        XCTAssertFalse(app.alerts["Tip: lock the app with Guided Access"].waitForExistence(timeout: 2),
+                       "Grown-up mode doesn't repeat the tip")
     }
 
     /// Scenario: Export all boards opens the system's share sheet.

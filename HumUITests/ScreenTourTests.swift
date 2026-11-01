@@ -16,14 +16,18 @@ final class ScreenTourTests: XCTestCase {
         let app = launchHum()
         shot(app, "01 welcome")
         el(app, "firstRun.start").tap()
-        shot(app, "02 voice")
+        shot(app, "02 how hum works")
         app.buttons["Next"].firstMatch.tap()
-        shot(app, "03 grid size")
+        shot(app, "03 voice")
         app.buttons["Next"].firstMatch.tap()
-        shot(app, "04 start choice")
+        shot(app, "04 grid size")
+        app.buttons["Next"].firstMatch.tap()
+        shot(app, "05 extras")
+        app.buttons["Next"].firstMatch.tap()
+        shot(app, "06 start choice")
         el(app, "firstRun.starter").tap()
         XCTAssertTrue(el(app, "tile.hi").waitForExistence(timeout: 5))
-        shot(app, "05 starter board")
+        shot(app, "07 starter board")
     }
 
     @MainActor

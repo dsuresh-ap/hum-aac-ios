@@ -100,7 +100,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Tapping")
                 } footer: {
-                    Text("Every tap always makes a sound, even very fast repeated taps. Repeated tapping is communication too. On a board that scrolls, a tile speaks when the finger lifts. That way, scrolling never makes a tile speak.")
+                    Text("Every tap makes a sound, even very fast repeated taps, because repeated tapping is communication too. On a board that scrolls, a tile speaks when the finger lifts, so scrolling never makes a tile speak.")
                 }
 
                 Section {
@@ -122,7 +122,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Tiles")
                 } footer: {
-                    Text("The sentence strip collects tapped tiles, so your child can play them together. Use it when your child starts mixing words into new sentences. The history box shows what was said recently, so you can catch up if you missed it. The word finder looks up a word and lights up the way to its tile, without saying it. This helps your child learn the path. All three are off at first. Each tile always speaks on its own.")
+                    Text("The sentence strip collects tapped tiles so your child can play them together. Turn it on when your child starts mixing words into new sentences. The history box shows what was said recently, so you can catch up if you missed it. The word finder looks up a word and lights up the way to its tile without saying it, so your child learns the path. All three start off, and each tile always speaks on its own.")
                 }
 
                 whatsThisSection
@@ -220,7 +220,7 @@ struct SettingsView: View {
         } header: {
             Text("What's this?")
         } footer: {
-            Text("Adds a camera button at the top of your child's board. Your child points the camera at something. Hum shows up to three words for it. A word speaks only when your child taps it. Hum makes the guesses on this device, and they can be wrong. Pictures aren't kept.")
+            Text("Adds a camera button at the top of your child's board. Your child points the camera at something, and Hum shows up to three words for it. A word speaks only when your child taps it. Hum makes its guesses on this device, and they can be wrong. Pictures aren't kept.")
         }
     }
 

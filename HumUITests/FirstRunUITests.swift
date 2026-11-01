@@ -3,7 +3,7 @@
 
 import XCTest
 
-/// A parent opening Hum for the first time: Welcome → Voice → Grid size → Start.
+/// A parent opening Hum for the first time: Welcome → How Hum works → Voice → Grid size → Extras → Start.
 final class FirstRunUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -12,9 +12,12 @@ final class FirstRunUITests: XCTestCase {
     @MainActor
     private func goToStartChoice(_ app: XCUIApplication, grid: String? = nil) {
         el(app, "firstRun.start").tap()
-        app.buttons["Next"].firstMatch.tap()
+        app.buttons["Next"].firstMatch.tap()  // how Hum works
+        app.buttons["Next"].firstMatch.tap()  // voice
         if let grid { app.buttons[grid].firstMatch.tap() }
-        app.buttons["Next"].firstMatch.tap()
+        app.buttons["Next"].firstMatch.tap()  // grid size
+        XCTAssertTrue(app.staticTexts["Extras for your child's screen"].waitForExistence(timeout: 3))
+        app.buttons["Next"].firstMatch.tap()  // extras
         XCTAssertTrue(app.staticTexts["How do you want to start?"].waitForExistence(timeout: 3))
     }
 
@@ -43,6 +46,8 @@ final class FirstRunUITests: XCTestCase {
         let app = launchHum()
         goToStartChoice(app, grid: "3 × 4")
         app.buttons["Back"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Extras for your child's screen"].waitForExistence(timeout: 3))
+        app.buttons["Back"].firstMatch.tap()
         XCTAssertTrue(app.staticTexts["How many tiles on a screen?"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["3 × 4"].firstMatch.isSelected, "The picked size should still be selected")
         app.buttons["Back"].firstMatch.tap()
@@ -54,6 +59,7 @@ final class FirstRunUITests: XCTestCase {
     func testSkipVoice() {
         let app = launchHum()
         el(app, "firstRun.start").tap()
+        app.buttons["Next"].firstMatch.tap()  // how Hum works
         app.buttons["Skip"].firstMatch.tap()
         XCTAssertTrue(app.staticTexts["How many tiles on a screen?"].waitForExistence(timeout: 3))
     }
@@ -105,7 +111,7 @@ final class FirstRunUITests: XCTestCase {
     /// protest tiles stay on Home.
     @MainActor
     func testStarterBoardGrowsToABiggerChoiceWithoutMovingTiles() {
-        let app = launchHum(isPad ? [] : ["-phoneLayout"])
+        let app = launchHum()
         goToStartChoice(app, grid: "4 × 5")
         el(app, "firstRun.starter").tap()
         XCTAssertTrue(el(app, "tile.hi").waitForExistence(timeout: 5))
@@ -119,11 +125,46 @@ final class FirstRunUITests: XCTestCase {
     func testChoosingAVoiceMarksIt() throws {
         let app = launchHum()
         el(app, "firstRun.start").tap()
+        app.buttons["Next"].firstMatch.tap()  // how Hum works
         let play = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Play '")).firstMatch
         try XCTSkipUnless(play.waitForExistence(timeout: 3), "No voices installed on this simulator")
         let name = String(play.label.dropFirst("Play ".count))
         app.buttons[name].firstMatch.tap()
         XCTAssertTrue(app.images["checkmark.circle.fill"].exists || app.buttons[name].firstMatch.isSelected,
                       "The chosen voice should be marked")
+    }
+
+    /// Scenario: "How Hum works" has tiles to try, and explains folders and the lock.
+    @MainActor
+    func testHowHumWorksStep() {
+        let app = launchHum()
+        el(app, "firstRun.start").tap()
+        XCTAssertTrue(app.staticTexts["How Hum works"].waitForExistence(timeout: 3))
+        let snack = app.buttons["I want a snack"].firstMatch
+        XCTAssertTrue(snack.exists, "A tile to try")
+        snack.tap()
+        XCTAssertTrue(app.staticTexts["Folders hold more tiles"].exists)
+        XCTAssertTrue(app.staticTexts["Grown-up settings are behind the lock"].exists)
+        shot(app, "how hum works")
+    }
+
+    /// Scenario: turning on the history box during setup shows it on the child's screen.
+    @MainActor
+    func testExtrasStepTurnsOnTheHistoryBox() {
+        let app = launchHum()
+        el(app, "firstRun.start").tap()
+        app.buttons["Next"].firstMatch.tap()
+        app.buttons["Next"].firstMatch.tap()
+        app.buttons["Next"].firstMatch.tap()
+        let history = el(app, "firstRun.history")
+        XCTAssertTrue(history.waitForExistence(timeout: 3))
+        XCTAssertEqual(history.value as? String, "0", "Off at first")
+        history.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        XCTAssertEqual(history.value as? String, "1")
+        shot(app, "extras")
+        app.buttons["Next"].firstMatch.tap()
+        el(app, "firstRun.starter").tap()
+        XCTAssertTrue(el(app, "tile.hi").waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["What's said will show here."].exists, "The history box is on the child's screen")
     }
 }

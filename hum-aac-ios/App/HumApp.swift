@@ -40,8 +40,6 @@ struct HumApp: App {
                 .environment(model)
                 .modelContainer(model.container)
                 .task {
-                    let launchArgs = ProcessInfo.processInfo.arguments
-                    if launchArgs.contains("-uiTesting") { model.usesPhoneLayout = launchArgs.contains("-phoneLayout") }
                     model.launch()
                     // Screenshot/UI-test helpers. Only active with -uiTesting (in-memory store).
                     let args = ProcessInfo.processInfo.arguments

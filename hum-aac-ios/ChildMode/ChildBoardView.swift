@@ -120,14 +120,13 @@ struct BoardGrid: View {
 
     var body: some View {
         GeometryReader { geo in
-            let layout = GridMetrics.layout(in: geo.size, rows: snapshot.rows, columns: snapshot.columns,
-                                            spacing: spacing, canScroll: !snapshot.paged)
+            let layout = GridMetrics.layout(in: geo.size, rows: snapshot.rows, columns: snapshot.columns, spacing: spacing)
             if layout.scrolls {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical) {
                         grid(layout)
                     }
-                    .scrollIndicators(.hidden)
+                    .scrollIndicators(.never)
                     .scrollBounceBehavior(.basedOnSize)
                     // The word finder's next tile may be below the fold: bring it into view.
                     .task(id: model.finderHint) {
@@ -136,8 +135,8 @@ struct BoardGrid: View {
                         }
                     }
                 }
-                // A new board (or page) starts at the top. Sync updates to the same board keep the place.
-                .id("\(snapshot.boardID)-\(snapshot.page)")
+                // A new board starts at the top. Sync updates to the same board keep the place.
+                .id(snapshot.boardID)
                 .accessibilityIdentifier("boardScroll")
             } else {
                 grid(layout)
@@ -302,6 +301,7 @@ private struct SentenceStrip: View {
                     }
                     .padding(.horizontal, 8)
                 }
+                .scrollIndicators(.never)
                 .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
                 .background(Theme.chrome, in: .rect(cornerRadius: 14))
             }
@@ -373,7 +373,7 @@ private struct HistoryBox: View {
                             }
                         }
                     }
-                    .scrollIndicators(.hidden)
+                    .scrollIndicators(.never)
                     // Keep the newest entry in view, on first show and when something new is said.
                     // Older entries scroll off the leading edge.
                     .task(id: recent.last) {

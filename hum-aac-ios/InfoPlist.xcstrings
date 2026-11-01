@@ -151,7 +151,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Take a photo of the real thing for a tile, or let your child ask “What's this?”. Photos stay on this device."
+            "value" : "Take a photo of the real thing for a tile, or let your child ask “What's this?” Photos stay on this device."
           }
         },
         "es" : {
@@ -199,42 +199,42 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Send boards straight between your iPad, iPhone and Mac when they're near each other, only when you choose to. Nothing goes through the internet."
+            "value" : "When you choose to, Hum sends boards straight between your iPad, iPhone and Mac while they're near each other. Nothing goes through the internet."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Envía tableros directamente entre tu iPad, iPhone y Mac cuando están cerca, solo cuando tú lo decidas. Nada pasa por internet."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Envoyez des tableaux directement entre votre iPad, iPhone et Mac quand ils sont proches, seulement quand vous le décidez. Rien ne passe par Internet."
           }
         },
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Sende Tafeln direkt zwischen deinem iPad, iPhone und Mac, wenn sie nah beieinander sind, nur wenn du es möchtest. Nichts geht über das Internet."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Envie pranchas direto entre seu iPad, iPhone e Mac quando estiverem perto, só quando você quiser. Nada passa pela internet."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Invia le tabelle direttamente tra iPad, iPhone e Mac quando sono vicini, solo quando lo scegli tu. Niente passa da internet."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "在你选择时，把沟通板直接发送到附近你的 iPad、iPhone 和 Mac 之间。不经过互联网。"
           }
         }

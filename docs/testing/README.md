@@ -16,7 +16,7 @@ The big-import tests need a real family setup that is **not in git**: put a `.hu
 
 Every launch uses `-uiTesting` (in-memory store, fresh settings). Extra launch arguments, all test-only:
 `-skipFirstRun`, `-startInParent`, `-demoFolder`, `-demoHistory`, `-demoPendingImport`, `-wideHome`,
-`-darkMode`, `-phoneLayout` (UI-test launches use the iPhone page layout only with this),
+`-darkMode`,
 `-importFile <path>` (as if the file arrived through “Open in Hum”).
 
 ### Known bugs inside tests
@@ -42,4 +42,4 @@ every change in the test into one step.
 | `ImportUITests` | Big-file preview and Cancel (HUM-011); merged setup reachable through a folder tile, with a banner (HUM-001, HUM-027); Replace everything asks, child sees the file's Home in pages, folders open, Undo (HUM-038); broken file; newer format; tile with no words named; import waits for grown-up mode. |
 | `LandscapeUITests` | iPhone sideways: the editor scrolls and tiles never overlap (HUM-051); the child's tiles keep their spots and the history box steps aside (HUM-050). |
 | `ScreenTourTests` | Walks every screen and attaches screenshots for review by eye. |
-| `HumUITests` | The original smoke tests (first run, speak into history, gate, add + undo, phone layout, new folder, folder back, import preview + undo). |
+| `HumUITests` | The original smoke tests (first run, speak into history, gate, add + undo, wide board on one screen, new folder, folder back, import preview + undo). |
