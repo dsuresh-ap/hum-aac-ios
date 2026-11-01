@@ -115,6 +115,7 @@ struct WhatsThisView: View {
                     Spacer()
                 }
                 bottom
+                    .centeredOffTheFold()
             }
             .padding(Theme.gridPadding)
         }

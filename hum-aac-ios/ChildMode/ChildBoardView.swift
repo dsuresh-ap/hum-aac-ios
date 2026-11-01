@@ -120,7 +120,9 @@ struct BoardGrid: View {
 
     var body: some View {
         GeometryReader { geo in
-            let layout = GridMetrics.layout(in: geo.size, rows: snapshot.rows, columns: snapshot.columns, spacing: spacing)
+            // Partly folded, the grid opens a gap at the fold. Tiles keep their rows and columns.
+            let layout = GridMetrics.layout(in: geo.size, rows: snapshot.rows, columns: snapshot.columns, spacing: spacing,
+                                            fold: geo.fold)
             if layout.scrolls {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical) {
@@ -166,15 +168,18 @@ struct BoardGrid: View {
                             .id(cell.id)
                             .frame(width: layout.tileWidth, height: layout.tileHeight)
                             .overlay { if hint == .tile(cell.id) { FinderGlow() } }
+                            .padding(.leading, layout.gap(beforeColumn: column))
                             // The ring reaches past the tile: draw it over the tiles next to it.
                             .zIndex(hint == .tile(cell.id) ? 1 : 0)
                         } else {
                             Color.clear
                                 .frame(width: layout.tileWidth, height: layout.tileHeight)
+                                .padding(.leading, layout.gap(beforeColumn: column))
                                 .accessibilityHidden(true)
                         }
                     }
                 }
+                .padding(.top, layout.gap(beforeRow: row))
                 .zIndex(snapshot.cells[row].contains { $0.map { hint == .tile($0.id) } ?? false } ? 1 : 0)
             }
         }

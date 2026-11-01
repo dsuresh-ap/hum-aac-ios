@@ -7,6 +7,7 @@ import CoreGraphics
 ///
 /// Columns always fill the width, so tiles never reflow sideways. Rows fill the height when they fit.
 /// When they don't, the board scrolls down instead of squashing tiles. Every tile keeps its row and column.
+/// On a folding iPhone held partly folded, the grid opens a gap where the screen folds, so no tile sits on it.
 enum GridMetrics {
     /// The smallest a tile gets, in either direction (the spec's minimum hit target).
     static let minimumTile: CGFloat = 88
@@ -21,19 +22,72 @@ enum GridMetrics {
         var tileWidth: CGFloat
         var tileHeight: CGFloat
         var scrolls: Bool
+        /// Extra room between two columns, where the screen folds.
+        var columnSplit: Split? = nil
+        /// Extra room between two rows, where the screen folds (only on a board that doesn't scroll).
+        var rowSplit: Split? = nil
+
+        func gap(beforeColumn column: Int) -> CGFloat { columnSplit?.after == column ? columnSplit!.gap : 0 }
+        func gap(beforeRow row: Int) -> CGFloat { rowSplit?.after == row ? rowSplit!.gap : 0 }
     }
 
-    static func layout(in size: CGSize, rows: Int, columns: Int, spacing: CGFloat, canScroll: Bool = true) -> Layout {
-        let width = max(tileWidth(across: size.width, columns: columns, spacing: spacing), 0)
+    /// Extra room before tile `after` along one direction, on top of the usual spacing.
+    struct Split: Equatable {
+        var after: Int
+        var gap: CGFloat
+    }
+
+    /// - Parameter fold: where the screen folds across the grid, with the system's margins for touch
+    ///   targets, in the grid's own coordinates. Nil when nothing folds.
+    static func layout(in size: CGSize, rows: Int, columns: Int, spacing: CGFloat, canScroll: Bool = true,
+                       fold: CGRect? = nil) -> Layout {
+        // A tall, thin fold runs top to bottom and splits the columns. A wide one splits the rows.
+        let foldSplitsColumns = fold.map { $0.height >= $0.width } ?? false
+        let columnFold = foldSplitsColumns ? fold.flatMap { split(count: columns, length: size.width, spacing: spacing, avoiding: $0.minX...$0.maxX) } : nil
+        let width = columnFold?.size ?? max(tileWidth(across: size.width, columns: columns, spacing: spacing), 0)
         let fit = max((size.height - spacing * CGFloat(rows - 1)) / CGFloat(max(rows, 1)), 0)
         let shortest = max(minimumTile, width * flattest)
-        guard canScroll, fit < shortest else { return Layout(tileWidth: width, tileHeight: fit, scrolls: false) }
+        guard canScroll, fit < shortest else {
+            var layout = Layout(tileWidth: width, tileHeight: fit, scrolls: false, columnSplit: columnFold?.split)
+            // Rows split only when the tiles stay tall enough. A scrolling board moves under the fold anyway.
+            if let fold, !foldSplitsColumns,
+               let rowFold = split(count: rows, length: size.height, spacing: spacing, avoiding: fold.minY...fold.maxY),
+               !canScroll || rowFold.size >= shortest {
+                layout.tileHeight = rowFold.size
+                layout.rowSplit = rowFold.split
+            }
+            return layout
+        }
 
         // Show as many whole rows as fit at a comfortable shape, plus a peek of the next one.
         let comfortable = max(shortest, width * scrollingShape)
         let whole = max(1, Int((size.height + spacing) / (comfortable + spacing)))
         let height = (size.height - spacing * CGFloat(whole)) / (CGFloat(whole) + peek)
-        return Layout(tileWidth: width, tileHeight: max(height, shortest), scrolls: true)
+        return Layout(tileWidth: width, tileHeight: max(height, shortest), scrolls: true, columnSplit: columnFold?.split)
+    }
+
+    /// Tiles of one size on both sides of a fold, so none sits on it. The first and last tiles stay at the
+    /// edges and the spare room goes into the fold. Picks the split that keeps tiles biggest.
+    /// Nil when there's nothing to split: one tile, or a fold that misses the inside of the grid.
+    static func split(count: Int, length: CGFloat, spacing: CGFloat, avoiding fold: ClosedRange<CGFloat>) -> (size: CGFloat, split: Split)? {
+        guard count > 1, fold.lowerBound > 0, fold.upperBound < length else { return nil }
+        var best: (size: CGFloat, after: Int)?
+        for after in 1..<count {
+            let before = (fold.lowerBound - spacing * CGFloat(after - 1)) / CGFloat(after)
+            let behind = (length - fold.upperBound - spacing * CGFloat(count - after - 1)) / CGFloat(count - after)
+            let size = min(before, behind)
+            if size > (best?.size ?? 0) { best = (size, after) }
+        }
+        guard let best else { return nil }
+        let gap = length - best.size * CGFloat(count) - spacing * CGFloat(count - 1)
+        return (best.size, Split(after: best.after, gap: gap))
+    }
+
+    /// Where each tile starts along one direction.
+    static func origins(count: Int, size: CGFloat, spacing: CGFloat, split: Split?) -> [CGFloat] {
+        (0..<count).map { i in
+            CGFloat(i) * (size + spacing) + (split.map { i >= $0.after ? $0.gap : 0 } ?? 0)
+        }
     }
 
     static func tileWidth(across width: CGFloat, columns: Int, spacing: CGFloat) -> CGFloat {
