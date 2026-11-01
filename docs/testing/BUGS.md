@@ -21,6 +21,7 @@ or misleading) · Medium (works, but confusing or against the spec) · Low (poli
 | [HUM-002](#hum-002) | Critical | Bug | Editor | Undo after deleting a tile doesn't bring it back; the tile is lost | Fixed |
 | [HUM-052](#hum-052) | Critical | Bug | Editor, AI helper | Before iOS 27, undo after moving a tile into a folder or adding AI tiles loses tiles or crashes | Fixed |
 | [HUM-054](#hum-054) | Critical | Bug | Import, backups | A tile below row 8 on a tall board makes the setup's file unopenable (export, backup, AirDrop, nearby) | Fixed |
+| [HUM-056](#hum-056) | Critical | Bug | Launch | The first launch after a reboot can stay a blank white screen: Hum waits for Apple's speech service | Fixed |
 | [HUM-053](#hum-053) | High | Bug | Settings (Mac) | Clicks in Settings do nothing on the Mac: About Hum, the voice list, pop-up menus | Fixed |
 | [HUM-037](#hum-037) | High | Bug | Import (iOS) | Imported SVG symbols stay blank for minutes after import (1 of ~40 appeared in 90 s) | Fixed |
 | [HUM-038](#hum-038) | High | Bug | Import | Undo after “Replace everything” doesn't bring the old boards back | Fixed |
@@ -125,6 +126,15 @@ Boards can be 20 rows tall, but the schema still allowed a tile's `row` only up 
 in row 8 or lower was refused on import ("'row' must be between 0 and 7"): its export, its "Before import"
 backup, AirDrop and nearby transfer all made files Hum couldn't open. The schema now allows rows 0–19, and
 `schemaGridLimitsMatchTheValidator` keeps the schema and `HumValidator`'s grid limits together.
+
+### HUM-056
+**Blank white screen at launch after a reboot.** Critical · Bug · Launch · *Found by:* a pre-ship check on
+freshly booted iOS 26.5 and 27 simulators
+
+Hum looked up the best installed voice while it started, on the main thread. Right after a reboot Apple's
+speech service can take a long time to answer (`AVSpeechSynthesisVoice.currentLanguageCode()` waits on a
+semaphore in TextToSpeech.framework), so the first screen never appeared. Every first launch after a
+fresh simulator boot hung; a second launch worked. A real device may hit it right after a restart.
 
 ## High
 
@@ -475,6 +485,7 @@ warning only (HUM-040); developer screens are removed, not hidden (HUM-022, HUM-
 |-----|-----|
 | HUM-001 | `MergePlanner` turns the file's Home into a folder named after the file and adds a folder tile in your Home's first empty spot (or the tray). The preview says so. |
 | HUM-053 | The bottom inset is iOS-only; the Mac shows the same words as the window subtitle. Checked with real clicks on the Mac: "Show all voices" and About Hum open. |
+| HUM-056 | No voice lookup runs on the main actor any more. `SpeechService` starts in the system voice; `AppModel.upgradeVoiceIfBetterInstalled()` finds the best voice in a background task and applies it (and re-renders the board). The renderer and the live fallback look voices up off the main actor too, and the voice lists in first run and Settings load with `VoiceCatalog.load()`. A tap before the voice is found still speaks, in the system voice. Checked on a freshly booted iOS 27 simulator: the old build stayed white after 20 s, the fixed one showed Welcome within 4 s. |
 | HUM-052 | Moving a tile to another board and merge imports (which the AI helper uses) register their own undo (`BoardStore.change(_:restoring:boards:mediaOf:redo:_:)`): it puts the touched tiles and boards back as they were and deletes what the change made. Redo does the change again. Pictures are kept only for tiles whose picture the change replaces. Like deletes, these forget older undo steps. `FolderTests.movingIntoAFolderKeepsTheTileAndMovesNothingElse` and `AIHelperTests.addingSuggestionsNeverMovesTiles` check undo and redo; all unit tests pass on iOS 18.5, 26.5 and 27. |
 | HUM-002 | Deleting a tile or folder registers its own undo (`BoardStore.change(_:undo:_:)`), which rebuilds it with the same ID, spot, picture and recording. SwiftData can't undo deletes. Because Undo makes new objects, older undo steps are forgotten after a delete (they'd point at the deleted ones and crash). |
 | HUM-003 | The starter card says “A 5 × 4 board…” when a smaller size was picked, and every start choice sets the new-folder size to the picked grid. |

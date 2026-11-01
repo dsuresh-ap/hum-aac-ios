@@ -8,6 +8,9 @@
 
 ## Unreleased: fixes
 
+- Hum no longer opens to a blank white screen right after the device restarts. It used to wait for
+  Apple's speech service before showing anything; now it finds the best voice in the background, and a
+  tile tapped before then speaks in the system voice.
 - Setups with a tall board (a tile below row 8) open again. Their exports, backups and transfers were
   refused on import before.
 

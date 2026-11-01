@@ -10,7 +10,10 @@ import AVFoundation
 /// which sound robotic. Hum always uses the best one installed and upgrades automatically when a better
 /// version appears. Voices from third-party voice apps installed on the device (iOS 17+ speech provider
 /// extensions) appear here too.
-enum VoiceCatalog {
+///
+/// Right after a reboot Apple's speech service can take many seconds to answer, so the main actor never
+/// asks it directly: use `load()`, or call these from a background task.
+nonisolated enum VoiceCatalog {
     /// Voices for the device's language, best first. Novelty voices ("Bubbles", "Jester") and the old
     /// robotic MacinTalk voices ("Fred", "Junior", "Kathy", "Ralph"), which aren't flagged as novelty,
     /// are left out.
@@ -44,13 +47,23 @@ enum VoiceCatalog {
         return a.name < b.name
     }
 
+    /// `voices()` off the main actor.
+    static func load() async -> [AVSpeechSynthesisVoice] {
+        await Task.detached(priority: .userInitiated) { voices() }.value
+    }
+
     static func best(language: String = AVSpeechSynthesisVoice.currentLanguageCode()) -> AVSpeechSynthesisVoice? {
         voices(language: language).first
     }
 
-    /// True when only robotic "compact" voices are installed for this language.
-    static var onlyCompactVoicesInstalled: Bool {
-        !voices().contains { $0.quality == .enhanced || $0.quality == .premium }
+    /// The voice "Device default" uses: the best installed, else the system's own.
+    static func defaultIdentifier() -> String? {
+        best()?.identifier ?? AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode())?.identifier
+    }
+
+    /// True when `voices` (from `load()`) has only robotic "compact" voices.
+    static func onlyCompact(_ voices: [AVSpeechSynthesisVoice]) -> Bool {
+        !voices.isEmpty && !voices.contains { $0.quality == .enhanced || $0.quality == .premium }
     }
 
     /// A better-quality version of the same voice, if the parent has since downloaded one
