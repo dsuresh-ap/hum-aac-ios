@@ -58,9 +58,8 @@ final class Tile {
     var column: Int?
     /// Only changed by an explicit parent move. Used to settle sync conflicts deterministically.
     var positionUpdatedAt: Date = Date.now
-    /// The tile's spot in the phone layout (see `PhoneLayout`), for boards too big for a phone screen.
-    /// Filled in the first time a phone shows the board; after that only a parent's move on the phone
-    /// changes it. It never affects `row`/`column`, which every bigger screen uses.
+    /// No longer used: iPhone once showed big boards as pages, and these held each tile's spot there.
+    /// Kept so stores and iCloud records from earlier builds still open.
     var phonePage: Int?
     var phoneRow: Int?
     var phoneColumn: Int?

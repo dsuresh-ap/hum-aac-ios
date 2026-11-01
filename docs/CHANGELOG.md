@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased: pre-ship polish
+
+- **Setup walkthrough:** first run now explains how Hum works (try two tiles, folders, the grown-up
+  lock), shows each voice's quality with the Natural / Younger / Calm style and where to get better
+  voices, and has an Extras step for speaking on touch, the history box, the word finder, the sentence
+  strip, vibration (iPhone) and Guided Access (iPhone and iPad). The starter board no longer overrides
+  these choices.
+- **No more iPhone pages:** iPhone shows every board's own grid, like iPad and Mac. Tiles are never
+  pushed to a "More" page; a board only leads somewhere else through a folder tile the parent made.
+  Boards wider than the phone get smaller tiles, and the tile size slider on iPhone offers only sizes
+  that fit.
+- Scroll bars never show on the tiles, the editor or the history, even on a Mac with a mouse.
+- Brighter dark-mode app icon: the keys keep their colors on a near-black teal.
+- Plainer wording in a few settings footers and tile editor hints.
+
 ## Unreleased: plainer words
 
 - 46 longer texts for grown-ups (settings footers, sharing and nearby-transfer messages, import problems,

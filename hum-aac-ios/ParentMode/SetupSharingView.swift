@@ -161,7 +161,7 @@ struct SetupSharingView: View {
                         openURL(HumLinks.configGuide)
                     }
                 } footer: {
-                    Text("Anyone can learn how Hum files are written. So you, or an AI assistant, can write boards on a computer, then import them here. The guide opens in your web browser.")
+                    Text("How Hum files are written is public, so you or an AI assistant can write boards on a computer and import them here. The guide opens in your web browser.")
                 }
             }
             .formStyle(.grouped)

@@ -29,8 +29,8 @@ final class LandscapeUITests: XCTestCase {
     @MainActor
     func testEditorScrollsInsteadOfOverlappingTiles() throws {
         try XCTSkipIf(isPad, "iPhone only")
-        // Home 6 columns wide: shown in pages of 4 × 8 on iPhone.
-        let app = launchHum(["-skipFirstRun", "-startInParent", "-wideHome", "-phoneLayout"])
+        // Home 6 columns wide: all six columns show on iPhone too.
+        let app = launchHum(["-skipFirstRun", "-startInParent", "-wideHome"])
         XCTAssertTrue(el(app, "editTile.hi").waitForExistence(timeout: 5))
         XCUIDevice.shared.orientation = .landscapeLeft
         XCTAssertTrue(el(app, "editGridScroll").waitForExistence(timeout: 5), "The editor scrolls when the board doesn't fit")
@@ -54,7 +54,7 @@ final class LandscapeUITests: XCTestCase {
     @MainActor
     func testChildBoardInLandscape() throws {
         try XCTSkipIf(isPad, "iPhone only")
-        let app = launchHum(["-skipFirstRun", "-wideHome", "-phoneLayout", "-demoHistory"])
+        let app = launchHum(["-skipFirstRun", "-wideHome", "-demoHistory"])
         XCTAssertTrue(el(app, "tile.hi").waitForExistence(timeout: 5))
         let portraitOrder = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'tile.'")).allElementsBoundByIndex
             .sorted { ($0.frame.minY, $0.frame.minX) < ($1.frame.minY, $1.frame.minX) }.map(\.identifier)

@@ -185,12 +185,10 @@ struct GridSizePicker: View {
     var minColumns = 1
     @Environment(AppModel.self) private var model
 
-    /// The most columns the slider offers: as many as fit at a usable size on this screen. iPhone shows
-    /// wide boards in pages, so it offers all 8. A board that already has more keeps its number.
+    /// The most columns the slider offers: as many as fit at a usable size on this screen.
+    /// A board that already has more keeps its number.
     private var maxColumns: Int {
-        let fitting = AppModel.isPhone
-            ? HumValidator.columnRange.upperBound
-            : GridMetrics.maxColumns(across: model.boardArea.width, spacing: Theme.gridSpacing)
+        let fitting = GridMetrics.maxColumns(across: model.boardArea.width, spacing: Theme.gridSpacing)
         return max(fitting, columns, minColumns + 1, 2)
     }
 

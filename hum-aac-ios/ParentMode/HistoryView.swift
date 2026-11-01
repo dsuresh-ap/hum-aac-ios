@@ -65,6 +65,7 @@ struct HistoryView: View {
                     }
                 }
             }
+            .scrollIndicators(.never)
             .navigationTitle("History")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }

@@ -69,14 +69,9 @@ struct GridSizeSheet: View {
     }
 
     private var footer: String {
-        var text = moving > 0
+        moving > 0
             ? String(localized: "\(moving) tiles move. The order stays the same: left to right, then top to bottom. Your child may need time to find them again.")
             : String(localized: "No tiles move.")
-        // The grid is shared by every device. iPhone shows boards wider than 4 tiles as pages.
-        if AppModel.isPhone && columns > PhoneLayout.columns {
-            text += " " + String(localized: "On iPhone, boards wider than \(PhoneLayout.columns) tiles are shown as pages.")
-        }
-        return text
     }
 
     private func apply() {

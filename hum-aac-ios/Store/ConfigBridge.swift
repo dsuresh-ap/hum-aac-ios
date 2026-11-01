@@ -171,12 +171,7 @@ enum ConfigBridge {
                 tile.column = newColumn
                 tile.positionUpdatedAt = now
             }
-            if tile.board?.id != board.id {
-                tile.board = board
-                tile.phonePage = nil  // its phone spot was on the old board
-                tile.phoneRow = nil
-                tile.phoneColumn = nil
-            }
+            if tile.board?.id != board.id { tile.board = board }
             tile.updatedAt = now
         }
 

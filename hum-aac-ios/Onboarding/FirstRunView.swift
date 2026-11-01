@@ -5,12 +5,13 @@ import SwiftUI
 import AVFoundation
 import HumConfig
 
-/// First-run setup, under two minutes: Welcome → Voice → Grid size → Start.
+/// First-run setup, a few minutes at most:
+/// Welcome → How Hum works → Voice → Tile size → Extras → Start.
 struct FirstRunView: View {
     @Environment(AppModel.self) private var model
     let onImport: () -> Void
 
-    enum Step: Int, CaseIterable { case welcome, voice, grid, start }
+    enum Step: Int, CaseIterable { case welcome, howItWorks, voice, grid, extras, start }
     static let gridOptions: [(Int, Int)] = [(2, 2), (3, 3), (3, 4), (4, 5)]
     @State private var step: Step = .welcome
     @State private var rows = 3
@@ -29,8 +30,10 @@ struct FirstRunView: View {
             Group {
                 switch step {
                 case .welcome: welcome
+                case .howItWorks: howItWorks
                 case .voice: voicePicker
                 case .grid: gridPicker
+                case .extras: extras
                 case .start: startChoice
                 }
             }
@@ -41,6 +44,8 @@ struct FirstRunView: View {
         .background(Theme.background)
         .onAppear(perform: setDefaults)
     }
+
+    // MARK: Welcome
 
     private var welcome: some View {
         VStack(spacing: 28) {
@@ -67,65 +72,135 @@ struct FirstRunView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
-            primaryButton("Let's set up") { step = .voice }
+            primaryButton("Let's set up") { step = .howItWorks }
                 .accessibilityIdentifier("firstRun.start")
         }
     }
 
-    private var voicePicker: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Everything above the buttons scrolls, so Next stays on screen at the largest text sizes.
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) { voiceChoices }
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            HStack {
-                Button("Skip") {
-                    model.settings.voiceIdentifier = nil
-                    step = .grid
+    // MARK: How Hum works
+
+    private var howItWorks: some View {
+        stepPage(back: .welcome, next: .voice) {
+            stepTitle("How Hum works")
+            Text("Try it: tap a tile.").foregroundStyle(.secondary)
+            // Real keys the parent can press: they sink and speak, like on the child's board.
+            HStack(spacing: 14) {
+                TryKey(symbol: "🍎", label: String(localized: "I want a snack"), function: .request, size: roomy ? 150 : 112) {
+                    say(String(localized: "I want a snack, please!", comment: "Spoken when a parent tries a tile during setup."))
                 }
-                Spacer()
-                primaryButton("Next") { step = .grid }
+                TryKey(symbol: "✋", label: String(localized: "All done"), function: .protest, size: roomy ? 150 : 112) {
+                    say(String(localized: "All done!", comment: "Spoken when a parent tries a tile during setup."))
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .accessibilityIdentifier("firstRun.tryTiles")
+
+            VStack(alignment: .leading, spacing: 18) {
+                HowRow(glyph: "speaker.wave.2.fill",
+                       title: "One tap, one whole phrase",
+                       detail: "Hum speaks as soon as a finger touches a tile. Tapping the same tile again and again is fine, because repeating is talking too.")
+                HowRow(glyph: "folder.fill",
+                       title: "Folders hold more tiles",
+                       detail: "A tile with a folder corner opens its own page, like “Food” or “Outside”. Home and Back at the top bring your child out again.")
+                HowRow(glyph: "lock.fill",
+                       title: "Grown-up settings are behind the lock",
+                       detail: "Press and hold the lock in the top corner for 3 seconds. That's where you add tiles, swap in real photos and record voices.")
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    // MARK: Voice
+
+    private var voicePicker: some View {
+        stepPage(back: .howItWorks, next: .grid, skip: {
+            model.settings.voiceIdentifier = nil
+            step = .grid
+        }) {
+            stepTitle("Pick a voice")
+            Text("Tap ▶ to listen. You can change this any time.").foregroundStyle(.secondary)
+            if VoiceCatalog.onlyCompactVoicesInstalled {
+                NaturalVoicesCard()
+                    .fixedSize(horizontal: false, vertical: true)  // all the steps, never "…"
+                    .padding(14)
+                    .background(Theme.editBand, in: .rect(cornerRadius: 14))
+            }
+            VStack(spacing: 10) {
+                ForEach(voices.prefix(4), id: \.identifier) { voice in
+                    voiceRow(voice)
+                }
+            }
+            styleChoice
+            if !VoiceCatalog.onlyCompactVoicesInstalled {
+                DisclosureGroup("Where to get more voices") {
+                    MoreVoicesSteps()
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 6)
+                }
+                .font(.callout)
+                .tint(Theme.ink)
             }
         }
     }
 
-    @ViewBuilder private var voiceChoices: some View {
-        Text("Pick a voice").font(.system(.largeTitle, design: .serif, weight: .semibold))
-        Text("Tap ▶ to listen. You can change this any time.").foregroundStyle(.secondary)
-        if VoiceCatalog.onlyCompactVoicesInstalled {
-            NaturalVoicesCard()
-                .fixedSize(horizontal: false, vertical: true)  // all the steps, never "…"
-                .padding(14)
-                .background(Theme.editBand, in: .rect(cornerRadius: 14))
-        }
-        VStack(spacing: 10) {
-            ForEach(voices.prefix(4), id: \.identifier) { voice in
-                // With no choice yet, the voice Hum would use is the one marked.
-                let selected = (model.settings.voiceIdentifier ?? SpeechService.defaultVoiceIdentifier()) == voice.identifier
+    private func voiceRow(_ voice: AVSpeechSynthesisVoice) -> some View {
+        // With no choice yet, the voice Hum would use is the one marked.
+        let selected = (model.settings.voiceIdentifier ?? SpeechService.defaultVoiceIdentifier()) == voice.identifier
+        return HStack {
+            Button {
+                model.settings.voiceIdentifier = voice.identifier
+                model.applySpeechSettings()
+                play(voice)
+            } label: {
                 HStack {
-                    Button {
-                        model.settings.voiceIdentifier = voice.identifier
-                        play(voice)
-                    } label: {
-                        HStack {
-                            Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                            Text(voice.name).font(.title3)
-                            Spacer()
-                        }
-                        .contentShape(.rect)
+                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(selected ? Color.accentColor : .secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(voice.name).font(.title3)
+                        Text(VoiceCatalog.qualityName(voice)).font(.caption).foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
-                    Button { play(voice) } label: { Image(systemName: "play.circle.fill").font(.title) }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Play \(voice.name)")
+                    Spacer()
                 }
-                .accessibilityAddTraits(selected ? .isSelected : [])
-                .padding(14)
-                .background(Theme.chrome, in: .rect(cornerRadius: 14))
+                .contentShape(.rect)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(voice.name)
+            .accessibilityValue(VoiceCatalog.qualityName(voice))
+            Button { play(voice) } label: { Image(systemName: "play.circle.fill").font(.title) }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Play \(voice.name)")
         }
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .padding(14)
+        .background(Theme.chrome, in: .rect(cornerRadius: 14))
     }
+
+    /// Natural, Younger or Calm: the same quick styles as in Settings.
+    private var styleChoice: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("How it sounds").font(.headline)
+            Picker("How it sounds", selection: Binding(
+                get: { VoiceStyle.matching(rate: model.settings.rate, pitch: model.settings.pitch) },
+                set: { style in
+                    guard let v = style.values else { return }
+                    model.settings.rate = v.rate
+                    model.settings.pitch = v.pitch
+                    model.applySpeechSettings()
+                    say(SpeechSamples.tryVoice)
+                })) {
+                ForEach(VoiceStyle.allCases.filter { $0 != .custom }, id: \.self) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            Text("“Younger” makes any voice a little higher and slower. Apple doesn't have children's voices. For a real child's voice, an older sibling or cousin can record tiles later.")
+                .font(.footnote).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.top, 6)
+    }
+
+    // MARK: Tile size
 
     private var gridPicker: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -139,16 +214,12 @@ struct FirstRunView: View {
                     VStack(alignment: .leading, spacing: 16) { gridChoices(spaced: false) }
                 }
             }
-            HStack {
-                Button("Back") { step = .voice }
-                Spacer()
-                primaryButton("Next") { step = .start }
-            }
+            footer(back: .voice, next: .extras)
         }
     }
 
     @ViewBuilder private func gridChoices(spaced: Bool) -> some View {
-        Text("How many tiles on a screen?").font(.system(.largeTitle, design: .serif, weight: .semibold))
+        stepTitle("How many tiles on a screen?")
         Text("Fewer, bigger tiles are easier to start with. Rows × columns.").foregroundStyle(.secondary)
         if spaced { Spacer() }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: roomy ? 160 : 130), spacing: roomy ? 20 : 12)], spacing: roomy ? 20 : 12) {
@@ -174,6 +245,64 @@ struct FirstRunView: View {
         }
     }
 
+    // MARK: Extras
+
+    private var extras: some View {
+        @Bindable var settings = model.settings
+        return stepPage(back: .grid, next: .start) {
+            stepTitle("Extras for your child's screen")
+            Text("Most are off, so the screen stays calm. You can change any of them later in Settings.")
+                .foregroundStyle(.secondary)
+            VStack(spacing: 10) {
+                ExtraToggle(isOn: Binding(get: { settings.activation == .touchDown },
+                                          set: { settings.activation = $0 ? .touchDown : .touchUp }),
+                            glyph: "hand.point.up.left.fill",
+                            title: "Speak as soon as a finger touches",
+                            detail: "This is the fastest. Turn it off if your child often brushes tiles by accident. A tile then speaks when the finger lifts.")
+                    .accessibilityIdentifier("firstRun.touchDown")
+                ExtraToggle(isOn: $settings.showHistory, glyph: "clock.arrow.circlepath",
+                            title: "History box",
+                            detail: "A small row above the tiles shows what was said last, so you can catch up if you missed it.")
+                    .accessibilityIdentifier("firstRun.history")
+                ExtraToggle(isOn: $settings.showWordFinder, glyph: "magnifyingglass",
+                            title: "Word finder",
+                            detail: "Adds a magnifier at the top. Look up a word, and Hum lights up the way to its tile without saying it.")
+                ExtraToggle(isOn: $settings.sentenceStrip, glyph: "text.line.first.and.arrowtriangle.forward",
+                            title: "Sentence strip",
+                            detail: "Tapped tiles collect in a strip that plays them together. Turn it on once your child starts mixing phrases into new ones.")
+                #if os(iOS)
+                if UIDevice.current.userInterfaceIdiom == .phone {
+                    ExtraToggle(isOn: $settings.haptics, glyph: "iphone.radiowaves.left.and.right",
+                                title: "Light vibration on tap",
+                                detail: "Some children like feeling the tap. Some don't.")
+                }
+                #endif
+            }
+            #if os(iOS)
+            guidedAccessCard
+            #endif
+        }
+    }
+
+    #if os(iOS)
+    /// Guided Access keeps the child inside Hum. Explained here, so the editor doesn't repeat it later.
+    private var guidedAccessCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("Keep your child in Hum", systemImage: "lock.iphone").font(.headline)
+            Text("Turn on Guided Access in Settings → Accessibility → Guided Access. Then, with Hum open, triple-click the side (or Home) button to start it.")
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Theme.editBand, in: .rect(cornerRadius: 14))
+        .padding(.top, 6)
+        .onAppear { model.settings.hasSeenGuidedAccessTip = true }
+    }
+    #endif
+
+    // MARK: Start
+
     private var startChoice: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Scrolls at the largest text sizes, so the footnote never hides the start buttons.
@@ -184,15 +313,18 @@ struct FirstRunView: View {
                 }
             }
             .scrollBounceBehavior(.basedOnSize)
-            Button("Back") { step = .grid }
+            HStack {
+                Button("Back") { step = .extras }
+                Spacer()
+            }
         }
     }
 
     @ViewBuilder private var startChoices: some View {
-        Text("How do you want to start?").font(.system(.largeTitle, design: .serif, weight: .semibold))
+        stepTitle("How do you want to start?")
         choice("Starter board", starterDetail, "sparkles") {
             useChosenSizeForNewFolders()
-            model.finishFirstRun(.starter)
+            keepingExtras { model.finishFirstRun(.starter) }
             growHomeToChosenSize()
         }
         .accessibilityIdentifier("firstRun.starter")
@@ -240,7 +372,45 @@ struct FirstRunView: View {
         model.settings.newBoardColumns = columns
     }
 
+    /// The starter file carries its own speech settings. The parent's choices on the Extras step win.
+    private func keepingExtras(_ body: () -> Void) {
+        let (activation, strip) = (model.settings.activation, model.settings.sentenceStrip)
+        body()
+        model.settings.activation = activation
+        model.settings.sentenceStrip = strip
+    }
+
     // MARK: Helpers
+
+    private func stepTitle(_ title: LocalizedStringKey) -> some View {
+        Text(title)
+            .font(.system(.largeTitle, design: .serif, weight: .semibold))
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    /// A step's content, which scrolls at the largest text sizes, above its Back / Skip / Next buttons.
+    private func stepPage<Content: View>(back: Step, next: Step, skip: (() -> Void)? = nil,
+                                         @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) { content() }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollIndicators(.never)
+            footer(back: back, next: next, skip: skip)
+        }
+    }
+
+    private func footer(back: Step, next: Step, skip: (() -> Void)? = nil) -> some View {
+        HStack(spacing: 20) {
+            Button("Back") { step = back }
+            Spacer()
+            if let skip { Button("Skip", action: skip) }
+            primaryButton("Next") { step = next }
+        }
+    }
 
     private func choice(_ title: LocalizedStringKey, _ detail: String, _ icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -269,9 +439,22 @@ struct FirstRunView: View {
     }
 
     private func play(_ voice: AVSpeechSynthesisVoice) {
+        speak(SpeechSamples.tryVoice, voice: voice)
+    }
+
+    /// Says `text` with the chosen voice (or the one Hum would pick) and the chosen style.
+    private func say(_ text: String) {
+        let id = model.settings.voiceIdentifier ?? SpeechService.defaultVoiceIdentifier()
+        speak(text, voice: AVSpeechSynthesisVoice(identifier: id))
+    }
+
+    private func speak(_ text: String, voice: AVSpeechSynthesisVoice?) {
         preview.stopSpeaking(at: .immediate)
-        let u = AVSpeechUtterance(string: SpeechSamples.tryVoice)
+        let u = AVSpeechUtterance(string: text)
         u.voice = voice
+        u.rate = Float(model.settings.rate)
+        u.pitchMultiplier = Float(model.settings.pitch)
+        u.volume = Float(model.settings.volume)
         preview.speak(u)
     }
 
@@ -296,12 +479,121 @@ struct FirstRunView: View {
     }
 }
 
+/// One thing to know about Hum, beside the mark the parent will see on the child's screen.
+private struct HowRow: View {
+    let glyph: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: glyph)
+                .font(.title3)
+                .foregroundStyle(Theme.ink.opacity(0.7))
+                .frame(width: 52, height: 52)
+                .background(Theme.chrome, in: .rect(cornerRadius: 16))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.headline)
+                Text(detail).font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// A setting on the Extras step: what it adds to the child's screen, and a switch.
+private struct ExtraToggle: View {
+    @Binding var isOn: Bool
+    let glyph: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: glyph)
+                    .font(.title3)
+                    .foregroundStyle(Theme.ink.opacity(0.7))
+                    .frame(width: 32)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(.headline)
+                    Text(detail).font(.callout).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .toggleStyle(.switch)
+        .tint(.accentColor)
+        .padding(14)
+        .background(Theme.chrome, in: .rect(cornerRadius: 14))
+    }
+}
+
+/// Where the free natural voices are, for devices that already have one.
+private struct MoreVoicesSteps: View {
+    var body: some View {
+        #if os(macOS)
+        Text("System Settings → Accessibility → Read & Speak → System voice → Manage Voices. Voices marked Premium or Enhanced sound most natural. Hum lists new ones here right away.")
+            .foregroundStyle(.secondary)
+        #else
+        Text("Settings → Accessibility → Read & Speak → Voices → your language. Voices marked Premium or Enhanced sound most natural. They're large, so use Wi-Fi. Hum lists new ones here right away.")
+            .foregroundStyle(.secondary)
+        #endif
+    }
+}
+
 /// A small, static tile for the welcome screen.
 private struct SampleKey: View {
     let symbol: String
     let label: String
     let function: TileFunction
     var size: CGFloat = 140
+
+    var body: some View {
+        KeyFace(symbol: symbol, label: label, function: function, size: size, pressed: false)
+    }
+}
+
+/// A tile the parent can press during setup: it sinks onto its edge and speaks, like the real thing.
+private struct TryKey: View {
+    let symbol: String
+    let label: String
+    let function: TileFunction
+    var size: CGFloat = 120
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            KeyFace(symbol: symbol, label: label, function: function, size: size, pressed: false)
+        }
+        .buttonStyle(KeyPressStyle(symbol: symbol, label: label, function: function, size: size))
+        .accessibilityLabel(label)
+        .accessibilityHint("Says the phrase")
+    }
+}
+
+private struct KeyPressStyle: ButtonStyle {
+    let symbol: String
+    let label: String
+    let function: TileFunction
+    let size: CGFloat
+
+    func makeBody(configuration: Configuration) -> some View {
+        KeyFace(symbol: symbol, label: label, function: function, size: size, pressed: configuration.isPressed)
+            .animation(Theme.pressAnimation, value: configuration.isPressed)
+    }
+}
+
+/// A soft key: a face over a darker edge. Pressed, the face sinks onto the edge.
+private struct KeyFace: View {
+    let symbol: String
+    let label: String
+    let function: TileFunction
+    let size: CGFloat
+    let pressed: Bool
 
     var body: some View {
         VStack(spacing: 8) {
@@ -311,10 +603,12 @@ private struct SampleKey: View {
         }
         .frame(width: size, height: size)
         .background(Theme.tileColor(function: function, hex: nil), in: .rect(cornerRadius: Theme.tileCorner, style: .continuous))
+        .offset(y: pressed ? Theme.keyDepth : 0)
         .background(alignment: .bottom) {
             RoundedRectangle(cornerRadius: Theme.tileCorner, style: .continuous)
                 .fill(Theme.tileEdge(function: function, hex: nil))
                 .offset(y: Theme.keyDepth)
         }
+        .padding(.bottom, Theme.keyDepth)
     }
 }

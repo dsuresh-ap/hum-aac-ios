@@ -31,14 +31,12 @@ struct BoardSnapshot: Equatable {
         var linkedBoardExists: Bool
         /// Key of the decoded recording, if the parent recorded this phrase. Changes when re-recorded.
         var recordingKey: String?
-        /// Set on the phone layout's "More" cell: tapping it opens this page of the same board.
-        var nextPage: Int? = nil
 
         static func == (a: Cell, b: Cell) -> Bool {
             a.id == b.id && a.label == b.label && a.spokenText == b.spokenText && a.function == b.function
                 && a.colorHex == b.colorHex && a.symbol == b.symbol && a.image === b.image
                 && a.linkedBoardID == b.linkedBoardID && a.linkedBoardExists == b.linkedBoardExists
-                && a.recordingKey == b.recordingKey && a.nextPage == b.nextPage
+                && a.recordingKey == b.recordingKey
         }
     }
 
@@ -49,10 +47,6 @@ struct BoardSnapshot: Equatable {
     var isHome: Bool
     /// `cells[row][column]`: nil is an empty or hidden slot. Hidden tiles keep their slot.
     var cells: [[Cell?]]
-    /// The phone layout's page (0 on bigger screens).
-    var page = 0
-    /// True when this is a phone layout page. Pages are sized to fit, so they never scroll.
-    var paged = false
 }
 
 @MainActor
@@ -80,7 +74,6 @@ final class AppModel {
                 stopFinding()
                 editPath = []
                 editingBoardID = currentBoardID
-                editingPage = currentPage
                 showNextPendingChange()
             } else if oldValue == .parent {
                 // Leaving parent mode: show the latest edits right away (the child isn't tapping yet).
@@ -92,14 +85,11 @@ final class AppModel {
     var editingBoardID: UUID?
     /// Folders opened while editing, so "Back" returns to the board you came from.
     var editPath: [UUID] = []
-    /// The phone layout page shown in the editor (iPhone, big boards).
-    var editingPage = 0
 
     /// Jumps the editor to a board (from a menu or the board list). Forgets the folder path.
     func editBoard(_ id: UUID?) {
         editPath = []
         editingBoardID = id
-        editingPage = 0
     }
 
     /// Opens a folder in the editor, remembering where we came from.
@@ -107,15 +97,13 @@ final class AppModel {
         guard id != editingBoardID else { return }
         if let current = editingBoardID ?? homeBoardID { editPath.append(current) }
         editingBoardID = id
-        editingPage = 0
     }
 
     func backInEditor() {
         editingBoardID = editPath.popLast()
-        editingPage = 0
     }
 
-    // MARK: Phone layout
+    // MARK: Board area
 
     /// The space the child's board grid last had on screen, and the editor's grid.
     var childBoardArea: CGSize = .zero
@@ -124,25 +112,6 @@ final class AppModel {
     /// picker and the editor's "Scrolls below here" line use it.
     var boardArea: CGSize { childBoardArea != .zero ? childBoardArea : editorBoardArea }
 
-    /// True on iPhone: boards too big for a phone screen are shown in their phone layout (`PhoneLayout`).
-    var usesPhoneLayout = AppModel.isPhone
-
-    static var isPhone: Bool {
-        #if os(iOS)
-        UIDevice.current.userInterfaceIdiom == .phone
-        #else
-        false
-        #endif
-    }
-
-    /// Whether this device shows `board` in its phone layout instead of its own grid.
-    func showsPhoneLayout(_ board: Board) -> Bool { usesPhoneLayout && !PhoneLayout.fits(board) }
-
-    /// Gives new tiles a phone spot before the phone shows `board`. Not an undo step.
-    func arrangePhoneLayout(_ board: Board) {
-        guard showsPhoneLayout(board) else { return }
-        store.withoutUndo { _ = PhoneLayout.arrange(board) }
-    }
     /// True until a parent finishes first-run setup.
     var needsFirstRun: Bool
     @ObservationIgnored private(set) lazy var store = BoardStore(context: context)
@@ -398,17 +367,8 @@ final class AppModel {
 
     // MARK: Navigation
 
-    /// Where the child has been: a board, and its phone layout page.
-    struct Stop: Equatable {
-        var board: UUID
-        var page: Int
-    }
-
-    /// Boards (and phone pages) the child opened on the way to the current one, for the Back button.
-    /// Home clears it.
-    private(set) var boardPath: [Stop] = []
-    /// The phone layout page being shown (always 0 on bigger screens).
-    private(set) var currentPage = 0
+    /// Boards the child opened on the way to the current one, for the Back button. Home clears it.
+    private(set) var boardPath: [UUID] = []
     var canGoBack: Bool { !boardPath.isEmpty }
 
     var homeBoardID: UUID? {
@@ -427,31 +387,23 @@ final class AppModel {
         if let current = currentBoardID {
             // Opening a board that is already on the path (a loop of links) goes back to it instead
             // of growing the path forever.
-            if let index = boardPath.firstIndex(where: { $0.board == boardID }) {
+            if let index = boardPath.firstIndex(of: boardID) {
                 boardPath.removeSubrange(index...)
             } else {
-                boardPath.append(Stop(board: current, page: currentPage))
+                boardPath.append(current)
             }
         }
         if boardID == homeBoardID { boardPath = [] }
         show(boardID: boardID)
     }
 
-    /// Opens another page of the current board's phone layout ("More"). Back returns to this page.
-    func openPage(_ page: Int) {
-        guard let current = currentBoardID, page != currentPage else { return }
-        boardPath.append(Stop(board: current, page: currentPage))
-        show(boardID: current, page: page)
-    }
-
     func goBack() {
         guard let previous = boardPath.popLast() else { return goHome() }
-        show(boardID: previous.board, page: previous.page)
+        show(boardID: previous)
     }
 
-    func show(boardID: UUID?, page: Int = 0) {
+    func show(boardID: UUID?) {
         currentBoardID = boardID
-        currentPage = page
         rebuildSnapshot()
     }
 
@@ -461,7 +413,6 @@ final class AppModel {
     func tap(_ cell: BoardSnapshot.Cell, tapTime: UInt64) {
         lastTouch = .now
         if cell.id == finderRoute?.last?.tileID { stopFinding() }
-        if let page = cell.nextPage { return openPage(page) }
         // A silent folder tile (no phrase, no recording) just opens its board.
         if !cell.spokenText.isEmpty || cell.recordingKey != nil {
             speech.speak(cell.spokenText, recordingID: cell.recordingKey, tapTime: tapTime)
@@ -516,19 +467,13 @@ final class AppModel {
     var finderHint: FinderHint? {
         guard let route = finderRoute, let snapshot else { return nil }
         guard let step = route.first(where: { $0.boardID == snapshot.boardID }) else { return .home }
-        if snapshot.cells.joined().contains(where: { $0?.id == step.tileID }) { return .tile(step.tileID) }
-        // On an iPhone page: the tile is on a later page ("More") or an earlier one (Back).
-        guard snapshot.paged, let page = fetchTile(step.tileID).flatMap(PhoneLayout.spot(of:))?.page else { return nil }
-        return page > snapshot.page ? .tile(Self.moreCellID(snapshot.boardID, page: snapshot.page)) : .back
+        return snapshot.cells.joined().contains(where: { $0?.id == step.tileID }) ? .tile(step.tileID) : nil
     }
 
     /// Opens a found tile or board in the editor and rings the tile.
     func showInEditor(_ result: WordFinder.Result) {
         editBoard(result.boardID)
         guard result.kind == .tile else { return }
-        if let board = fetchBoard(result.boardID), showsPhoneLayout(board) {
-            editingPage = fetchTile(result.id).flatMap(PhoneLayout.spot(of:))?.page ?? 0
-        }
         editorHighlightID = result.id
     }
 
@@ -582,21 +527,11 @@ final class AppModel {
             return
         }
         let allBoardIDs = Set(((try? context.fetch(FetchDescriptor<Board>())) ?? []).map(\.id))
-        let phone = showsPhoneLayout(board)
-        if phone { arrangePhoneLayout(board) }
-        let pageCount = phone ? PhoneLayout.pageCount(board) : 1
-        let page = min(currentPage, pageCount - 1)
-        let (rows, columns) = phone ? (PhoneLayout.rows, PhoneLayout.columns) : (board.rows, board.columns)
+        let (rows, columns) = (board.rows, board.columns)
         var cells = [[BoardSnapshot.Cell?]](repeating: [BoardSnapshot.Cell?](repeating: nil, count: columns), count: rows)
         var recordings: [(id: String, data: Data)] = []
         for tile in board.placedTiles where !tile.isHidden {
-            let spot: (Int, Int)?
-            if phone {
-                spot = PhoneLayout.spot(of: tile).flatMap { $0.page == page ? ($0.row, $0.column) : nil }
-            } else {
-                spot = tile.row.flatMap { r in tile.column.map { (r, $0) } }
-            }
-            guard let (r, c) = spot, r < rows, c < columns, cells[r][c] == nil else { continue }
+            guard let r = tile.row, let c = tile.column, r < rows, c < columns, cells[r][c] == nil else { continue }
             let key = tile.audioData.map { Self.recordingKey(tile.id, $0) }
             if let key, let audio = tile.audioData { recordings.append((key, audio)) }
             cells[r][c] = BoardSnapshot.Cell(
@@ -606,13 +541,8 @@ final class AppModel {
                 linkedBoardExists: tile.linkedBoardID.map(allBoardIDs.contains) ?? false,
                 recordingKey: key)
         }
-        if phone, page < pageCount - 1 {
-            cells[PhoneLayout.rows - 1][PhoneLayout.columns - 1] = BoardSnapshot.Cell(
-                id: Self.moreCellID(board.id, page: page), label: String(localized: "More", comment: "The tile that turns to the next page of a board on iPhone."), spokenText: "", function: nil, colorHex: nil,
-                symbol: "➡️", image: nil, linkedBoardID: nil, linkedBoardExists: false, recordingKey: nil, nextPage: page + 1)
-        }
         snapshot = BoardSnapshot(boardID: board.id, name: board.name, rows: rows, columns: columns, isHome: board.isHome,
-                                 cells: cells, page: page, paged: phone)
+                                 cells: cells)
         speech.prepareRecordings(recordings)
         prerender(board)
     }
@@ -645,14 +575,6 @@ final class AppModel {
         var descriptor = FetchDescriptor<Board>(predicate: #Predicate { $0.id == id })
         descriptor.fetchLimit = 1
         return try? context.fetch(descriptor).first
-    }
-
-    /// A stable ID for a board page's "More" cell, so SwiftUI keeps the same view between rebuilds.
-    static func moreCellID(_ board: UUID, page: Int) -> UUID {
-        var bytes = board.uuid
-        bytes.15 ^= UInt8(truncatingIfNeeded: page + 1)
-        bytes.14 ^= 0x5A
-        return UUID(uuid: bytes)
     }
 
     /// Tile ID + size + a cheap content hash, so a new recording never plays the old one.
