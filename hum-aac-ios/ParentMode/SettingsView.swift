@@ -20,7 +20,7 @@ struct SettingsView: View {
         @Bindable var settings = model.settings
         NavigationStack {
             Form {
-                if VoiceCatalog.onlyCompactVoicesInstalled {
+                if VoiceCatalog.onlyCompact(voices) {
                     Section {
                         NaturalVoicesCard()
                     }
@@ -180,7 +180,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
-            .onAppear(perform: loadVoices)
+            .task { await loadVoices() }
         }
         #if os(macOS)
         .frame(minWidth: 520, minHeight: 640)
@@ -245,8 +245,8 @@ struct SettingsView: View {
     }
 
     /// Voices for the device's language, best quality first.
-    private func loadVoices() {
-        voices = VoiceCatalog.voices()
+    private func loadVoices() async {
+        voices = await VoiceCatalog.load()
     }
 
     private func voiceChanged() {
@@ -260,7 +260,7 @@ struct SettingsView: View {
                 switch status {
                 case .authorized:
                     personalVoiceStatus = String(localized: "Personal Voice is allowed. Your voice is now in the list.")
-                    loadVoices()
+                    await loadVoices()
                     if let mine = AVSpeechSynthesisVoice.speechVoices().first(where: { $0.voiceTraits.contains(.isPersonalVoice) }) {
                         model.settings.voiceIdentifier = mine.identifier
                         voiceChanged()

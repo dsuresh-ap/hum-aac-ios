@@ -18,7 +18,7 @@ final class SpeechRenderer {
         await acquire()
         defer { release() }
 
-        let utterance = SpeechRenderer.utterance(for: key)
+        let utterance = SpeechRenderer.utterance(for: key, voice: await SpeechRenderer.voice(key.voiceIdentifier))
         let box = SampleBox()
         let samples: [Float] = await withCheckedContinuation { (continuation: CheckedContinuation<[Float], Never>) in
             let once = OnceFlag()
@@ -41,9 +41,17 @@ final class SpeechRenderer {
         return PCMClip.trimSilence(samples)
     }
 
-    static func utterance(for key: SpeechKey) -> AVSpeechUtterance {
+    /// Looks a voice up off the main actor: right after a reboot Apple's speech service can take
+    /// seconds to answer. Nil for an empty or unknown identifier.
+    static func voice(_ identifier: String) async -> AVSpeechSynthesisVoice? {
+        guard !identifier.isEmpty else { return nil }
+        return await Task.detached(priority: .userInitiated) { AVSpeechSynthesisVoice(identifier: identifier) }.value
+    }
+
+    /// A nil voice speaks in the system's default voice for the device's language.
+    static func utterance(for key: SpeechKey, voice: AVSpeechSynthesisVoice?) -> AVSpeechUtterance {
         let utterance = AVSpeechUtterance(string: key.text)
-        utterance.voice = AVSpeechSynthesisVoice(identifier: key.voiceIdentifier) ?? AVSpeechSynthesisVoice(language: nil)
+        utterance.voice = voice
         utterance.rate = Float(AVSpeechUtteranceMinimumSpeechRate
             + (AVSpeechUtteranceMaximumSpeechRate - AVSpeechUtteranceMinimumSpeechRate) * Float(key.rate))
         utterance.pitchMultiplier = Float(key.pitch)

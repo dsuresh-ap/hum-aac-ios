@@ -40,6 +40,7 @@ struct FirstRunView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background)
         .onAppear(perform: setDefaults)
+        .task { voices = await VoiceCatalog.load() }
     }
 
     private var welcome: some View {
@@ -93,7 +94,7 @@ struct FirstRunView: View {
     @ViewBuilder private var voiceChoices: some View {
         Text("Pick a voice").font(.system(.largeTitle, design: .serif, weight: .semibold))
         Text("Tap ▶ to listen. You can change this any time.").foregroundStyle(.secondary)
-        if VoiceCatalog.onlyCompactVoicesInstalled {
+        if VoiceCatalog.onlyCompact(voices) {
             NaturalVoicesCard()
                 .fixedSize(horizontal: false, vertical: true)  // all the steps, never "…"
                 .padding(14)
@@ -102,7 +103,7 @@ struct FirstRunView: View {
         VStack(spacing: 10) {
             ForEach(voices.prefix(4), id: \.identifier) { voice in
                 // With no choice yet, the voice Hum would use is the one marked.
-                let selected = (model.settings.voiceIdentifier ?? SpeechService.defaultVoiceIdentifier()) == voice.identifier
+                let selected = (model.settings.voiceIdentifier ?? model.defaultVoiceIdentifier) == voice.identifier
                 HStack {
                     Button {
                         model.settings.voiceIdentifier = voice.identifier
@@ -281,7 +282,6 @@ struct FirstRunView: View {
         #else
         (rows, columns) = (4, 5)
         #endif
-        voices = VoiceCatalog.voices()
     }
 
     /// The starter board is 5 × 4. If the parent picked a bigger grid, grow Home (growing never moves tiles),
