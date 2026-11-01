@@ -21,8 +21,6 @@
 	<array>
 		<string>_hum-setup._tcp</string>
 	</array>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
