@@ -261,8 +261,10 @@ struct SettingsView: View {
                 case .authorized:
                     personalVoiceStatus = String(localized: "Personal Voice is allowed. Your voice is now in the list.")
                     await loadVoices()
-                    if let mine = AVSpeechSynthesisVoice.speechVoices().first(where: { $0.voiceTraits.contains(.isPersonalVoice) }) {
-                        model.settings.voiceIdentifier = mine.identifier
+                    if let mine = await VoiceCatalog.lookUp({
+                        AVSpeechSynthesisVoice.speechVoices().first { $0.voiceTraits.contains(.isPersonalVoice) }?.identifier
+                    }) ?? nil {
+                        model.settings.voiceIdentifier = mine
                         voiceChanged()
                     }
                 case .denied:

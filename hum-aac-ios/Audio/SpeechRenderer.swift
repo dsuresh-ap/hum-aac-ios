@@ -18,7 +18,14 @@ final class SpeechRenderer {
         await acquire()
         defer { release() }
 
-        let utterance = SpeechRenderer.utterance(for: key, voice: await SpeechRenderer.voice(key.voiceIdentifier))
+        let identifier = key.voiceIdentifier
+        var voice: AVSpeechSynthesisVoice?
+        if !identifier.isEmpty {
+            // No answer from the speech service: render nothing rather than cache the wrong voice.
+            guard let found = await VoiceCatalog.lookUp({ AVSpeechSynthesisVoice(identifier: identifier) }) else { return [] }
+            voice = found
+        }
+        let utterance = SpeechRenderer.utterance(for: key, voice: voice)
         let box = SampleBox()
         let samples: [Float] = await withCheckedContinuation { (continuation: CheckedContinuation<[Float], Never>) in
             let once = OnceFlag()
@@ -41,11 +48,11 @@ final class SpeechRenderer {
         return PCMClip.trimSilence(samples)
     }
 
-    /// Looks a voice up off the main actor: right after a reboot Apple's speech service can take
-    /// seconds to answer. Nil for an empty or unknown identifier.
+    /// Looks a voice up off the main actor (see `VoiceCatalog.lookUp`). Nil for an empty or unknown
+    /// identifier, or when the speech service doesn't answer in time.
     static func voice(_ identifier: String) async -> AVSpeechSynthesisVoice? {
         guard !identifier.isEmpty else { return nil }
-        return await Task.detached(priority: .userInitiated) { AVSpeechSynthesisVoice(identifier: identifier) }.value
+        return await VoiceCatalog.lookUp { AVSpeechSynthesisVoice(identifier: identifier) } ?? nil
     }
 
     /// A nil voice speaks in the system's default voice for the device's language.
@@ -117,7 +124,7 @@ nonisolated final class SampleBox: @unchecked Sendable {
     }
 }
 
-nonisolated private final class OnceFlag: @unchecked Sendable {
+nonisolated final class OnceFlag: @unchecked Sendable {
     private let lock = NSLock()
     private var claimed = false
     func claim() -> Bool { lock.withLock { if claimed { return false }; claimed = true; return true } }
