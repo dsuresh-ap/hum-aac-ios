@@ -8,13 +8,24 @@ Already done in the same change (no Xcode needed): the TD Snap importer was remo
 a disclaimer and licence note, `ITSAppUsesNonExemptEncryption = NO` went into `Hum-Info.plist`, and
 `CONTRIBUTING.md`, `Hum-agent-prompt.md` and `docs/PLAN.md` §9 were brought up to date.
 
-**Status (2026-10-12, second pass):** Tasks 1–5 are written and committed, with tests, but were made
-in a Linux container without Xcode or Swift. **Nobody has built or run them yet.** Before release:
-build, run `swift test --package-path Packages/HumConfig` and the app tests on an iOS 27 simulator, and
-fix any compile errors. Task 6 has a starting table in [`accessibility.md`](accessibility.md) (all
-"Not tested") and one small fix (no animation on tile release with Reduce Motion). Task 7 is not done.
-Task 4 adds a CloudKit field (`Tile.imageCredit`): deploy it to the **production** CloudKit schema
-before release.
+**Status (2026-11-02):** Tasks 1–5 are built and tested: unit tests pass on iPhone 18 Pro and iPad
+Pro 13" (iOS 27) and iPad (A16) (iOS 18.5), and every UI suite passes on iPhone 18 Pro Max and iPad Pro
+13" (iOS 27). Task 6 is still open: [`accessibility.md`](accessibility.md) is mostly "Not tested".
+Task 7 results are below. Task 4 adds a CloudKit field (`Tile.imageCredit`): deploy it to the
+**production** CloudKit schema before release.
+
+**Task 7 results (2026-11-02, Release archives for iOS and macOS):**
+- `ITSAppUsesNonExemptEncryption` is `NO` on both. Version 1.0, build 1.
+- `PrivacyInfo.xcprivacy` is in both bundles with UserDefaults (CA92.1), boot time (35F9.1) and file
+  timestamp (C617.1). The file timestamp entry was missing before (temporary-file cleanup reads
+  creation dates).
+- No `Snap`, `.sps`, Tobii or DynaVox text in either binary.
+- The macOS app is sandboxed with only camera, microphone, user-selected files and network.
+- `aps-environment` is `development` in the archives (signed for development). A local App Store export
+  failed on this Mac: no "iOS Distribution" certificate, and the cached App Store profile lacks the
+  Private Cloud Compute entitlement. Distribute from Xcode's Organizer (it signs in the cloud and makes a
+  fresh profile), and check `aps-environment` is `production` in what it uploads. If it reports the
+  Private Cloud Compute capability, turn it on for the App ID in the developer portal.
 
 ---
 

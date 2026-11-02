@@ -304,8 +304,10 @@ AVAudioEngine (started once, kept running while foreground)
 ## 9. Privacy manifest
 
 `PrivacyInfo.xcprivacy`: `NSPrivacyTracking = false`, no tracking domains, no collected data types.
-Required-reason APIs actually used: `UserDefaults` (CA92.1 — app's own data) and `mach_absolute_time()`
-for the tap-to-sound latency probe (35F9.1). No file timestamp APIs are used (re-checked 2026-10-12).
+Required-reason APIs actually used: `UserDefaults` (CA92.1 — app's own data), `mach_absolute_time()`
+for the tap-to-sound latency probe and `systemUptime` for the lock's hold (35F9.1), and the creation
+date of Hum's own temporary files, so launch cleans up only leftovers from an earlier run (file
+timestamp, C617.1). Re-checked 2026-11-01.
 Re-audited each milestone.
 
 ## 10. CI

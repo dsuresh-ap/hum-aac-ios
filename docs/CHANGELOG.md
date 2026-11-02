@@ -25,6 +25,8 @@
 
 ## Unreleased: fixes
 
+- The privacy manifest now lists the file creation dates Hum reads to clean up its own temporary files
+  at launch (reason C617.1). Without it, App Store Connect refuses the upload.
 - **Security:** an SVG picture in an imported file can no longer make Hum open a web address on iPhone
   and iPad (a hidden page refresh could have told a stranger the family's IP address and when they
   opened the file). Hum now draws SVGs as pictures, which run nothing and load nothing, and its drawing
