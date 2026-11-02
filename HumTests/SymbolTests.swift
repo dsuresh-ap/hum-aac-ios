@@ -59,6 +59,51 @@ struct SymbolTests {
         #expect(await ImageProcessing.tileImageDataAllowingSVG(from: Data("hello".utf8)) == nil)
     }
 
+    #if canImport(UIKit)
+    /// An imported SVG must never make WebKit open a web address: a meta refresh would tell a stranger
+    /// the family's IP address and when they opened the file.
+    @MainActor
+    @Test(.needsWebKit) func svgPicturesCannotOpenWebAddresses() async throws {
+        // Next to the picture: not an SVG file, so nothing is drawn.
+        let beside = #"<meta http-equiv="refresh" content="0;url=https://attacker.invalid/a">"#
+            + #"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="red"/></svg>"#
+        #expect(await ImageProcessing.tileImageDataAllowingSVG(from: Data(beside.utf8)) == nil)
+        // Inside the picture: drawn as an image, which runs nothing and loads nothing.
+        let inside = """
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><foreignObject width="40" height="40">
+            <meta xmlns="http://www.w3.org/1999/xhtml" http-equiv="refresh" content="0;url=https://attacker.invalid/b"/>
+            </foreignObject><image href="https://attacker.invalid/c.png" width="40" height="40"/>
+            <circle cx="20" cy="20" r="15" fill="red"/></svg>
+            """
+        let jpeg = try #require(await ImageProcessing.tileImageDataAllowingSVG(from: Data(inside.utf8)))
+        #expect(try Self.centerIsRed(jpeg))
+        try await Task.sleep(for: .seconds(2))  // a refresh fires after the page loads
+        #expect(!SVGRenderer.blockedNavigations.contains { $0.host == "attacker.invalid" }, "nothing tried to navigate")
+    }
+
+    /// The renderer's web views cancel any navigation away from their own page.
+    @MainActor
+    @Test(.needsWebKit) func svgWebViewsCancelNavigation() async throws {
+        let target = try #require(URL(string: "https://refresh.invalid/"))
+        let html = #"<!doctype html><html><head><meta http-equiv="refresh" content="0;url=\#(target)"></head></html>"#
+        _ = await SVGRenderer.snapshot(html, points: 64)
+        for _ in 0..<50 where !SVGRenderer.blockedNavigations.contains(target) {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        #expect(SVGRenderer.blockedNavigations.contains(target))
+    }
+    #endif
+
+    @Test func onlyWellFormedSVGFilesAreDrawn() {
+        #expect(SVGRenderer.isSVGDocument(Data(#"<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"/>"#.utf8)))
+        #expect(!SVGRenderer.isSVGDocument(Data(#"<meta http-equiv="refresh" content="0"><svg/>"#.utf8)))
+        #expect(!SVGRenderer.isSVGDocument(Data("<html><svg/></html>".utf8)))
+        #expect(!SVGRenderer.isSVGDocument(Data("<svg>".utf8)))
+        #expect(SVGRenderer.withNamespace("<svg width=\"4\"/>") == #"<svg xmlns="http://www.w3.org/2000/svg" width="4"/>"#)
+        let ready = #"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="x"/>"#
+        #expect(SVGRenderer.withNamespace(ready) == ready)
+    }
+
     @Test func svgWithoutViewBoxGetsOne() {
         #expect(SVGRenderer.withViewBox(#"<svg xmlns="x" width="40" height="30.5"><g/></svg>"#)
                 == #"<svg viewBox="0 0 40 30.5" xmlns="x" width="40" height="30.5"><g/></svg>"#)

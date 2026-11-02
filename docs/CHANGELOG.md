@@ -25,6 +25,12 @@
 
 ## Unreleased: fixes
 
+- **Security:** an SVG picture in an imported file can no longer make Hum open a web address on iPhone
+  and iPad (a hidden page refresh could have told a stranger the family's IP address and when they
+  opened the file). Hum now draws SVGs as pictures, which run nothing and load nothing, and its drawing
+  view cancels any attempt to leave its own page. A file whose SVG isn't well-formed now gets no picture,
+  as on the Mac.
+
 - Hum no longer opens to a blank white screen right after the device restarts. It used to wait for
   Apple's speech service before showing anything; now it finds the best voice in the background, and a
   tile tapped before then speaks in the system voice.
