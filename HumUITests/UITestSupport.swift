@@ -44,7 +44,8 @@ extension XCTestCase {
         guard more.exists else { return false }
         let item = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@ AND identifier != %@", label, id)).firstMatch
         // The first tap on "More" right after entering the editor is sometimes ignored (BUGS.md, HUM-014).
-        for _ in 0..<2 where !item.exists {
+        // While the menu is open, "More" isn't on screen: then the item just isn't in the menu.
+        for _ in 0..<2 where !item.exists && more.exists {
             more.tap()
             _ = item.waitForExistence(timeout: 2)
         }

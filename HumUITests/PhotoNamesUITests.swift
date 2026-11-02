@@ -94,7 +94,8 @@ final class PhotoNamesUITests: XCTestCase {
             UIColor.systemTeal.setFill()
             context.fill(CGRect(x: 0, y: 0, width: 120, height: 120))
         }
-        let paste = app.buttons["Paste"].firstMatch
+        // Not the iPad keyboard's own Paste button in the shortcut bar.
+        let paste = app.buttons.matching(NSPredicate(format: "label == 'Paste' AND NOT (identifier BEGINSWITH 'assistantPaste')")).firstMatch
         XCTAssertTrue(paste.waitForExistence(timeout: 3))
         paste.tap()
     }
