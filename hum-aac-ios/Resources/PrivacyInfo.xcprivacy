@@ -27,12 +27,21 @@
 			</array>
 		</dict>
 		<dict>
-			<!-- mach_absolute_time(): measures tap-to-sound latency inside the app (kept in memory only). -->
+			<!-- mach_absolute_time() measures tap-to-sound latency (kept in memory only); systemUptime times the lock's hold. -->
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>35F9.1</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- Creation dates of Hum's own temporary files, so launch deletes only ones left by an earlier run. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
 			</array>
 		</dict>
 	</array>
