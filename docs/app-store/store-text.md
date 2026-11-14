@@ -1,7 +1,11 @@
 # App Store text (version 1.0, English U.S.)
 
-Paste these into App Store Connect. The same text works for the iOS and macOS versions. The character
-limits are App Store Connect's.
+Paste these into App Store Connect. The same text works for the iOS and macOS versions, apart from one
+line in the description (see below). The character limits are App Store Connect's.
+
+Hum isn't in the Kids Category, so the name, subtitle, icon, screenshots and description must not imply
+that children are the main audience (App Review Guideline 5.1.4(b); "For Kids" and "For Children" are
+reserved for the Kids Category, 2.3.8). Keep the wording about anyone who communicates in whole phrases.
 
 ## App Information
 
@@ -17,27 +21,25 @@ An AAC app for all. Everyone deserves a chance to be understood!
 
 ## Description (4,000)
 
-Hum is a free AAC (augmentative and alternative communication) app for children who learn language in whole phrases, often called gestalt language processors.
+Hum is an AAC (augmentative and alternative communication) app for anyone who communicates in whole phrases, at any age.
 
-Many autistic children learn language in chunks. A child might say "let's get out of here!" from a favorite show to mean "I want to leave." Most AAC apps start from single core words; Hum starts from whole phrases. Each tile says one whole phrase, the way your child already says it.
-
-FOR YOUR CHILD
+FOR THE PERSON USING HUM
 • Big, clear tiles. One tap says the whole phrase right away, even when tapped again and again.
 • "No thank you", "Stop", "All done", "Help" and "Too loud" are the same size as every other tile. You decide where they go.
-• Tiles never move by themselves, so your child can learn where everything is.
-• A history box shows what your child said, so you can follow along.
+• Tiles never move by themselves, so it's easy to learn where everything is.
+• A history box shows what was said, so you can follow along.
 • Folders keep boards simple: a Snack tile can open a Food board.
 • Optional: a word finder that lights up the way to a tile, a sentence strip for later stages, and a "What's this?" camera that offers words for a picture.
 • There are no stars, rewards, praise sounds or confetti. A tap just speaks.
 
-FOR GROWN-UPS
-• Hold the lock for 3 seconds to change things. Your child can't change the board by accident.
-• Type the phrase exactly the way your child says it. Hum picks a short label and an emoji for you.
+FOR FAMILIES AND CAREGIVERS
+• Hold the lock for 3 seconds to change things, so the board can't be changed by accident.
+• Type a phrase exactly the way it's said. Hum picks a short label and an emoji for you.
 • Add a real photo, choose an emoji, or search free symbols from ARASAAC and Mulberry.
-• Record a phrase in your own voice, with the same tune your child knows.
+• Record a phrase in your own voice, with the tune and rhythm they know.
 • Choose a voice, or use Personal Voice and the enhanced system voices.
 • Paste many phrases at once to make tiles quickly.
-• Works with Guided Access to keep your child in Hum.
+• Works with Guided Access to keep Hum on screen.
 
 SHARE AND SYNC
 • Keep boards the same on iPad, iPhone and Mac with your own iCloud (off until you turn it on).
@@ -46,11 +48,11 @@ SHARE AND SYNC
 • The file format is open and documented, so you can make boards with a coding agent too.
 
 AI HELPER (OPTIONAL)
-On devices with Apple Intelligence, Hum can suggest tiles from what your child says. It is off until you turn it on. Nothing is added until you choose it. Suggestions can be wrong.
+On devices with Apple Intelligence, Hum can suggest tiles from the phrases you describe. It is off until you turn it on. Nothing is added until you choose it, and suggestions can be wrong.
 
 PRIVACY
 • No ads, accounts, analytics or tracking. We collect no data.
-• Hum works offline. It uses the network only when a grown-up starts iCloud sync, the AI helper on Private Cloud Compute, a symbol search, or a nearby transfer.
+• Hum works offline. It uses the network only when you start iCloud sync, the AI helper on Private Cloud Compute, a symbol search, or a nearby transfer.
 • Photos, recordings and history stay on your device unless you turn on iCloud sync.
 
 FREE FOREVER
@@ -59,6 +61,8 @@ No in-app purchases, no subscriptions and no "pro" version. Hum is open source u
 Available in English, Chinese (Simplified), French, German, Italian, Portuguese (Brazil) and Spanish.
 
 Hum is a communication tool. It is not a medical device or therapy, and it doesn't replace a speech-language pathologist. Don't rely on Hum as the only way to call for help in an emergency.
+
+**macOS version:** use the same description without the "Works with Guided Access to keep Hum on screen." line. Guided Access is only on iPhone and iPad, and each platform's description has to be accurate for that platform (App Review Guideline 2.3).
 
 ## Keywords (100)
 
