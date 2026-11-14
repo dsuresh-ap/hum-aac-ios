@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Makes the Mac App Store screenshots (2880 x 1800). Run it from Terminal, which needs
-# Screen Recording permission (System Settings > Privacy & Security). Each shot opens a
+# Screen Recording permission (System Settings > Privacy & Security) and, the first time, asks
+# to control System Events (to bring Hum to the front). Each shot opens a
 # separate test copy of Hum with an in-memory demo board, so your own boards aren't touched.
 #
 # Usage: docs/app-store/mac-screenshots.sh /path/to/Debug/Hum.app
@@ -22,6 +23,11 @@ shot() {
 import CoreGraphics
 let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as! [[String: Any]]
 print(list.first { (\$0[kCGWindowOwnerPID as String] as? Int32) == $pid && (\$0[kCGWindowLayer as String] as? Int) == 0 }?[kCGWindowNumber as String] ?? 0)")
+  # Bring this copy of Hum to the front, so its window looks active (colored buttons, bright title).
+  # The first time, macOS asks to let Terminal control System Events.
+  osascript -e "tell application \"System Events\" to set frontmost of (first process whose unix id is $pid) to true" >/dev/null 2>&1 \
+    || echo "Couldn't bring Hum to the front, so $name may show an inactive window." >&2
+  sleep 1
   screencapture -x -o -l$win $OUT/raw.png 2>/dev/null || true
   kill $pid
   if [[ ! -f $OUT/raw.png ]]; then
@@ -39,7 +45,8 @@ print(list.first { (\$0[kCGWindowOwnerPID as String] as? Int32) == $pid && (\$0[
   echo "$OUT/$name.png"
 }
 
-shot 1-child-board -skipFirstRun -demoFolder -demoHistory
-shot 2-grown-up-editor -skipFirstRun -demoFolder -startInParent
-shot 3-dark-mode -skipFirstRun -demoFolder -demoHistory -darkMode
-shot 4-welcome
+# Light unless the shot is about dark mode, whatever the Mac itself is set to.
+shot 1-child-board -lightMode -skipFirstRun -demoFolder -demoHistory
+shot 2-grown-up-editor -lightMode -skipFirstRun -demoFolder -startInParent
+shot 3-dark-mode -darkMode -skipFirstRun -demoFolder -demoHistory
+shot 4-welcome -lightMode

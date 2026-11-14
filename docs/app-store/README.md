@@ -21,7 +21,9 @@ is needed. If you add ARASAAC or Mulberry symbols to a screenshot, credit them i
 
 ## Mac screenshots
 
-Terminal needs Screen Recording permission. Build the Debug app for "My Mac" in Xcode, then:
+Terminal needs Screen Recording permission, and the first run asks to let Terminal control System
+Events (to bring Hum to the front, so the window looks active). The shots are light, apart from the
+dark-mode one, whatever your Mac is set to. Build the Debug app for "My Mac" in Xcode, then:
 
 ```bash
 docs/app-store/mac-screenshots.sh /path/to/Debug/Hum.app
