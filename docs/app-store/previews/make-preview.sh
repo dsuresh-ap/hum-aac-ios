@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Turns a raw iPhone simulator recording (1206 x 2622) into an App Store app preview:
-# 886 x 1920, 30 fps H.264 with a silent stereo AAC track. Usage: convert.sh <raw.mov> <out.mp4> [hold-seconds]
+# 886 x 1920, 30 fps H.264 with a silent stereo AAC track. Usage: make-preview.sh <raw.mov> <out.mp4> [hold-seconds]
 HOLD=${3:-0}
 ffmpeg -v error -y -i "$1" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 \
   -filter_complex "[0:v]fps=30,scale=886:-2,crop=886:1920,tpad=stop_mode=clone:stop_duration=$HOLD,format=yuv420p[v]" \
