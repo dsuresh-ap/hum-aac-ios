@@ -9,6 +9,7 @@
 # Usage: docs/app-store/mac-screenshots.sh /path/to/Debug/Hum.app
 set -e
 APP=${1:?Pass the path to a Debug build of Hum.app (Product > Show Build Folder in Xcode)}
+[[ -d $APP ]] || { echo "No app at $APP. Build Hum for My Mac first." >&2; exit 1; }
 OUT=${0:a:h}/screenshots/mac
 mkdir -p $OUT
 
@@ -21,8 +22,13 @@ shot() {
 import CoreGraphics
 let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as! [[String: Any]]
 print(list.first { (\$0[kCGWindowOwnerPID as String] as? Int32) == $pid && (\$0[kCGWindowLayer as String] as? Int) == 0 }?[kCGWindowNumber as String] ?? 0)")
-  screencapture -x -o -l$win $OUT/raw.png
+  screencapture -x -o -l$win $OUT/raw.png 2>/dev/null || true
   kill $pid
+  if [[ ! -f $OUT/raw.png ]]; then
+    echo "Couldn't capture Hum's window. Give the app you ran this from Screen Recording permission" >&2
+    echo "(System Settings > Privacy & Security > Screen Recording), reopen it and try again." >&2
+    exit 1
+  fi
   # Shrink the window only if it doesn't fit inside 2880 x 1800, then fill the rest with Hum's light teal.
   local w=$(sips -g pixelWidth $OUT/raw.png | awk '/pixelWidth/{print $2}')
   local h=$(sips -g pixelHeight $OUT/raw.png | awk '/pixelHeight/{print $2}')
