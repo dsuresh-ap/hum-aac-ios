@@ -26,7 +26,7 @@ func doc(tile: String, rows: Int = 2, columns: Int = 2) -> Data {
 
 @Suite("Examples & golden files")
 struct ExampleTests {
-    static let names = ["starter.hum.json", "food.hum.json", "linked-boards.hum.json"]
+    static let names = ["starter.hum.json", "food.hum.json", "linked-boards.hum.json", "routines.hum.json"]
 
     @Test(arguments: names)
     func exampleLoadsWithoutErrors(name: String) throws {
