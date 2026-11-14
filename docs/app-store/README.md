@@ -2,7 +2,9 @@
 
 - [`store-text.md`](store-text.md): name, subtitle, promotional text, description, keywords, URLs,
   copyright and the App Review notes.
-- `screenshots/`: one folder per App Store Connect tab. Upload the files in number order.
+- `screenshots/`: one folder per App Store Connect tab. Upload the files in number order. There's no
+  welcome screen shot: it says "A voice for your child", and a listing outside the Kids Category can't
+  imply that children are the main audience (App Review Guideline 5.1.4(b)).
 
 | Folder | App Store Connect tab | Size (pixels) |
 |---|---|---|
@@ -35,5 +37,4 @@ dark-mode one, whatever your Mac is set to. Build the Debug app for "My Mac" in 
 docs/app-store/mac-screenshots.sh /path/to/Debug/Hum.app
 ```
 
-It writes four shots to `screenshots/mac/`: the child's board, the grown-up editor, dark mode and the
-welcome screen.
+It writes three shots to `screenshots/mac/`: the child's board, the grown-up editor and dark mode.

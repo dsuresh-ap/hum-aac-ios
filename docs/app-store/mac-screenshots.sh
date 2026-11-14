@@ -49,4 +49,3 @@ print(list.first { (\$0[kCGWindowOwnerPID as String] as? Int32) == $pid && (\$0[
 shot 1-child-board -lightMode -skipFirstRun -demoFolder -demoHistory
 shot 2-grown-up-editor -lightMode -skipFirstRun -demoFolder -startInParent
 shot 3-dark-mode -darkMode -skipFirstRun -demoFolder -demoHistory
-shot 4-welcome -lightMode
