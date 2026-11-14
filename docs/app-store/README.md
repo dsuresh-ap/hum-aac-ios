@@ -27,6 +27,19 @@ simulators, with the status bar set to 9:41 and a full battery
 (`xcrun simctl status_bar <device> override ...`). Every picture is an emoji, so no symbol-set credit
 is needed. If you add ARASAAC or Mulberry symbols to a screenshot, credit them in the description.
 
+## App previews
+
+`previews/iphone-6.3/` has two app previews for the iPhone tab, 886 × 1920, 30 fps H.264 with a silent
+stereo AAC track (previews play muted at first):
+
+1. `1-history-fills-up.mp4` (16 s): tiles are tapped and the history box fills up, through the Food folder.
+2. `2-add-a-tile.mp4` (17 s): hold the lock, add "To the playground!", save, and tap it on the board.
+
+They were recorded on an iPhone 17 Pro simulator (iOS 26.5, same 1206 × 2622 screen as the 6.3" iPhones)
+with `xcrun simctl io <device> recordVideo --codec=h264`, then converted with
+`previews/make-preview.sh <raw.mov> <out.mp4> [seconds to hold the last frame]`. App Store previews
+must be 15 to 30 seconds long and show only the app (App Review Guideline 2.3.4).
+
 ## Mac screenshots
 
 Terminal needs Screen Recording permission, and the first run asks to let Terminal control System
