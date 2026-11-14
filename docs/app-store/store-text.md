@@ -13,7 +13,7 @@ limits are App Store Connect's.
 
 ## Promotional Text (170)
 
-A free AAC app for children who learn language in whole phrases. One tap says the whole phrase. Free forever: no ads, no accounts, no tracking.
+An AAC app for all. Everyone deserves a chance to be understood!
 
 ## Description (4,000)
 
@@ -74,7 +74,7 @@ AAC,autism,gestalt,GLP,echolalia,nonspeaking,speech,talker,communication,NLA,phr
 
 ## Copyright (200)
 
-2026 The Hum Authors
+2026 Dhananjay Suresh
 
 ## App Review Information
 
