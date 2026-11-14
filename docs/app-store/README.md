@@ -15,8 +15,10 @@ Hum has no Apple Watch app, so the Apple Watch tab stays empty.
 
 `header/` has the optional header for the "Header and Search Results" tab, in both supported sizes
 (5244 × 2950 and 3840 × 1646). Everything sits in the middle because the App Store crops the header
-differently on each device; check it with that tab's Preview button. `make-header.swift` draws it
-(`swift make-header.swift 5244 2950 out.png`).
+differently on each device; check it with that tab's Preview button. The same folder has the
+optional Search Results asset (3840 × 2560), the same design with bigger tiles because it shows small.
+`make-header.swift` draws both: `swift make-header.swift 5244 2950 out.png` for the header, and
+`swift make-header.swift 3840 2560 out.png 1.3` for search results.
 
 The screenshots use Hum's demo board (`-uiTesting -skipFirstRun -demoFolder -demoHistory`) on iOS 27
 simulators, with the status bar set to 9:41 and a full battery

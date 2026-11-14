@@ -1,7 +1,7 @@
 // Copyright 2026 The Hum Authors
 // SPDX-License-Identifier: Apache-2.0
 //
-// Renders the App Store header in Hum's style. Usage: swift header.swift <width> <height> <out.png>
+// Renders the App Store header in Hum's style. Usage: swift make-header.swift <width> <height> <out.png> [zoom]
 import SwiftUI
 import AppKit
 
@@ -30,9 +30,11 @@ struct Tile: View {
 
 struct Header: View {
     let size: CGSize
+    /// How much bigger than the header's tiles to draw them (the search results asset shows small).
+    let zoom: Double
     var body: some View {
         // Keep everything in the middle: the App Store crops the header differently on each device.
-        let side = min(size.width * 0.105, size.height * 0.27)
+        let side = min(size.width * 0.105 * zoom, size.height * 0.27)
         ZStack {
             hex(0xE9EDF0)
             VStack(spacing: side * 0.42) {
@@ -54,8 +56,9 @@ struct Header: View {
 
 let args = CommandLine.arguments
 let size = CGSize(width: Double(args[1])!, height: Double(args[2])!)
+let zoom = args.count > 4 ? Double(args[4])! : 1
 MainActor.assumeIsolated {
-    let renderer = ImageRenderer(content: Header(size: size))
+    let renderer = ImageRenderer(content: Header(size: size, zoom: zoom))
     renderer.scale = 1
     guard let image = renderer.nsImage, let tiff = image.tiffRepresentation,
           let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) else {
