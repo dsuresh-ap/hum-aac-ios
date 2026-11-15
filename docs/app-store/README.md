@@ -29,16 +29,35 @@ is needed. If you add ARASAAC or Mulberry symbols to a screenshot, credit them i
 
 ## App previews
 
-`previews/iphone-6.3/` has two app previews for the iPhone tab, 886 × 1920, 30 fps H.264 with a silent
-stereo AAC track (previews play muted at first):
+Two app previews for each tab, in the same order on every device. All are 30 fps H.264 (11 Mbps) with a
+silent stereo AAC track (previews start muted), 15 to 30 seconds long, and show only the app (App Review
+Guideline 2.3.4).
 
-1. `1-history-fills-up.mp4` (16 s): tiles are tapped and the history box fills up, through the Food folder.
-2. `2-add-a-tile.mp4` (17 s): hold the lock, add "To the playground!", save, and tap it on the board.
+1. `1-history-fills-up.mp4`: tiles are tapped and the history box fills up, through the Food folder and
+   back Home.
+2. `2-add-a-tile.mp4`: hold the lock, add "To the playground!", save, and tap the new tile on the board.
 
-They were recorded on an iPhone 17 Pro simulator (iOS 26.5, same 1206 × 2622 screen as the 6.3" iPhones)
-with `xcrun simctl io <device> recordVideo --codec=h264`, then converted with
-`previews/make-preview.sh <raw.mov> <out.mp4> [seconds to hold the last frame]`. App Store previews
-must be 15 to 30 seconds long and show only the app (App Review Guideline 2.3.4).
+| Folder | Size | Recorded on |
+|---|---|---|
+| `previews/iphone-6.3/` | 886 × 1920 | iPhone 17 Pro simulator (iOS 26.5; same 1206 × 2622 screen) |
+| `previews/iphone-duo/` | 886 × 1920 | iPhone Duo simulator (iOS 27.1), outer screen, fitted on Hum's background |
+| `previews/ipad-13/` | 1200 × 1600 | iPad Pro 13-inch (M5) simulator (iOS 26.5) |
+| `previews/mac/` | 1920 × 1080 | the Mac app's window on Hum's light teal |
+
+iPhone Duo previews use the standard iPhone size, not the Duo's own screen shape, so the whole screen is
+fitted inside 886 × 1920 with Hum's background color above and below.
+
+To make one: record with `xcrun simctl io <device> recordVideo --codec=h264 <raw.mov>` (on the iPhone
+Duo add `--display=1` and use `--codec=hevc`: its H.264 recording keeps only the first frame), or record
+the Mac window with `screencapture -v -R<x,y,w,h>`. Then convert:
+
+```bash
+docs/app-store/previews/make-preview.sh <raw.mov> <out.mp4> <WxH> <fill|fit|window> [start] [hold] [length]
+```
+
+`fill` crops to the size (iPhone, iPad), `fit` fits the whole screen inside it (iPhone Duo) and `window`
+puts a Mac window on the teal background. `start` and `length` trim the recording; `hold` keeps the last
+frame a little longer to reach 15 seconds.
 
 ## Mac screenshots
 

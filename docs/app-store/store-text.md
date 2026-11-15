@@ -21,7 +21,7 @@ An AAC app for all. Everyone deserves a chance to be understood!
 
 ## Description (4,000)
 
-Hum is an AAC (augmentative and alternative communication) app for anyone who communicates in whole phrases, at any age.
+Hum is an AAC (augmentative and alternative communication) app for anyone, at any age. I made it for my daughter, who is a gestalt language processor (GLP): she learns language in whole phrases. I wanted an app that's easy to customize, free for as many people as possible, and that lets her stim by tapping the same tile again and again. I hope it's useful for your family too!
 
 FOR THE PERSON USING HUM
 • Big, clear tiles. One tap says the whole phrase right away, even when tapped again and again.
