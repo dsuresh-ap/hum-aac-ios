@@ -15,12 +15,19 @@
 
 Hum has no Apple Watch app, so the Apple Watch tab stays empty.
 
-`header/` has the optional header for the "Header and Search Results" tab, in both supported sizes
-(5244 × 2950 and 3840 × 1646). Everything sits in the middle because the App Store crops the header
-differently on each device; check it with that tab's Preview button. The same folder has the
-optional Search Results asset (3840 × 2560), the same design with bigger tiles because it shows small.
-`make-header.swift` draws both: `swift make-header.swift 5244 2950 out.png` for the header, and
-`swift make-header.swift 3840 2560 out.png 1.3` for search results.
+`header/` has the optional assets for the "Header and Search Results" tab. App Store Connect crops them
+differently on each device, so the title and the three tiles stay inside Apple's "art safe area" for each
+one, and faded tiles fill the rest (they can be cut off anywhere):
+
+| File | Use | Size | Art safe area |
+|---|---|---|---|
+| `universal-5244x2950.png` | Header and search results, one image for both | 5244 × 2950 | 1402 × 962 at (1921, 660) |
+| `header-3840x1646.png` | Header only | 3840 × 1646 | 1646 × 661 at (1097, 493) |
+| `search-results-3840x2560.png` | Search results only | 3840 × 2560 | 2168 × 1030 at (836, 765) |
+
+Upload either the universal image, or the header and search results images. The PNGs have no alpha
+channel (App Store Connect refuses transparency). Check the crop with that tab's Preview button.
+`header/make-header.sh` draws all three (it needs ffmpeg).
 
 The screenshots use Hum's demo board (`-uiTesting -skipFirstRun -demoFolder -demoHistory`) on iOS 27
 simulators, with the status bar set to 9:41 and a full battery
