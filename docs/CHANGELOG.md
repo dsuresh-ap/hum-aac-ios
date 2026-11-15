@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased: after 1.0
+
+- On the iPhone Duo's outer screen, the tile editor's Cancel and Save stay at the top while the parent
+  types. iOS 27.1 used to shrink that bar away as the keyboard scrolled the form, so Save was out of reach.
+
 ## Unreleased: pre-ship polish
 
 - **Setup walkthrough:** first run now explains how Hum works (try two tiles, folders, the grown-up
