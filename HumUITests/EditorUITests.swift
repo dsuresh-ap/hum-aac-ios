@@ -218,4 +218,21 @@ final class EditorUITests: XCTestCase {
         XCTAssertTrue(el(app, "editTile.hi").waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'points'")).firstMatch.exists)
     }
+
+    /// Scenario: "Scrolls below here" shows only when the child really scrolls. The editor's spare empty
+    /// row isn't on the child's screen, so it doesn't count.
+    @MainActor
+    func testFoldLineOnlyWhenTheChildScrolls() {
+        let app = launchHum(["-skipFirstRun"])
+        XCTAssertTrue(el(app, "tile.hi").waitForExistence(timeout: 5))
+        openParentMode(app)
+        XCTAssertTrue(el(app, "editTile.hi").waitForExistence(timeout: 3))
+        XCTAssertFalse(el(app, "scrollFold").exists, "The child sees the whole starter board")
+        app.terminate()
+
+        let tall = launchHum(["-skipFirstRun", "-tallHome"])
+        XCTAssertTrue(el(tall, "tile.hi").waitForExistence(timeout: 5))
+        openParentMode(tall)
+        XCTAssertTrue(el(tall, "scrollFold").waitForExistence(timeout: 3), "A 12-row board scrolls for the child")
+    }
 }

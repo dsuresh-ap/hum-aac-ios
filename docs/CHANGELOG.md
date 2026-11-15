@@ -25,6 +25,9 @@
 
 ## Unreleased: fixes
 
+- The editor no longer shows "Scrolls below here" at the bottom of a board your child sees whole. The
+  editor's spare empty row was counted as one of the child's rows, so on iPhone the line sat on top of
+  the last row.
 - The privacy manifest now lists the file creation dates Hum reads to clean up its own temporary files
   at launch (reason C617.1). Without it, App Store Connect refuses the upload.
 - **Security:** an SVG picture in an imported file can no longer make Hum open a web address on iPhone
