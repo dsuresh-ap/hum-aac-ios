@@ -1,0 +1,312 @@
+{
+  "boards": [
+    {
+      "columns": 4,
+      "id": "d7c708aa-b036-5535-8de7-b0b5f44acee0",
+      "isHome": true,
+      "name": "Home",
+      "rows": 3,
+      "tiles": [
+        {
+          "column": 0,
+          "function": "request",
+          "id": "698e8d87-77ae-5bbf-8ec0-f5f5fe4c291a",
+          "label": "let's go",
+          "linkedBoardID": "dcd78518-1d2e-52ea-874d-ad2b74c339c6",
+          "row": 0,
+          "spokenText": "Let's go!",
+          "symbol": "🚪"
+        },
+        {
+          "column": 1,
+          "function": "connection",
+          "id": "7c159097-63eb-573b-b388-965ed7bdf63e",
+          "label": "hello, bath",
+          "linkedBoardID": "309f1ac1-8e13-5801-a24e-b7111ddf49d0",
+          "row": 0,
+          "spokenText": "Hello, bath!",
+          "symbol": "🛁"
+        },
+        {
+          "column": 2,
+          "function": "connection",
+          "id": "7ef29680-a99d-57a2-9fde-49e55e9684b3",
+          "label": "night-night",
+          "linkedBoardID": "be489079-c77d-5b96-b945-0f913ecdf241",
+          "row": 0,
+          "spokenText": "Night-night, teddy!",
+          "symbol": "🌙"
+        },
+        {
+          "column": 3,
+          "function": "regulation",
+          "id": "975e979d-03db-50b2-ae70-ae73d86d6de6",
+          "label": "help",
+          "row": 0,
+          "spokenText": "Help me!",
+          "symbol": "🙋"
+        },
+        {
+          "column": 0,
+          "function": "connection",
+          "id": "2f73ef2c-391b-552b-b7d8-5a1c00ff5bf0",
+          "label": "again!",
+          "row": 1,
+          "spokenText": "Again!",
+          "symbol": "🔁"
+        },
+        {
+          "column": 1,
+          "function": "comment",
+          "id": "6dbd47d2-4c41-567f-a8c7-849c67d6ef05",
+          "label": "uh oh",
+          "row": 1,
+          "spokenText": "Uh oh!",
+          "symbol": "😮"
+        },
+        {
+          "column": 2,
+          "function": "request",
+          "id": "91d9e5bd-e306-5020-9b7b-e311abe8b4c5",
+          "label": "my turn",
+          "row": 1,
+          "spokenText": "My turn!",
+          "symbol": "🙌"
+        },
+        {
+          "column": 3,
+          "function": "regulation",
+          "id": "0e20fa04-4b26-56f5-bd4e-15b23aa44332",
+          "label": "break",
+          "row": 1,
+          "spokenText": "I need a break!",
+          "symbol": "🛋️"
+        },
+        {
+          "column": 0,
+          "function": "protest",
+          "id": "202b489d-4e92-55e5-99e8-7754fe37dbf7",
+          "label": "not that one",
+          "row": 2,
+          "spokenText": "Not that one!",
+          "symbol": "🙅"
+        },
+        {
+          "column": 1,
+          "function": "protest",
+          "id": "c8e9a8a6-246f-51f2-9866-9d20e0699b69",
+          "label": "stop",
+          "row": 2,
+          "spokenText": "Stop!",
+          "symbol": "✋"
+        },
+        {
+          "column": 2,
+          "function": "protest",
+          "id": "75728b8e-f0ba-5ca1-96e6-b541695aca54",
+          "label": "all done",
+          "row": 2,
+          "spokenText": "All done!",
+          "symbol": "✅"
+        },
+        {
+          "column": 3,
+          "function": "regulation",
+          "id": "eb867fb3-790b-5b67-911a-e6a5e00be97d",
+          "label": "too loud",
+          "row": 2,
+          "spokenText": "Too loud!",
+          "symbol": "🙉"
+        }
+      ]
+    },
+    {
+      "columns": 3,
+      "id": "dcd78518-1d2e-52ea-874d-ad2b74c339c6",
+      "name": "Out the door",
+      "rows": 2,
+      "tiles": [
+        {
+          "column": 0,
+          "function": "request",
+          "id": "1d5f8884-0297-5506-9b47-46ceb070f00d",
+          "label": "shoes on",
+          "row": 0,
+          "spokenText": "Shoes on!",
+          "symbol": "👟"
+        },
+        {
+          "column": 1,
+          "function": "request",
+          "id": "a1689f40-52b8-5339-879e-e64b84769f04",
+          "label": "to the car",
+          "row": 0,
+          "spokenText": "Let's go to the car!",
+          "symbol": "🚗"
+        },
+        {
+          "column": 2,
+          "function": "comment",
+          "id": "2d5fb8d0-c4f1-5875-8250-01ed81c74dd2",
+          "label": "the bus",
+          "row": 0,
+          "spokenText": "Here comes the bus!",
+          "symbol": "🚌"
+        },
+        {
+          "column": 0,
+          "function": "connection",
+          "id": "de030b89-3e85-5a01-bf68-612392adad5a",
+          "label": "bye, house",
+          "row": 1,
+          "spokenText": "Bye-bye, house!",
+          "symbol": "👋"
+        },
+        {
+          "column": 1,
+          "function": "protest",
+          "id": "5f4ed027-5778-5893-8862-c99f6fe72719",
+          "label": "not that one",
+          "row": 1,
+          "spokenText": "Not that one!",
+          "symbol": "🙅"
+        },
+        {
+          "column": 2,
+          "function": "protest",
+          "id": "acdde620-5869-5841-921e-dd6aa0f3b0c3",
+          "label": "all done",
+          "row": 1,
+          "spokenText": "All done!",
+          "symbol": "✅"
+        }
+      ]
+    },
+    {
+      "columns": 3,
+      "id": "309f1ac1-8e13-5801-a24e-b7111ddf49d0",
+      "name": "Bath time",
+      "rows": 2,
+      "tiles": [
+        {
+          "column": 0,
+          "function": "comment",
+          "id": "b653d75d-fd18-5fb5-a171-a32fd604ce91",
+          "label": "the water",
+          "row": 0,
+          "spokenText": "Here comes the water!",
+          "symbol": "🚿"
+        },
+        {
+          "column": 1,
+          "function": "comment",
+          "id": "f00a0767-7d65-51f6-9085-a165e9238022",
+          "label": "splash",
+          "row": 0,
+          "spokenText": "Splash!",
+          "symbol": "💦"
+        },
+        {
+          "column": 2,
+          "function": "request",
+          "id": "46510b68-7edc-55fe-a47d-c76dc62a568f",
+          "label": "more bubbles",
+          "row": 0,
+          "spokenText": "More bubbles!",
+          "symbol": "🫧"
+        },
+        {
+          "column": 0,
+          "function": "comment",
+          "id": "d16ad131-22d0-5901-b762-52d053b1dd3a",
+          "label": "all wet",
+          "row": 1,
+          "spokenText": "All wet!",
+          "symbol": "💧"
+        },
+        {
+          "column": 1,
+          "function": "connection",
+          "id": "b6ef9c78-a6e5-5943-87ff-d731a62c9c74",
+          "label": "bye, water",
+          "row": 1,
+          "spokenText": "Bye-bye, water!",
+          "symbol": "👋"
+        },
+        {
+          "column": 2,
+          "function": "protest",
+          "id": "64301e6b-6452-5f0d-875d-da6791067c92",
+          "label": "all done",
+          "row": 1,
+          "spokenText": "All done!",
+          "symbol": "✅"
+        }
+      ]
+    },
+    {
+      "columns": 3,
+      "id": "be489079-c77d-5b96-b945-0f913ecdf241",
+      "name": "Bedtime",
+      "rows": 2,
+      "tiles": [
+        {
+          "column": 0,
+          "function": "request",
+          "id": "a8c06105-0c84-5a02-a8b6-946611ec81eb",
+          "label": "one more book",
+          "row": 0,
+          "spokenText": "One more book!",
+          "symbol": "📖"
+        },
+        {
+          "column": 1,
+          "function": "request",
+          "id": "eeccd8c5-5729-5bf5-b276-96719151fc13",
+          "label": "lights off",
+          "row": 0,
+          "spokenText": "Lights off!",
+          "symbol": "💡"
+        },
+        {
+          "column": 2,
+          "function": "connection",
+          "id": "802464c9-8621-5ae5-b025-6d98e7b3e5c5",
+          "label": "bye, toys",
+          "row": 0,
+          "spokenText": "Bye-bye, toys!",
+          "symbol": "🧸"
+        },
+        {
+          "column": 0,
+          "function": "connection",
+          "id": "42c5f707-97b3-5ef0-884f-dfa8faa7f7c2",
+          "label": "again!",
+          "row": 1,
+          "spokenText": "Again!",
+          "symbol": "🔁"
+        },
+        {
+          "column": 1,
+          "function": "regulation",
+          "id": "96f6f766-3bd6-5db6-aaa8-864d10fb91e5",
+          "label": "help",
+          "row": 1,
+          "spokenText": "Help me!",
+          "symbol": "🙋"
+        },
+        {
+          "column": 2,
+          "function": "protest",
+          "id": "dfef88c6-aa13-52b1-81f4-7d41a1ae592e",
+          "label": "all done",
+          "row": 1,
+          "spokenText": "All done!",
+          "symbol": "✅"
+        }
+      ]
+    }
+  ],
+  "formatVersion": 1,
+  "name": "Daily routines"
+}
