@@ -119,7 +119,7 @@ struct TileEditorSheet: View {
             .navigationTitle(title)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
-            .keepsBarWhileTyping()
+            .keepsBarWhileScrolling()
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -689,12 +689,14 @@ struct CameraPicker: UIViewControllerRepresentable {
 #endif
 
 extension View {
-    /// Keeps the sheet's top bar (Cancel, Save) on screen while the form scrolls. On the iPhone Duo's outer
-    /// screen, iOS 27.1 shrinks the bar away when the keyboard scrolls the form up, and Save goes with it.
-    func keepsBarWhileTyping() -> some View { modifier(KeepsBarWhileTyping()) }
+    /// Keeps a sheet's top bar (Cancel, Save, Done) on screen while its form scrolls. On the iPhone Duo's
+    /// outer screen, iOS 27.1 shrinks the bar away on any scroll, the keyboard's too, and its buttons go
+    /// with it. Put it inside the NavigationStack: outside the stack it does nothing. (A pushed screen's
+    /// Back sits beside the bar there, so it stays.)
+    func keepsBarWhileScrolling() -> some View { modifier(KeepsBarWhileScrolling()) }
 }
 
-private struct KeepsBarWhileTyping: ViewModifier {
+private struct KeepsBarWhileScrolling: ViewModifier {
     func body(content: Content) -> some View {
         // Bar minimizing came with the iOS 27 SDK (SwiftUICore 8.0.85.29 is 27.1, like the fold lookup).
         // Older SDKs, like CI's Xcode 26, build without it: their bars never minimize.

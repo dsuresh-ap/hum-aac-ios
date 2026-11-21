@@ -128,7 +128,9 @@ extension XCTestCase {
     /// The back button of a pushed screen inside a sheet (not the editor's own toolbar behind it).
     func goBack(_ app: XCUIApplication, from parent: String) {
         // iOS 26 and later name it `BackButton`; iOS 18 leaves it unnamed. Not the editor's own "Home & folders".
-        app.navigationBars.buttons.matching(NSPredicate(format: "label == %@ AND (identifier == 'BackButton' OR identifier == '')", parent)).firstMatch.tap()
+        let inBar = app.navigationBars.buttons.matching(NSPredicate(format: "label == %@ AND (identifier == 'BackButton' OR identifier == '')", parent)).firstMatch
+        // On the iPhone Duo's outer screen it sits beside the bar, by the clock, with no label.
+        (inBar.exists ? inBar : app.descendants(matching: .any)["BackButton"].firstMatch).tap()
     }
 
     /// Leaves the editor for the child's board.

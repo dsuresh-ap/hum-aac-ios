@@ -167,6 +167,7 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
             .navigationTitle("Settings")
+            .keepsBarWhileScrolling()
             #if os(macOS)
             .navigationSubtitle("Changes save as you make them")
             #else

@@ -89,6 +89,7 @@ struct BoardManagerView: View {
             }
             .formStyle(.grouped)
             .navigationTitle("Home & folders")
+            .keepsBarWhileScrolling()
             .modifier(SearchWhenLong(isLong: boards.count > 12, text: $search))
             .onAppear {
                 newColumns = model.settings.newBoardColumns

@@ -6,6 +6,8 @@
   types. iOS 27.1 used to shrink that bar away as the keyboard scrolled the form, so Save was out of reach.
 - In the tile editor, the phrase stays above the keyboard while the parent types. On a short screen, like
   the iPhone Duo's outer screen, the "Ideas" row and a second line of text pushed it behind the keyboard.
+- On the iPhone Duo's outer screen, Done stays at the top of Settings, Share & sync, and Home & folders
+  when they scroll. iOS 27.1 used to shrink that bar away there too.
 
 ## Unreleased: pre-ship polish
 
