@@ -45,6 +45,23 @@ final class EditorUITests: XCTestCase {
         XCTAssertEqual(tile.label, "All aboard!")
     }
 
+    /// Scenario: while the parent types, Cancel and Save stay on screen. On the iPhone Duo's outer
+    /// screen iOS 27.1 once shrank the sheet's top bar away as the form scrolled.
+    @MainActor
+    func testSaveStaysReachableWhileTyping() {
+        let app = launchHum(["-skipFirstRun", "-demoFolder", "-startInParent"])
+        el(app, "emptySlot.3.3").tap()
+        let field = el(app, "spokenTextField")
+        XCTAssertTrue(field.waitForExistence(timeout: 3))
+        field.typeText("Let's get out of here, it's too loud in here!")
+        let save = app.buttons["saveTile"].firstMatch
+        XCTAssertTrue(save.isHittable, "Save must stay on screen while typing")
+        XCTAssertTrue(app.buttons["Cancel"].firstMatch.isHittable, "Cancel must stay on screen while typing")
+        shot(app, "Tile editor while typing")
+        save.tap()
+        XCTAssertTrue(el(app, "emptySlot.3.3").waitForNonExistence(timeout: 3), "Save fills the spot")
+    }
+
     /// Scenario: the parent changes what a tile says. The tile keeps its spot.
     @MainActor
     func testEditingAPhraseKeepsTheSpot() {
