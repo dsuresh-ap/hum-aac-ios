@@ -32,6 +32,8 @@ struct HumApp: App {
         _model = State(initialValue: model)
         // Shortcuts and Siri actions use this same model (Intents/ChildIntents.swift).
         AppDependencyManager.shared.add(dependency: model)
+        // So does the car's screen (CarPlay/CarPlaySceneDelegate.swift).
+        CarPlayHost.model = model
     }
 
     var body: some Scene {

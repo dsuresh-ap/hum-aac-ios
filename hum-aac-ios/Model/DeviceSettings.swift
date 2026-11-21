@@ -45,6 +45,8 @@ final class DeviceSettings {
     /// Grid size for new boards.
     var newBoardRows: Int { didSet { defaults.set(newBoardRows, forKey: Keys.newRows) } }
     var newBoardColumns: Int { didSet { defaults.set(newBoardColumns, forKey: Keys.newColumns) } }
+    /// The board CarPlay shows on this iPhone. `nil` (or a deleted board) means Home.
+    var carBoardID: UUID? { didSet { defaults.set(carBoardID?.uuidString, forKey: Keys.carBoard) } }
 
     // Parent
     var editGate: EditGate { didSet { defaults.set(editGate.rawValue, forKey: Keys.editGate) } }
@@ -76,6 +78,7 @@ final class DeviceSettings {
         returnHomeAfterFolderTap = defaults.bool(forKey: Keys.returnHome)
         newBoardRows = defaults.object(forKey: Keys.newRows) as? Int ?? 3
         newBoardColumns = defaults.object(forKey: Keys.newColumns) as? Int ?? 4
+        carBoardID = defaults.string(forKey: Keys.carBoard).flatMap(UUID.init(uuidString:))
         editGate = defaults.string(forKey: Keys.editGate).flatMap(EditGate.init) ?? .holdLock
         hasCompletedSetup = defaults.bool(forKey: Keys.setupDone)
         hasSeenGuidedAccessTip = defaults.bool(forKey: Keys.guidedAccessTip)
@@ -109,6 +112,7 @@ final class DeviceSettings {
         static let showHistory = "display.showHistory", returnHome = "nav.returnHome", wordFinder = "display.wordFinder"
         static let whatsThis = "child.whatsThisCamera"
         static let newRows = "grid.newRows", newColumns = "grid.newColumns"
+        static let carBoard = "carPlay.board"
         static let iCloud = "sync.iCloud", ai = "ai.enabled", aiPCC = "ai.privateCloud"
     }
 }

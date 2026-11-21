@@ -16,6 +16,12 @@ final class AudioEngine {
     private var sourceNode: AVAudioSourceNode?
     private var observers: [NSObjectProtocol] = []
     private(set) var isRunning = false
+    /// While CarPlay is connected, Hum shares the car's speakers: other audio (the radio, music) dips
+    /// while a phrase plays, and `release` gives the speakers back afterwards. CarPlay asks every app
+    /// not to hold the audio while it's quiet.
+    var sharesOutput = false
+    /// True after `release`, until the next `start`. System events don't restart a released engine.
+    private(set) var isReleased = false
     /// Counts restarts (for the developer screen and tests).
     private(set) var restartCount = 0
 
@@ -43,12 +49,13 @@ final class AudioEngine {
 
     /// Configures the session (iOS) and starts the engine. Safe to call repeatedly.
     func start() {
+        isReleased = false
         #if os(iOS)
         let session = AVAudioSession.sharedInstance()
         do {
             // .playback: speech plays even with the ring/silent switch on silent. A child's voice is
             // not a notification sound.
-            try session.setCategory(.playback, mode: .default, options: [])
+            try session.setCategory(.playback, mode: .default, options: sharesOutput ? [.duckOthers] : [])
             try session.setPreferredIOBufferDuration(0.005)
             try session.setActive(true)
         } catch {
@@ -74,6 +81,16 @@ final class AudioEngine {
         sampler.stopAll()
         engine.pause()
         isRunning = false
+    }
+
+    /// CarPlay only (see `sharesOutput`): stops the engine and lets other audio come back up. The next
+    /// phrase starts it again, which takes a moment longer than a tap on the board.
+    func release() {
+        pause()
+        isReleased = true
+        #if os(iOS)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
     }
 
     /// Rebuilds the connection and starts again (after a route change, reset or interruption).
@@ -106,23 +123,30 @@ final class AudioEngine {
         let center = NotificationCenter.default
         // Engine-level change (both platforms): the hardware format or device changed.
         observers.append(center.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.restart() }
+            MainActor.assumeIsolated {
+                guard let self, !self.isReleased else { return }
+                self.restart()
+            }
         })
         #if os(iOS)
         observers.append(center.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] note in
             let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
             MainActor.assumeIsolated {
-                if raw == AVAudioSession.InterruptionType.ended.rawValue { self?.restart() }
+                guard let self, !self.isReleased else { return }
+                if raw == AVAudioSession.InterruptionType.ended.rawValue { self.restart() }
             }
         })
         observers.append(center.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, !self.engine.isRunning else { return }
+                guard let self, !self.engine.isRunning, !self.isReleased else { return }
                 self.restart()
             }
         })
         observers.append(center.addObserver(forName: AVAudioSession.mediaServicesWereResetNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.restart() }
+            MainActor.assumeIsolated {
+                guard let self, !self.isReleased else { return }
+                self.restart()
+            }
         })
         #endif
     }

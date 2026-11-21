@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased: CarPlay (waiting for Apple)
+
+- **Hum on a car's screen:** a driver who uses Hum to talk can tap up to 8 phrases on the car's screen,
+  for example at a traffic stop, instead of reaching for a phone. Phrases play through the car's
+  speakers, and the radio dips while Hum talks. "Show" puts the last phrase on screen in big text.
+- Settings → In the car (iPhone): choose the board the car shows, or make a ready-made “In the car”
+  board. The car board doesn't show the "No tile opens this folder yet" warning.
+- Needs Apple's CarPlay driving-task entitlement before it works in a real car. Until then it is only on
+  in the Simulator (docs/PLAN.md §8d).
+
 ## Unreleased: pre-ship polish
 
 - **Setup walkthrough:** first run now explains how Hum works (try two tiles, folders, the grown-up

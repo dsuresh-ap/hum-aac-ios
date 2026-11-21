@@ -301,6 +301,30 @@ AVAudioEngine (started once, kept running while foreground)
   connections (server) entitlement for the listener. Code: `Store/NearbyProtocol.swift`,
   `Store/NearbyTransfer.swift`, `Store/NetworkTransport.swift`, `ParentMode/NearbyTransferView.swift`.
 
+## 8d. CarPlay (driver's board) — added 2026-11-21 at the owner's request
+
+For a driver who uses Hum to talk: at a traffic stop, a toll booth or after a crash, they tap the car's
+screen (hands in sight) instead of reaching for a phone. Code: `hum-aac-ios/CarPlay/`.
+
+- **Needs Apple's approval.** CarPlay apps need an entitlement per category; Hum asks for **driving
+  task** (`com.apple.developer.carplay-driving-task`) at developer.apple.com/contact/carplay. Until it's
+  granted, only Simulator builds carry it (`hum-aac-ios-simulator.entitlements`, picked by
+  `CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]`) and `CarBoard.isAvailable` hides the settings
+  elsewhere. When granted: add the key to `hum-aac-ios.entitlements` and make `isAvailable` true.
+- **What the car shows.** Apple's grid template: at most 8 buttons, the first 8 speaking tiles of one
+  board in reading order. Driving task apps may only go one screen deeper, so folders don't open; their
+  phrase still speaks. "Show" puts the last phrase on screen in big text with "Say again".
+- **Which board.** A per-device setting (`DeviceSettings.carBoardID`, iPhone only, never synced);
+  Home when none is chosen. "Make an “In the car” board" adds a 2×4 starter board (English, like the
+  starter board) and chooses it.
+- **Audio.** CarPlay asks apps not to hold the audio while quiet. While CarPlay is connected the session
+  ducks other audio (`.duckOthers`) and is released about a second after a phrase ends
+  (`SpeechService.sharesOutput`). The next tap starts it again, a little slower than a tap on the board.
+  When the car disconnects Hum goes back to its usual always-on session (§5).
+- **No network.** Nothing new leaves the device.
+- **Testing.** Device Hub → Device → CarPlay Simulator (needs Apple's CarPlay Simulator from
+  "Additional Tools for Xcode"). Also test with the iPhone locked: most people use CarPlay that way.
+
 ## 9. Privacy manifest
 
 `PrivacyInfo.xcprivacy`: `NSPrivacyTracking = false`, no tracking domains, no collected data types.
