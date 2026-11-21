@@ -4,6 +4,8 @@
 
 - On the iPhone Duo's outer screen, the tile editor's Cancel and Save stay at the top while the parent
   types. iOS 27.1 used to shrink that bar away as the keyboard scrolled the form, so Save was out of reach.
+- In the tile editor, the phrase stays above the keyboard while the parent types. On a short screen, like
+  the iPhone Duo's outer screen, the "Ideas" row and a second line of text pushed it behind the keyboard.
 
 ## Unreleased: pre-ship polish
 
