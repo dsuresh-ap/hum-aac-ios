@@ -359,13 +359,13 @@ struct FirstRunView: View {
         .padding(.top, 8)
     }
 
-    /// The starter board has its own 5 × 4 size. A smaller choice is used for new folders instead,
+    /// The starter Home has its own 3 × 4 size. A smaller choice is used for new folders instead,
     /// and the card says so, rather than squeezing the starter's tiles away (BUGS.md, HUM-003).
     private var starterDetail: String {
-        guard rows < 5 || columns < 4, rows * columns < 20 else {
-            return String(localized: "18 whole phrases like “Let's go!”, “All done” and “Too loud”. Replace the pictures with real photos later.")
+        guard rows < 3 || columns < 4, rows * columns < 12 else {
+            return String(localized: "12 whole phrases like “Let's go!”, “All done” and “Too loud”, and folders for going out, bath time and bedtime. Every tile has a picture; swap in your own photos any time.")
         }
-        return String(localized: "A 5 × 4 board with 18 whole phrases, like “Let's go!”, “All done” and “Too loud”. Replace the pictures with real photos later. New folders use the size you picked: \(rows) × \(columns).")
+        return String(localized: "A 3 × 4 board with 12 whole phrases, like “Let's go!”, “All done” and “Too loud”, and folders for going out, bath time and bedtime. Every tile has a picture; swap in your own photos any time. New folders use the size you picked: \(rows) × \(columns).")
     }
 
     private func useChosenSizeForNewFolders() {
@@ -468,7 +468,7 @@ struct FirstRunView: View {
         #endif
     }
 
-    /// The starter board is 5 × 4. If the parent picked a bigger grid, grow Home (growing never moves tiles),
+    /// The starter Home is 3 × 4. If the parent picked a bigger grid, grow Home (growing never moves tiles),
     /// which leaves empty spots for the child's own phrases.
     private func growHomeToChosenSize() {
         guard let home = model.store.boards().first(where: \.isHome) else { return }

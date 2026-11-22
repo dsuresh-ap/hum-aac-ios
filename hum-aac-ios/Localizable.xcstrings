@@ -4280,43 +4280,43 @@
         }
       }
     },
-    "18 whole phrases like “Let's go!”, “All done” and “Too loud”. Replace the pictures with real photos later." : {
-      "comment" : "Starter board card in first-run setup. The quoted phrases are tiles on the starter board: use the same words as starter.<language>.hum.json (see docs/LOCALIZATION.md).",
+    "12 whole phrases like “Let's go!”, “All done” and “Too loud”, and folders for going out, bath time and bedtime. Every tile has a picture; swap in your own photos any time." : {
+      "comment" : "Starter board card in first-run setup. The quoted phrases are tiles on the starter board: use the same words as starter.<language>.hum (see docs/LOCALIZATION.md).",
       "localizations" : {
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "18 frases completas en inglés, como “Let's go!”, “All done” y “Too loud”. Cambia los dibujos por fotos reales más adelante."
+            "state" : "needs_review",
+            "value" : "12 frases completas en inglés, como “Let's go!”, “All done” y “Too loud”, y carpetas para salir, la hora del baño y la hora de dormir. Cada casilla tiene un dibujo; cámbialo por tus propias fotos cuando quieras."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "18 phrases entières en anglais, comme « Let's go! », « All done » et « Too loud ». Remplacez plus tard les dessins par de vraies photos."
+            "state" : "needs_review",
+            "value" : "12 phrases entières en anglais, comme « Let's go! », « All done » et « Too loud », et des dossiers pour sortir, le bain et le coucher. Chaque case a une image ; remplacez-la par vos propres photos quand vous voulez."
           }
         },
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "18 ganze Sätze auf Englisch, wie „Let's go!“, „All done“ und „Too loud“. Ersetze die Bilder später durch echte Fotos."
+            "state" : "needs_review",
+            "value" : "12 ganze Sätze auf Englisch, wie „Let's go!“, „All done“ und „Too loud“, und Ordner fürs Rausgehen, Baden und Schlafengehen. Jedes Feld hat ein Bild; ersetze es jederzeit durch eigene Fotos."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "18 frases inteiras em inglês, como “Let's go!”, “All done” e “Too loud”. Troque os desenhos por fotos reais depois."
+            "state" : "needs_review",
+            "value" : "12 frases inteiras em inglês, como “Let's go!”, “All done” e “Too loud”, e pastas para sair de casa, hora do banho e hora de dormir. Cada cartão tem uma figura; troque por suas próprias fotos quando quiser."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "18 frasi intere in inglese, come “Let's go!”, “All done” e “Too loud”. Più avanti sostituisci i disegni con foto vere."
+            "state" : "needs_review",
+            "value" : "12 frasi intere in inglese, come “Let's go!”, “All done” e “Too loud”, e cartelle per uscire, il bagnetto e la nanna. Ogni casella ha un'immagine; sostituiscila con le tue foto quando vuoi."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "18 个完整的英文短语，比如“Let's go!”“All done”和“Too loud”。以后可以把图画换成真实照片。"
+            "state" : "needs_review",
+            "value" : "12 个完整的英文短语，比如“Let's go!”“All done”和“Too loud”，还有出门、洗澡和睡觉的文件夹。每张卡片都有图片，随时可以换成你自己的照片。"
           }
         }
       }
@@ -4363,49 +4363,49 @@
         }
       }
     },
-    "A 5 × 4 board with 18 whole phrases, like “Let's go!”, “All done” and “Too loud”. Replace the pictures with real photos later. New folders use the size you picked: %lld × %lld." : {
-      "comment" : "Starter board card in first-run setup. The quoted phrases are tiles on the starter board: use the same words as starter.<language>.hum.json (see docs/LOCALIZATION.md).",
+    "A 3 × 4 board with 12 whole phrases, like “Let's go!”, “All done” and “Too loud”, and folders for going out, bath time and bedtime. Every tile has a picture; swap in your own photos any time. New folders use the size you picked: %lld × %lld." : {
+      "comment" : "Starter board card in first-run setup. The quoted phrases are tiles on the starter board: use the same words as starter.<language>.hum (see docs/LOCALIZATION.md).",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "A 5 × 4 board with 18 whole phrases, like “Let's go!”, “All done” and “Too loud”. Replace the pictures with real photos later. New folders use the size you picked: %1$lld × %2$lld."
+            "state" : "translated",
+            "value" : "A 3 × 4 board with 12 whole phrases, like “Let's go!”, “All done” and “Too loud”, and folders for going out, bath time and bedtime. Every tile has a picture; swap in your own photos any time. New folders use the size you picked: %1$lld × %2$lld."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Un tablero de 5 × 4 con 18 frases completas en inglés, como “Let's go!”, “All done” y “Too loud”. Cambia los dibujos por fotos reales más adelante. Las carpetas nuevas usan tu tamaño de %1$lld × %2$lld."
+            "value" : "Un tablero de 3 × 4 con 12 frases completas en inglés, como “Let's go!”, “All done” y “Too loud”, y carpetas para salir, la hora del baño y la hora de dormir. Cada casilla tiene un dibujo; cámbialo por tus propias fotos cuando quieras. Las carpetas nuevas usan tu tamaño de %1$lld × %2$lld."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Un tableau de 5 × 4 avec 18 phrases entières en anglais, comme « Let's go! », « All done » et « Too loud ». Remplacez plus tard les dessins par de vraies photos. Les nouveaux dossiers utilisent votre taille de %1$lld × %2$lld."
+            "value" : "Un tableau de 3 × 4 avec 12 phrases entières en anglais, comme « Let's go! », « All done » et « Too loud », et des dossiers pour sortir, le bain et le coucher. Chaque case a une image ; remplacez-la par vos propres photos quand vous voulez. Les nouveaux dossiers utilisent votre taille de %1$lld × %2$lld."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Eine 5 × 4-Tafel mit 18 ganzen Sätzen auf Englisch, wie „Let's go!“, „All done“ und „Too loud“. Ersetze die Bilder später durch echte Fotos. Neue Ordner nutzen deine Größe %1$lld × %2$lld."
+            "value" : "Eine 3 × 4-Tafel mit 12 ganzen Sätzen auf Englisch, wie „Let's go!“, „All done“ und „Too loud“, und Ordnern fürs Rausgehen, Baden und Schlafengehen. Jedes Feld hat ein Bild; ersetze es jederzeit durch eigene Fotos. Neue Ordner nutzen deine Größe %1$lld × %2$lld."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Uma prancha de 5 × 4 com 18 frases inteiras em inglês, como “Let's go!”, “All done” e “Too loud”. Troque os desenhos por fotos reais depois. As pastas novas usam o seu tamanho de %1$lld × %2$lld."
+            "value" : "Uma prancha de 3 × 4 com 12 frases inteiras em inglês, como “Let's go!”, “All done” e “Too loud”, e pastas para sair de casa, hora do banho e hora de dormir. Cada cartão tem uma figura; troque por suas próprias fotos quando quiser. As pastas novas usam o seu tamanho de %1$lld × %2$lld."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Una tabella 5 × 4 con 18 frasi intere in inglese, come “Let's go!”, “All done” e “Too loud”. Più avanti sostituisci i disegni con foto vere. Le nuove cartelle usano la tua dimensione %1$lld × %2$lld."
+            "value" : "Una tabella 3 × 4 con 12 frasi intere in inglese, come “Let's go!”, “All done” e “Too loud”, e cartelle per uscire, il bagnetto e la nanna. Ogni casella ha un'immagine; sostituiscila con le tue foto quando vuoi. Le nuove cartelle usano la tua dimensione %1$lld × %2$lld."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "一块 5 × 4 的沟通板，含 18 个完整的英文短语，比如“Let's go!”“All done”和“Too loud”。以后可以把图画换成真实照片。新文件夹会使用你选的 %1$lld × %2$lld 大小。"
+            "value" : "一块 3 × 4 的沟通板，含 12 个完整的英文短语，比如“Let's go!”“All done”和“Too loud”，还有出门、洗澡和睡觉的文件夹。每张卡片都有图片，随时可以换成你自己的照片。新文件夹会使用你选的 %1$lld × %2$lld 大小。"
           }
         }
       }

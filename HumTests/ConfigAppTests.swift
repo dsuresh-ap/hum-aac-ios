@@ -11,18 +11,41 @@ let repoRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent().delet
 @MainActor
 @Suite("Config import/export through SwiftData")
 struct ConfigAppTests {
-    @Test func bundledStarterMatchesExamplesFile() throws {
-        let bundled = try Data(contentsOf: try #require(Bundle.main.url(forResource: "starter.hum", withExtension: "json")))
-        let example = try Data(contentsOf: repoRoot.appendingPathComponent("examples/starter.hum.json"))
-        #expect(bundled == example, "Copy examples/starter.hum.json to hum-aac-ios/Resources/")
+    /// `starter.hum` is `examples/starter/` packed (`hum-config pack examples/starter hum-aac-ios/Resources/starter.hum`).
+    @Test func bundledStarterMatchesExamplesFolder() throws {
+        let url = try #require(Bundle.main.url(forResource: "starter", withExtension: "hum"))
+        let bundled = try #require(StarterBoard.load(url))
+        let folder = repoRoot.appendingPathComponent("examples/starter")
+        let example = try HumConfigLoader.load(Data(contentsOf: folder.appendingPathComponent("hum.json"))).document
+        #expect(bundled.document == example, "Pack examples/starter into hum-aac-ios/Resources/starter.hum")
+        for path in Set(example.boards.flatMap(\.tiles).compactMap(\.image)) {
+            #expect(bundled.media[path] == (try? Data(contentsOf: folder.appendingPathComponent(path))), "\(path) matches")
+        }
+        let legacy = try Data(contentsOf: try #require(StarterBoard.legacyURL))
+        #expect(legacy == (try Data(contentsOf: repoRoot.appendingPathComponent("examples/starter-1.0.hum.json"))))
     }
 
-    /// Golden test: the starter imports into SwiftData and exports back to equal JSON.
+    /// Golden test: the starter imports into SwiftData, pictures and credits included, and exports back.
     @Test func starterRoundTripsThroughTheStore() throws {
-        let model = makeModel()
-        let original = try HumConfigLoader.load(Data(contentsOf: repoRoot.appendingPathComponent("examples/starter.hum.json"))).document
+        let model = makeModel(newStarter: true)
+        let original = try HumConfigLoader.load(Data(contentsOf: repoRoot.appendingPathComponent("examples/starter/hum.json"))).document
         let exported = ConfigBridge.export(boards: model.store.boards()).document
-        #expect(exported.boards == original.boards)
+        func withoutPicturePaths(_ boards: [HumBoard]) -> [HumBoard] {
+            boards.map { board in
+                var board = board
+                board.tiles = board.tiles.map { var t = $0; t.image = t.image == nil ? nil : "picture"; return t }
+                return board
+            }
+        }
+        #expect(withoutPicturePaths(exported.boards) == withoutPicturePaths(original.boards))
+        #expect(model.home.placedTiles.allSatisfy { $0.imageData != nil && $0.imageCredit?.hasPrefix("ARASAAC") == true })
+    }
+
+    /// Hum 1.0's starter, still loaded by most tests, round-trips too.
+    @Test func starterOneZeroRoundTripsThroughTheStore() throws {
+        let model = makeModel()
+        let original = try HumConfigLoader.load(Data(contentsOf: repoRoot.appendingPathComponent("examples/starter-1.0.hum.json"))).document
+        #expect(ConfigBridge.export(boards: model.store.boards()).document.boards == original.boards)
     }
 
     @Test(arguments: ["food.hum.json", "linked-boards.hum.json"])

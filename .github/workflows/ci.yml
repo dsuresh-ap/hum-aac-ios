@@ -22,7 +22,7 @@ jobs:
       - name: Test HumConfig
         run: swift test --package-path Packages/HumConfig
       - name: Validate example configs against the schema
-        run: swift run --package-path Packages/HumConfig hum-config validate examples/*.json
+        run: swift run --package-path Packages/HumConfig hum-config validate examples/*.json hum-aac-ios/Resources/starter.hum
 
   apple:
     runs-on: macos-26

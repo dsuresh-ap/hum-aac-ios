@@ -24,14 +24,14 @@ hum-aac-ios/
 │  ├─ Onboarding/                First-run flow
 │  ├─ AI/                        (M5) FoundationModels helpers, @Generable types, GLP rule checks
 │  ├─ Intents/                   (M4) App Intents + pending-change queue
-│  ├─ Resources/                 starter.hum.json (copied from examples/), starter.<language>.hum.json
+│  ├─ Resources/                 starter.hum (packed from examples/starter/), starter.<language>.hum, starter-1.0.hum.json
 │  ├─ *.xcstrings                String Catalogs (Localizable, InfoPlist, AppShortcuts, EmojiKeywords,
 │  │                             PraisePhrases); see docs/LOCALIZATION.md
 │  └─ PrivacyInfo.xcprivacy
 ├─ HumTests/  HumUITests/
 ├─ Packages/HumConfig/           dependency-free Swift package (library + `hum-config` CLI), builds on macOS AND Linux
 ├─ schema/hum.schema.json        JSON Schema draft 2020-12
-├─ examples/                     starter.hum.json, food.hum.json, linked-boards.hum.json
+├─ examples/                     starter/ (hum.json + media/), starter-1.0.hum.json, food.hum.json, linked-boards.hum.json
 ├─ docs/  PLAN.md CONFIG.md CHANGELOG.md
 ├─ AGENTS.md README.md LICENSE (Apache-2.0) CONTRIBUTING.md CODE_OF_CONDUCT.md
 └─ .github/workflows/ci.yml

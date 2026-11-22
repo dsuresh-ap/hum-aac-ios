@@ -2,6 +2,11 @@
 
 ## Unreleased: after 1.0
 
+- **New starter board:** a 3 × 4 Home with folders for getting out the door, bath time and bedtime, from
+  the daily-routines example DPWonder contributed. Every tile now has an ARASAAC picture instead of an
+  emoji. Protest and regulation tiles stay on Home, and "All done!" sits in the same spot in every folder.
+  Hum 1.0's starter is kept in the app, so sync still recognizes a device that made it, and sync now also
+  removes the starter's untouched folders along with its untouched Home.
 - On the iPhone Duo's outer screen, the tile editor's Cancel and Save stay at the top while the parent
   types. iOS 27.1 used to shrink that bar away as the keyboard scrolled the form, so Save was out of reach.
 

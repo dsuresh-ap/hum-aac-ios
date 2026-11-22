@@ -293,12 +293,15 @@ final class AppModel {
     }
 
     /// Finishes first-run setup with the parent's choice.
-    enum StartChoice { case starter, empty(rows: Int, columns: Int) }
+    /// `legacyStarter` is Hum 1.0's starter: only tests and UI tests use it, as sample data.
+    enum StartChoice { case starter, legacyStarter, empty(rows: Int, columns: Int) }
 
     func finishFirstRun(_ choice: StartChoice) {
         switch choice {
         case .starter:
             try? loadStarterBoard()
+        case .legacyStarter:
+            try? loadStarterBoard(from: StarterBoard.legacyURL)
         case .empty(let rows, let columns):
             if ((try? context.fetchCount(FetchDescriptor<Board>())) ?? 0) == 0 {
                 store.createBoard(name: String(localized: "Home"), rows: rows, columns: columns)
@@ -320,10 +323,10 @@ final class AppModel {
         goHome()
     }
 
-    /// The starter board ships as `starter.hum.json` (and `starter.<language>.hum.json` for languages that
-    /// have their own) and loads through the normal import path.
-    func loadStarterBoard() throws {
-        guard let url = StarterBoard.url else { return }
+    /// The starter ships as `starter.hum` (and `starter.<language>.hum` for languages that have their own)
+    /// and loads through the normal import path, pictures included.
+    func loadStarterBoard(from url: URL? = StarterBoard.url) throws {
+        guard let url else { return }
         let loaded = try HumConfigLoader.load(try Data(contentsOf: url))
         let existing = ConfigBridge.export(boards: store.boards()).document
         let plan = MergePlanner.plan(existing: existing, incoming: loaded.document, mode: .merge)

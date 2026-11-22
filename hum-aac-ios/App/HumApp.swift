@@ -46,7 +46,8 @@ struct HumApp: App {
                     if args.contains("-uiTesting") {
                         if args.contains("-skipFirstRun") {
                             model.settings.hasSeenGuidedAccessTip = true
-                            model.finishFirstRun(.starter)
+                            // UI tests were written around Hum 1.0's starter; -newStarter loads today's.
+                            model.finishFirstRun(args.contains("-newStarter") ? .starter : .legacyStarter)
                         }
                         if args.contains("-demoPendingImport") { UITestFixtures.queueImport(model) }
                         if args.contains("-startInParent") { model.mode = .parent }

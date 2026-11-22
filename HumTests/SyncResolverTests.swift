@@ -4,6 +4,7 @@
 import Foundation
 import Testing
 import SwiftData
+import HumConfig
 @testable import Hum
 
 /// What iCloud can produce when two devices edit offline, and how it's repaired without moving tiles.
@@ -40,19 +41,53 @@ struct SyncResolverTests {
     }
 
     /// A device joining sync uploads its untouched starter board, even one made before the family's own
-    /// setup. The family's Home stays Home and the starter disappears (it holds none of their work).
+    /// setup. The family's Home stays Home and the starter disappears with its folders (they hold none of
+    /// the family's work).
     @Test func familysHomeBeatsAnUntouchedStarterWhichIsRemoved() throws {
-        let model = makeModel()
-        let starterID = try #require(StarterBoard.homeID)
-        #expect(StarterBoard.isUntouched(model.home))
+        let model = makeModel(newStarter: true)
+        let starterIDs = Set(try #require(StarterBoard.document).boards.map(\.id))
+        #expect(starterIDs.count == 4)
+        #expect(model.store.boards().allSatisfy(StarterBoard.isUntouched))
         let family = Board(name: "Maya's Home", rows: 2, columns: 2, isHome: true)
         family.createdAt = model.home.createdAt.addingTimeInterval(3600)
         model.context.insert(family)
         let report = SyncResolver.resolve(in: model.context)
-        #expect(report.removedStarterBoards == 1)
+        #expect(report.removedStarterBoards == 4)
         #expect(model.store.boards().filter(\.isHome).map(\.name) == ["Maya's Home"])
-        #expect(!model.store.boards().contains { $0.id == starterID })
+        #expect(!model.store.boards().contains { starterIDs.contains($0.id) })
         #expect(try model.context.fetch(FetchDescriptor<Tile>()).isEmpty)
+    }
+
+    /// Hum 1.0's starter (one Home board) is still recognized on a device that made it.
+    @Test func anUntouchedStarterFromOneZeroIsRemovedToo() throws {
+        let model = makeModel()
+        let starterID = model.home.id
+        #expect(StarterBoard.homeIDs.contains(starterID) && starterID != StarterBoard.homeID)
+        #expect(StarterBoard.isUntouched(model.home))
+        let family = Board(name: "Maya's Home", rows: 2, columns: 2, isHome: true)
+        family.createdAt = model.home.createdAt.addingTimeInterval(-3600)  // even when it's older
+        model.context.insert(family)
+        let report = SyncResolver.resolve(in: model.context)
+        #expect(report.removedStarterBoards == 1)
+        #expect(!model.store.boards().contains { $0.id == starterID })
+    }
+
+    /// A folder the family changed stays (it isn't Home any more, but nothing is lost). A changed picture
+    /// counts as a change.
+    @Test func anEditedStarterFolderIsKept() throws {
+        let model = makeModel(newStarter: true)
+        let bath = try #require(model.store.boards().first { $0.name == "Bath time" })
+        try #require(bath.placedTiles.first).spokenText = "Rubber ducky!"
+        let bedtime = try #require(model.store.boards().first { $0.name == "Bedtime" })
+        #expect(StarterBoard.isUntouched(bedtime))
+        try #require(bedtime.placedTiles.first).imageData = Data([0xFF, 0xD8, 0xFF])
+        #expect(!StarterBoard.isUntouched(bedtime))
+        let family = Board(name: "Maya's Home", rows: 2, columns: 2, isHome: true)
+        family.createdAt = model.home.createdAt.addingTimeInterval(3600)
+        model.context.insert(family)
+        let report = SyncResolver.resolve(in: model.context)
+        #expect(report.removedStarterBoards == 2, "Home and Out the door")
+        #expect(Set(model.store.boards().map(\.name)) == ["Maya's Home", "Bath time", "Bedtime"])
     }
 
     @Test func anEditedStarterLosesHomeButIsKept() throws {

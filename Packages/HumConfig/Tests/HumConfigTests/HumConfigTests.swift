@@ -26,7 +26,7 @@ func doc(tile: String, rows: Int = 2, columns: Int = 2) -> Data {
 
 @Suite("Examples & golden files")
 struct ExampleTests {
-    static let names = ["starter.hum.json", "food.hum.json", "linked-boards.hum.json", "routines.hum.json"]
+    static let names = ["starter/hum.json", "starter-1.0.hum.json", "food.hum.json", "linked-boards.hum.json"]
 
     @Test(arguments: names)
     func exampleLoadsWithoutErrors(name: String) throws {
@@ -44,13 +44,35 @@ struct ExampleTests {
         #expect(try JSONValue.parse(reencoded) == JSONValue.parse(original))
     }
 
-    @Test func starterHasProtestTilesOnHomeAndFits() throws {
-        let doc = try HumConfigLoader.load(try example("starter.hum.json")).document
+    /// The starter (`examples/starter/`, packed into the app as `starter.hum`): protest and regulation tiles on
+    /// Home, "All done!" in every folder, and a credited picture on every tile.
+    @Test func starterHasProtestTilesOnHomeAndPictures() throws {
+        let doc = try HumConfigLoader.load(try example("starter/hum.json")).document
         let home = try #require(doc.homeBoard)
         let spoken = Set(home.tiles.map(\.spokenText))
-        for phrase in ["No thank you", "Stop!", "All done", "I need a break", "Too loud", "Help me"] {
+        for phrase in ["Not that one!", "Stop!", "All done!", "I need a break!", "Too loud!", "Help me!"] {
             #expect(spoken.contains(phrase))
         }
+        #expect(home.tiles.count == 12)
+        let folders = Set(home.tiles.compactMap(\.linkedBoardID))
+        #expect(folders.count == 3)
+        for board in doc.boards where !board.isHome {
+            #expect(folders.contains(board.id), "\(board.name) opens from Home")
+            #expect(board.tiles.contains { $0.spokenText == "All done!" }, "\(board.name) has All done!")
+        }
+        for tile in doc.boards.flatMap(\.tiles) {
+            let image = try #require(tile.image, "\(tile.label) has a picture")
+            #expect(FileManager.default.fileExists(atPath: repoRoot.appendingPathComponent("examples/starter/\(image)").path))
+            #expect(tile.imageCredit?.hasPrefix("ARASAAC") == true)
+            #expect(GLPRules.discouragedPhrase(in: tile.spokenText) == nil)
+        }
+    }
+
+    /// Hum 1.0's starter stays in the app so sync still recognizes it. Never change it.
+    @Test func starterOneZeroIsUnchanged() throws {
+        let doc = try HumConfigLoader.load(try example("starter-1.0.hum.json")).document
+        let home = try #require(doc.homeBoard)
+        #expect(home.id == UUID(uuidString: "af4376e6-882d-50ba-af8e-44d87b6aa819"))
         #expect(home.tiles.count == 18)
     }
 
@@ -238,7 +260,7 @@ struct ZipTests {
     }
 
     @Test func packageRoundTripWithMedia() throws {
-        var document = try HumConfigLoader.load(try example("starter.hum.json")).document
+        var document = try HumConfigLoader.load(try example("starter-1.0.hum.json")).document
         document.boards[0].tiles[0].image = "media/hi.jpg"
         let jpeg = Data([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3])
         let packed = try HumPackage.write(document, media: ["media/hi.jpg": jpeg, "media/unused.jpg": jpeg])
@@ -271,7 +293,7 @@ struct ZipTests {
     }
 
     @Test func creditsFileOnlyWhenATileHasACredit() throws {
-        var document = try HumConfigLoader.load(try example("starter.hum.json")).document
+        var document = try HumConfigLoader.load(try example("starter-1.0.hum.json")).document
         document.boards[0].tiles[0].image = "media/hi.jpg"
         let jpeg = Data([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3])
         let plain = try ZipArchive.read(try HumPackage.write(document, media: ["media/hi.jpg": jpeg]))

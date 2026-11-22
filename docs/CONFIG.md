@@ -103,10 +103,10 @@ Errors are written for people, e.g. `Tile 'snack' has no words to say.`
 
 | File | What it shows |
 |---|---|
-| [`examples/starter.hum.json`](../examples/starter.hum.json) | The starter board Hum ships with: 18 whole-gestalt tiles grouped by function, protest tiles on Home. |
+| [`examples/starter/`](../examples/starter/hum.json) | The starter Hum ships with (packed into the app as `starter.hum`): a 3 × 4 Home with folders that open Out the door, Bath time and Bedtime, protest and regulation tiles on Home, and an ARASAAC picture on every tile. Phrases from the open [Gestalt phrases list](https://github.com/DPWonder/gestalt-phrases) by ReadySetSay (CC BY 4.0). |
+| [`examples/starter-1.0.hum.json`](../examples/starter-1.0.hum.json) | Hum 1.0's starter: 18 whole-gestalt tiles grouped by function, protest tiles on Home. Kept so iCloud sync still recognizes it. |
 | [`examples/food.hum.json`](../examples/food.hum.json) | A single "Food" board using whole "Let's have ___!" phrases (one complete phrase per tile). |
 | [`examples/linked-boards.hum.json`](../examples/linked-boards.hum.json) | A Home board with folder tiles that open Food, Play and Outside sub-boards; protest tiles stay on Home. |
-| [`examples/routines.hum.json`](../examples/routines.hum.json) | A Home board with folder tiles that open Out the door, Bath time and Bedtime boards: everyday routine phrases, protest tiles on Home. Phrases from the open [Gestalt phrases list](https://github.com/DPWonder/gestalt-phrases) by ReadySetSay (CC BY 4.0). |
 
 ## Asking a coding agent to make a board
 
