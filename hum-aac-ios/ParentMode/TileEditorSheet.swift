@@ -93,23 +93,33 @@ struct TileEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                pictureSection
-                if folderFirst {
-                    labelSection
-                    phraseSection
-                } else {
-                    phraseSection
-                    labelSection
+            ScrollViewReader { proxy in
+                Form {
+                    pictureSection
+                    if folderFirst {
+                        labelSection
+                        phraseSection
+                    } else {
+                        phraseSection
+                        labelSection
+                    }
+                    recordingSection
+                    folderSection
+                    moreSection
                 }
-                recordingSection
-                folderSection
-                moreSection
+                .formStyle(.grouped)
+                #if os(iOS)
+                // Typing can push the field down: the "Ideas" row appears above it and the phrase wraps to
+                // a new line. iOS scrolls a field above the keyboard only when it gets focus, so on a short
+                // screen (the iPhone Duo's outer screen) the field slid behind the keyboard. Nudge it back.
+                .onChange(of: spokenText) { keepFocusedFieldVisible(proxy) }
+                .onChange(of: label) { keepFocusedFieldVisible(proxy) }
+                #endif
             }
-            .formStyle(.grouped)
             .navigationTitle(title)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            .keepsBarWhileScrolling()
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -181,6 +191,15 @@ struct TileEditorSheet: View {
         .frame(minWidth: 500, minHeight: 620)
         #endif
     }
+
+    #if os(iOS)
+    /// Scrolls the field being typed in just enough to show it. Does nothing while it's already in view.
+    private func keepFocusedFieldVisible(_ proxy: ScrollViewProxy) {
+        guard let focus else { return }
+        // After the new text's layout, so the scroll uses the field's new place.
+        DispatchQueue.main.async { proxy.scrollTo(focus) }
+    }
+    #endif
 
     private var title: String {
         if existing != nil { return link == .none ? String(localized: "Edit tile") : String(localized: "Edit folder") }
@@ -336,6 +355,7 @@ struct TileEditorSheet: View {
                 .accessibilityLabel("Hear the phrase")
                 .help("Hear the phrase")
             }
+            .id(Field.phrase)
             if let phrase = GLPRules.discouragedPhrase(in: spokenText) {
                 Text("“\(phrase)” sounds like praise or an instruction. Hum tiles are your child's own voice, so we suggest a phrase your child would say.")
                     .font(.footnote).foregroundStyle(.orange)
@@ -356,6 +376,7 @@ struct TileEditorSheet: View {
                 .onSubmit(submit)
                 .onChange(of: label) { _, new in labelEdited = new != Self.suggestLabel(spokenText) }
                 .accessibilityIdentifier("labelField")
+                .id(Field.label)
         } header: {
             Text(folderFirst ? "Folder name" : "Label")
         } footer: {
@@ -666,3 +687,27 @@ struct CameraPicker: UIViewControllerRepresentable {
     }
 }
 #endif
+
+extension View {
+    /// Keeps a sheet's top bar (Cancel, Save, Done) on screen while its form scrolls. On the iPhone Duo's
+    /// outer screen, iOS 27.1 shrinks the bar away on any scroll, the keyboard's too, and its buttons go
+    /// with it. Put it inside the NavigationStack: outside the stack it does nothing. (A pushed screen's
+    /// Back sits beside the bar there, so it stays.)
+    func keepsBarWhileScrolling() -> some View { modifier(KeepsBarWhileScrolling()) }
+}
+
+private struct KeepsBarWhileScrolling: ViewModifier {
+    func body(content: Content) -> some View {
+        // Bar minimizing came with the iOS 27 SDK (SwiftUICore 8.0.85.29 is 27.1, like the fold lookup).
+        // Older SDKs, like CI's Xcode 26, build without it: their bars never minimize.
+        #if os(iOS) && canImport(SwiftUICore, _version: 8.0.85.29)
+        if #available(iOS 27.0, *) {
+            content.toolbarMinimizationBehavior(.never, for: .navigationBar)
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
+    }
+}

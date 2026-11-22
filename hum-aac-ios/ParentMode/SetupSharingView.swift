@@ -166,6 +166,7 @@ struct SetupSharingView: View {
             }
             .formStyle(.grouped)
             .navigationTitle("Share & sync")
+            .keepsBarWhileScrolling()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }

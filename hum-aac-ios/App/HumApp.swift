@@ -53,6 +53,7 @@ struct HumApp: App {
                         if args.contains("-demoPendingImport") { UITestFixtures.queueImport(model) }
                         if args.contains("-startInParent") { model.mode = .parent }
                         if args.contains("-darkMode") { model.settings.appearance = .dark }
+                        if args.contains("-lightMode") { model.settings.appearance = .light }
                         if args.contains("-whatsThisCamera") { model.settings.whatsThisCamera = true }
                         if args.contains("-showHistory") { model.settings.showHistory = true }
                         if args.contains("-demoFolder") { UITestFixtures.addFoodFolder(model) }

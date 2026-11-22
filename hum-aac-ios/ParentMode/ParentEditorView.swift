@@ -363,7 +363,8 @@ private struct EditGrid: View {
     private var childFold: Int? {
         guard model.boardArea != .zero else { return nil }
         let visible = GridMetrics.visibleRows(in: model.boardArea, rows: board.rows, columns: columns, spacing: Theme.gridSpacing)
-        return visible < rows ? visible : nil
+        // The board's own rows: the editor's spare empty row isn't on the child's screen at all.
+        return visible < board.rows ? visible : nil
     }
 
     /// Folders a tile could move into: every board except this one and the folder the tile itself opens.

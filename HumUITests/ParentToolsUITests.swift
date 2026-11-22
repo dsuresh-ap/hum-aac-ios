@@ -156,6 +156,34 @@ final class ParentToolsUITests: XCTestCase {
         shot(app, "about hum")
     }
 
+    /// Scenario: the parent scrolls Settings and Share & sync and can still close them. On the iPhone Duo's
+    /// outer screen the top bar shrank away on scroll and took Done with it.
+    @MainActor
+    func testDoneStaysReachableAfterScrolling() {
+        let app = launchHum(["-skipFirstRun", "-startInParent"])
+        for (id, title) in [("settings", "Settings"), ("setupSharing", "Share & sync")] {
+            tapToolbar(app, id, label: title)
+            let bar = app.navigationBars[title]
+            XCTAssertTrue(bar.waitForExistence(timeout: 3))
+            app.swipeUp()
+            app.swipeUp()
+            shot(app, "\(title) after scrolling")
+            let done = bar.buttons["Done"]
+            XCTAssertTrue(done.exists && done.isHittable, "\(title)'s Done must stay on screen after scrolling")
+            if id == "settings" {
+                let about = el(app, "settings.about")
+                scrollTo(app, about)
+                about.tap()
+                XCTAssertTrue(el(app, "about.privacy").waitForExistence(timeout: 5))
+                app.swipeUp()
+                goBack(app, from: title)
+                XCTAssertTrue(bar.waitForExistence(timeout: 3), "About Hum's Back must stay on screen after scrolling")
+            }
+            done.tap()
+            XCTAssertTrue(bar.waitForNonExistence(timeout: 3))
+        }
+    }
+
     /// Scenario: switching the appearance to Dark changes the child's screen at once.
     @MainActor
     func testAppearanceDark() {

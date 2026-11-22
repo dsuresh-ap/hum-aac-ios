@@ -45,6 +45,42 @@ final class EditorUITests: XCTestCase {
         XCTAssertEqual(tile.label, "All aboard!")
     }
 
+    /// Scenario: while the parent types, Cancel and Save stay on screen. On the iPhone Duo's outer
+    /// screen iOS 27.1 once shrank the sheet's top bar away as the form scrolled.
+    @MainActor
+    func testSaveStaysReachableWhileTyping() {
+        let app = launchHum(["-skipFirstRun", "-demoFolder", "-startInParent"])
+        el(app, "emptySlot.3.3").tap()
+        let field = el(app, "spokenTextField")
+        XCTAssertTrue(field.waitForExistence(timeout: 3))
+        field.typeText("Let's get out of here, it's too loud in here!")
+        let save = app.buttons["saveTile"].firstMatch
+        XCTAssertTrue(save.isHittable, "Save must stay on screen while typing")
+        XCTAssertTrue(app.buttons["Cancel"].firstMatch.isHittable, "Cancel must stay on screen while typing")
+        shot(app, "Tile editor while typing")
+        save.tap()
+        XCTAssertTrue(el(app, "emptySlot.3.3").waitForNonExistence(timeout: 3), "Save fills the spot")
+    }
+
+    /// Scenario: the parent can see what they type. Typing adds an "Ideas" row above the phrase and wraps it
+    /// to a second line, which pushed the field behind the keyboard on the iPhone Duo's short outer screen.
+    @MainActor
+    func testPhraseStaysAboveTheKeyboardWhileTyping() {
+        let app = launchHum(["-skipFirstRun", "-demoFolder", "-startInParent"])
+        el(app, "emptySlot.3.3").tap()
+        let field = el(app, "spokenTextField")
+        XCTAssertTrue(field.waitForExistence(timeout: 3))
+        field.typeText("Let's get out of here, it's too loud in here!")
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 3))
+        // The scroll runs just after the text changes; give it a moment to land.
+        let deadline = Date.now.addingTimeInterval(3)
+        while field.frame.maxY > keyboard.frame.minY, Date.now < deadline { usleep(200_000) }
+        shot(app, "Phrase above the keyboard")
+        XCTAssertLessThanOrEqual(field.frame.maxY, keyboard.frame.minY, "The phrase must stay above the keyboard")
+        XCTAssertGreaterThanOrEqual(field.frame.minY, app.windows.firstMatch.frame.minY, "The phrase must stay on screen")
+    }
+
     /// Scenario: the parent changes what a tile says. The tile keeps its spot.
     @MainActor
     func testEditingAPhraseKeepsTheSpot() {
@@ -217,5 +253,22 @@ final class EditorUITests: XCTestCase {
         let app = launchHum(["-skipFirstRun", "-startInParent"])
         XCTAssertTrue(el(app, "editTile.hi").waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'points'")).firstMatch.exists)
+    }
+
+    /// Scenario: "Scrolls below here" shows only when the child really scrolls. The editor's spare empty
+    /// row isn't on the child's screen, so it doesn't count.
+    @MainActor
+    func testFoldLineOnlyWhenTheChildScrolls() {
+        let app = launchHum(["-skipFirstRun"])
+        XCTAssertTrue(el(app, "tile.hi").waitForExistence(timeout: 5))
+        openParentMode(app)
+        XCTAssertTrue(el(app, "editTile.hi").waitForExistence(timeout: 3))
+        XCTAssertFalse(el(app, "scrollFold").exists, "The child sees the whole starter board")
+        app.terminate()
+
+        let tall = launchHum(["-skipFirstRun", "-tallHome"])
+        XCTAssertTrue(el(tall, "tile.hi").waitForExistence(timeout: 5))
+        openParentMode(tall)
+        XCTAssertTrue(el(tall, "scrollFold").waitForExistence(timeout: 3), "A 12-row board scrolls for the child")
     }
 }

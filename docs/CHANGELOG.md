@@ -14,6 +14,15 @@
   and "After a crash" boards. Car boards don't show the "No tile opens this folder yet" warning.
 - Apple granted Hum the CarPlay driving-task entitlement; iPhone builds now carry it (docs/PLAN.md §8d).
 
+## Unreleased: after 1.0
+
+- On the iPhone Duo's outer screen, the tile editor's Cancel and Save stay at the top while the parent
+  types. iOS 27.1 used to shrink that bar away as the keyboard scrolled the form, so Save was out of reach.
+- In the tile editor, the phrase stays above the keyboard while the parent types. On a short screen, like
+  the iPhone Duo's outer screen, the "Ideas" row and a second line of text pushed it behind the keyboard.
+- On the iPhone Duo's outer screen, Done stays at the top of Settings, Share & sync, and Home & folders
+  when they scroll. iOS 27.1 used to shrink that bar away there too.
+
 ## Unreleased: pre-ship polish
 
 - **Setup walkthrough:** first run now explains how Hum works (try two tiles, folders, the grown-up
@@ -39,6 +48,9 @@
 
 ## Unreleased: fixes
 
+- The editor no longer shows "Scrolls below here" at the bottom of a board your child sees whole. The
+  editor's spare empty row was counted as one of the child's rows, so on iPhone the line sat on top of
+  the last row.
 - The privacy manifest now lists the file creation dates Hum reads to clean up its own temporary files
   at launch (reason C617.1). Without it, App Store Connect refuses the upload.
 - **Security:** an SVG picture in an imported file can no longer make Hum open a web address on iPhone
