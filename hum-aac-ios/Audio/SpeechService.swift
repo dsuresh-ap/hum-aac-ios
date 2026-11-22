@@ -54,6 +54,15 @@ final class SpeechService {
     func start() { engine.start() }
     func pause() { releaseTask?.cancel(); engine.pause(); liveSynth.stopSpeaking(at: .immediate) }
 
+    /// Something is playing now: a rendered phrase, a recording or live speech.
+    var isSpeaking: Bool { engine.sampler.isPlaying || liveSynth.isSpeaking }
+
+    /// Cuts off whatever is playing (CarPlay's Stop button). The next tap speaks as usual.
+    func stop() {
+        engine.sampler.stopAll()
+        liveSynth.stopSpeaking(at: .immediate)
+    }
+
     // MARK: Sharing the car's speakers (CarPlay)
 
     @ObservationIgnored private var releaseTask: Task<Void, Never>?
