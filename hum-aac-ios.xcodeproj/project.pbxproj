@@ -396,6 +396,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "hum-aac-ios/hum-aac-ios.entitlements";
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]" = "hum-aac-ios/hum-aac-ios-iphone.entitlements";
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = "hum-aac-ios/hum-aac-ios-iphone.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7V795ZVY5R;
@@ -424,8 +426,8 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo of the real thing for a tile, or let your child ask “What's this?” Photos stay on this device.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "When you choose to, Hum sends boards straight between your iPad, iPhone and Mac while they're near each other. Nothing goes through the internet.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record a tile's phrase in your own voice. Recordings stay on this device.";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = NO;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = NO;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = "remote-notification";
@@ -464,6 +466,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "hum-aac-ios/hum-aac-ios.entitlements";
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]" = "hum-aac-ios/hum-aac-ios-iphone.entitlements";
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = "hum-aac-ios/hum-aac-ios-iphone.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7V795ZVY5R;
@@ -492,8 +496,8 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo of the real thing for a tile, or let your child ask “What's this?” Photos stay on this device.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "When you choose to, Hum sends boards straight between your iPad, iPhone and Mac while they're near each other. Nothing goes through the internet.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record a tile's phrase in your own voice. Recordings stay on this device.";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = NO;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = NO;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = "remote-notification";

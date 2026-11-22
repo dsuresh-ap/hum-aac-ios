@@ -45,6 +45,15 @@ final class DeviceSettings {
     /// Grid size for new boards.
     var newBoardRows: Int { didSet { defaults.set(newBoardRows, forKey: Keys.newRows) } }
     var newBoardColumns: Int { didSet { defaults.set(newBoardColumns, forKey: Keys.newColumns) } }
+    /// The boards CarPlay shows on this iPhone, one tab each, in this order. Empty (or only deleted
+    /// boards) means Home.
+    var carBoardIDs: [UUID] { didSet { defaults.set(carBoardIDs.map(\.uuidString), forKey: Keys.carBoards) } }
+    /// After a tile speaks in the car, its phrase also shows big on the car's screen. Off by default.
+    var carShowsEachPhrase: Bool { didSet { defaults.set(carShowsEachPhrase, forKey: Keys.carShowsEach) } }
+    /// The card CarPlay shows for an officer or helper to read. Never synced: it may hold a phone number.
+    var aboutMe: AboutMeCard {
+        didSet { defaults.set(try? JSONEncoder().encode(aboutMe), forKey: Keys.aboutMe) }
+    }
 
     // Parent
     var editGate: EditGate { didSet { defaults.set(editGate.rawValue, forKey: Keys.editGate) } }
@@ -76,6 +85,12 @@ final class DeviceSettings {
         returnHomeAfterFolderTap = defaults.bool(forKey: Keys.returnHome)
         newBoardRows = defaults.object(forKey: Keys.newRows) as? Int ?? 3
         newBoardColumns = defaults.object(forKey: Keys.newColumns) as? Int ?? 4
+        // An early test build kept one board under "carPlay.board".
+        carBoardIDs = (defaults.stringArray(forKey: Keys.carBoards) ?? defaults.string(forKey: "carPlay.board").map { [$0] } ?? [])
+            .compactMap(UUID.init(uuidString:))
+        carShowsEachPhrase = defaults.bool(forKey: Keys.carShowsEach)
+        aboutMe = defaults.data(forKey: Keys.aboutMe).flatMap { try? JSONDecoder().decode(AboutMeCard.self, from: $0) }
+            ?? AboutMeCard()
         editGate = defaults.string(forKey: Keys.editGate).flatMap(EditGate.init) ?? .holdLock
         hasCompletedSetup = defaults.bool(forKey: Keys.setupDone)
         hasSeenGuidedAccessTip = defaults.bool(forKey: Keys.guidedAccessTip)
@@ -109,6 +124,7 @@ final class DeviceSettings {
         static let showHistory = "display.showHistory", returnHome = "nav.returnHome", wordFinder = "display.wordFinder"
         static let whatsThis = "child.whatsThisCamera"
         static let newRows = "grid.newRows", newColumns = "grid.newColumns"
+        static let carBoards = "carPlay.boards", carShowsEach = "carPlay.showEachPhrase", aboutMe = "carPlay.aboutMe"
         static let iCloud = "sync.iCloud", ai = "ai.enabled", aiPCC = "ai.privateCloud"
     }
 }

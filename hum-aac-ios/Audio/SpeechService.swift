@@ -52,7 +52,49 @@ final class SpeechService {
     }
 
     func start() { engine.start() }
-    func pause() { engine.pause(); liveSynth.stopSpeaking(at: .immediate) }
+    func pause() { releaseTask?.cancel(); engine.pause(); liveSynth.stopSpeaking(at: .immediate) }
+
+    /// Something is playing now: a rendered phrase, a recording or live speech.
+    var isSpeaking: Bool { engine.sampler.isPlaying || liveSynth.isSpeaking }
+
+    /// Cuts off whatever is playing (CarPlay's Stop button). The next tap speaks as usual.
+    func stop() {
+        engine.sampler.stopAll()
+        liveSynth.stopSpeaking(at: .immediate)
+    }
+
+    // MARK: Sharing the car's speakers (CarPlay)
+
+    @ObservationIgnored private var releaseTask: Task<Void, Never>?
+
+    /// On while CarPlay is connected: other audio dips while a phrase plays and comes back up a moment
+    /// after it ends (see `AudioEngine.sharesOutput`). Off again when the car disconnects.
+    var sharesOutput: Bool {
+        get { engine.sharesOutput }
+        set {
+            guard newValue != engine.sharesOutput else { return }
+            engine.sharesOutput = newValue
+            releaseTask?.cancel()
+            // Running: set the session up again with (or without) ducking. Released: the next phrase does.
+            if engine.isRunning { engine.start() }
+        }
+    }
+
+    /// Gives the speakers back once nothing has played for about a second.
+    private func releaseWhenQuiet() {
+        guard engine.sharesOutput else { return }
+        releaseTask?.cancel()
+        releaseTask = Task { [weak self] in
+            var quietChecks = 0
+            while quietChecks < 3 {
+                try? await Task.sleep(for: .milliseconds(400))
+                guard let self, !Task.isCancelled else { return }
+                quietChecks = engine.sampler.isPlaying || liveSynth.isSpeaking ? 0 : quietChecks + 1
+            }
+            guard let self, !Task.isCancelled, engine.sharesOutput else { return }
+            engine.release()
+        }
+    }
 
     var retrigger: VoiceSampler.Mode {
         get { engine.sampler.mode }
@@ -84,6 +126,9 @@ final class SpeechService {
     /// Speaks a tile's phrase now. `recording` (a parent's voice) wins over TTS when present.
     /// - Parameter tapTime: `mach_absolute_time()` taken in the touch handler, for the latency probe.
     func speak(_ text: String, recordingID: String? = nil, tapTime: UInt64 = mach_absolute_time()) {
+        // After the car speakers were given back (CarPlay), take them again for this phrase.
+        if engine.isReleased { engine.start() }
+        defer { releaseWhenQuiet() }
         nextToken &+= 1
         let token = nextToken
         if let recordingID, let clip = recordings[recordingID] {

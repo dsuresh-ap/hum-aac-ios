@@ -23,6 +23,9 @@ final class SpeechHistory {
         var date: Date
         /// How many times in a row it was said.
         var count: Int = 1
+        /// The tile it came from, so it can be said again in the same voice (a recording). `nil` for
+        /// phrases that aren't tiles, and for entries saved before this was kept.
+        var tileID: UUID?
     }
 
     static let maxEntries = 500
@@ -47,13 +50,15 @@ final class SpeechHistory {
             .appendingPathComponent("history.json")
     }
 
-    func add(label: String, spokenText: String, function: TileFunction?, colorHex: String?, at date: Date = .now) {
+    func add(label: String, spokenText: String, function: TileFunction?, colorHex: String?, tileID: UUID? = nil,
+             at date: Date = .now) {
         guard !spokenText.isEmpty else { return }
         if let last = entries.last, last.spokenText == spokenText, date.timeIntervalSince(last.date) < Self.repeatWindow {
             entries[entries.count - 1].count += 1
             entries[entries.count - 1].date = date
         } else {
-            entries.append(Entry(label: label, spokenText: spokenText, function: function, colorHex: colorHex, date: date))
+            entries.append(Entry(label: label, spokenText: spokenText, function: function, colorHex: colorHex, date: date,
+                                 tileID: tileID))
             if entries.count > Self.maxEntries { entries.removeFirst(entries.count - Self.maxEntries) }
         }
         scheduleSave()
@@ -61,6 +66,11 @@ final class SpeechHistory {
 
     /// The most recent entries, newest first.
     func recent(_ n: Int) -> [Entry] { Array(entries.suffix(n).reversed()) }
+
+    /// Up to `n` entries said since `date`, newest first (CarPlay shows only what was said in the car).
+    func recent(_ n: Int, since date: Date) -> [Entry] {
+        Array(entries.reversed().prefix { $0.date >= date }.prefix(n))
+    }
 
     /// The most recent entries, oldest first, so they read like a sentence being built.
     func latest(_ n: Int) -> [Entry] { Array(entries.suffix(n)) }

@@ -127,6 +127,10 @@ struct SettingsView: View {
 
                 whatsThisSection
 
+                if CarPlaySettingsSection.isShown {
+                    CarPlaySettingsSection()
+                }
+
                 Section {
                     Toggle("Go back to Home after a tile in a folder speaks", isOn: $settings.returnHomeAfterFolderTap)
                     LabeledContent("Tile size for new folders") {

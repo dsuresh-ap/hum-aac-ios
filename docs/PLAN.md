@@ -301,6 +301,42 @@ AVAudioEngine (started once, kept running while foreground)
   connections (server) entitlement for the listener. Code: `Store/NearbyProtocol.swift`,
   `Store/NearbyTransfer.swift`, `Store/NetworkTransport.swift`, `ParentMode/NearbyTransferView.swift`.
 
+## 8d. CarPlay (driver's board) — added 2026-11-21 at the owner's request
+
+For a driver who uses Hum to talk: at a traffic stop, a toll booth or after a crash, they tap the car's
+screen (hands in sight) instead of reaching for a phone. Code: `hum-aac-ios/CarPlay/`.
+
+- **Apple's approval.** CarPlay apps need an entitlement per category. Apple granted Hum **driving
+  task** (`com.apple.developer.carplay-driving-task`) on 2026-11-22. iPhone and iPad builds sign with
+  `hum-aac-ios-iphone.entitlements` (the Mac entitlements plus that key, picked by
+  `CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]` / `[sdk=iphonesimulator*]`); the Mac keeps
+  `hum-aac-ios.entitlements`, because the Mac has no CarPlay. Keep the two files alike otherwise.
+- **What the car shows.** Each car board is a tab (`CPTabBarTemplate`; the car decides how many tabs,
+  `maximumTabCount`). A tab is Apple's grid template: at most 8 buttons, the first 8 tiles in reading
+  order that speak or open a folder. Driving task apps may go two screens deep, so a folder tile on a tab
+  opens its folder, and inside a folder, folder tiles only speak. A tile never opens its own board.
+- **Which boards.** A per-device setting (`DeviceSettings.carBoardIDs`, iPhone only, never synced), up
+  to 4, in tab order; Home when none is chosen. "Make “Traffic stop” and “After a crash” boards" adds
+  two 2×4 starter boards (English, like the starter board) with Yes and No in the same spots on both.
+- **Show, Earlier and Stop.** Every grid has "Show" and "Stop" at the top. Show puts the last phrase
+  said since the car connected on screen in big text (an alert) with "Say again" and "Earlier".
+  Earlier lists what was said since the car connected, from `SpeechHistory`, phone phrases included;
+  never older history, so the car's screen doesn't show the day's conversation. The list doesn't change
+  while it's open (motor planning). "Show each phrase big" (off by default) shows every phrase after
+  it's said. Stop cuts off a phrase that's playing.
+- **About me card.** An optional tab for an officer or helper to read, like the "Blue Envelope"
+  programs some US states run for autistic drivers: a name, up to 7 lines in the driver's own words and
+  an emergency contact (`AboutMeCard`, in `DeviceSettings`: per device, never synced or exported, since
+  it can hold a phone number). "Say this" reads it out, phone digits one by one.
+- **Audio.** CarPlay asks apps not to hold the audio while quiet. While CarPlay is connected the session
+  ducks other audio (`.duckOthers`) and is released about a second after a phrase ends
+  (`SpeechService.sharesOutput`). The next tap starts it again, a little slower than a tap on the board.
+  When the car disconnects Hum goes back to its usual always-on session (§5).
+- **No network.** Nothing new leaves the device.
+- **Testing.** Device Hub has no CarPlay window for simulators. Use Apple's CarPlay Simulator app
+  ("Additional Tools for Xcode") with a real iPhone on USB, or a car. Also test with the iPhone locked:
+  most people use CarPlay that way.
+
 ## 9. Privacy manifest
 
 `PrivacyInfo.xcprivacy`: `NSPrivacyTracking = false`, no tracking domains, no collected data types.

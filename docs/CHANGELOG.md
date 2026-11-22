@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased: CarPlay
+
+- **Hum on a car's screen:** a driver who uses Hum to talk can tap phrases on the car's screen, for
+  example at a traffic stop, instead of reaching for a phone. Phrases play through the car's speakers,
+  and the radio dips while Hum talks.
+- Up to 4 boards in the car, one tab each, with 8 tiles per board. Folder tiles open their folder.
+- "Show" puts the last phrase on screen in big text, with "Say again" and "Earlier" (what was said since
+  the car connected). "Stop" cuts off a phrase. "Show each phrase big" shows every phrase as it's said.
+- An "About me" card in the car for an officer or helper to read, with "Say this". It stays on the
+  iPhone.
+- Settings → In the car (iPhone): choose and order the car's boards, or make ready-made "Traffic stop"
+  and "After a crash" boards. Car boards don't show the "No tile opens this folder yet" warning.
+- Apple granted Hum the CarPlay driving-task entitlement; iPhone builds now carry it (docs/PLAN.md §8d).
+
 ## Unreleased: after 1.0
 
 - On the iPhone Duo's outer screen, the tile editor's Cancel and Save stay at the top while the parent

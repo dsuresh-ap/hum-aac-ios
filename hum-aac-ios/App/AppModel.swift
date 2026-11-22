@@ -429,7 +429,8 @@ final class AppModel {
         // A silent folder tile (no phrase, no recording) just opens its board.
         if !cell.spokenText.isEmpty || cell.recordingKey != nil {
             speech.speak(cell.spokenText, recordingID: cell.recordingKey, tapTime: tapTime)
-            history.add(label: cell.label, spokenText: cell.spokenText, function: cell.function, colorHex: cell.colorHex)
+            history.add(label: cell.label, spokenText: cell.spokenText, function: cell.function, colorHex: cell.colorHex,
+                        tileID: cell.id)
             if settings.sentenceStrip { strip.append(cell) }
         }
         #if os(iOS)
@@ -502,8 +503,33 @@ final class AppModel {
         lastTouch = .now
         speech.start()
         speech.speak(tile.spokenText, recordingID: key)
-        history.add(label: tile.label, spokenText: tile.spokenText, function: tile.function, colorHex: tile.colorHex)
+        history.add(label: tile.label, spokenText: tile.spokenText, function: tile.function, colorHex: tile.colorHex,
+                    tileID: tile.id)
         return true
+    }
+
+    /// Says a phrase that isn't a tile (CarPlay's About me card). It goes into history like a tile.
+    func say(phrase: String) {
+        let text = phrase.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        lastTouch = .now
+        speech.start()
+        speech.speak(text)
+        history.add(label: text, spokenText: text, function: nil, colorHex: nil)
+    }
+
+    /// Says a history entry again from outside the board (CarPlay's Say again): the tile's recording if
+    /// it has one, else the words. Like the history box, it doesn't add another entry.
+    func sayAgain(_ entry: SpeechHistory.Entry) async {
+        lastTouch = .now
+        speech.start()
+        if let id = entry.tileID, let tile = fetchTile(id), let audio = tile.audioData, tile.spokenText == entry.spokenText {
+            let key = Self.recordingKey(tile.id, audio)
+            await speech.loadRecording(id: key, data: audio)
+            speech.speak(entry.spokenText, recordingID: key)
+        } else {
+            speech.speak(entry.spokenText)
+        }
     }
 
     /// Shows a board from Shortcuts or Siri. While a grown-up is editing, the editor jumps to it instead.

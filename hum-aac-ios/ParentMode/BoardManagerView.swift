@@ -50,12 +50,16 @@ struct BoardManagerView: View {
                                 Label {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(board.name)
-                                        if !board.isHome && !reachable.contains(board.id) {
+                                        if model.settings.carBoardIDs.contains(board.id) && CarBoard.isAvailable {
+                                            // The car board needs no folder tile: CarPlay opens it.
+                                            Text("Shown in the car (CarPlay)").font(.caption).foregroundStyle(.secondary)
+                                        } else if !board.isHome && !reachable.contains(board.id) {
                                             Text("No tile opens this folder yet").font(.caption).foregroundStyle(.orange)
                                         }
                                     }
                                 } icon: {
-                                    Image(systemName: board.isHome ? "house.fill" : "folder")
+                                    Image(systemName: board.isHome ? "house.fill"
+                                          : model.settings.carBoardIDs.contains(board.id) && CarBoard.isAvailable ? "car" : "folder")
                                 }
                                 Spacer()
                                 Text("\(board.columns) across").foregroundStyle(.secondary).monospacedDigit()
