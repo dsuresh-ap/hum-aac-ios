@@ -61,9 +61,18 @@ enum SyncResolver {
             extra.isHome = false
             report.fixedHomes += 1
             if StarterBoard.isUntouched(extra) {
-                for tile in extra.tiles ?? [] { context.delete(tile) }
-                context.delete(extra)
-                report.removedStarterBoards += 1
+                // The starter's folders go too, if they're untouched and nothing else opens them.
+                let folderIDs = Set((extra.tiles ?? []).compactMap(\.linkedBoardID))
+                let otherLinks = Set(liveBoards.filter { $0 !== extra }.flatMap { $0.tiles ?? [] }
+                    .filter { !$0.isDeleted }.compactMap(\.linkedBoardID))
+                let folders = liveBoards.filter {
+                    folderIDs.contains($0.id) && !otherLinks.contains($0.id) && !$0.isHome && StarterBoard.isUntouched($0)
+                }
+                for board in [extra] + folders {
+                    for tile in board.tiles ?? [] { context.delete(tile) }
+                    context.delete(board)
+                    report.removedStarterBoards += 1
+                }
             }
         }
         liveBoards.removeAll { $0.isDeleted }
@@ -104,8 +113,8 @@ enum SyncResolver {
 
     /// Which of two Homes stays Home: not the starter board, then the newest, then the smaller id.
     private static func preferredHome(_ a: Board, _ b: Board) -> Bool {
-        let starterID = StarterBoard.homeID
-        let (aStarter, bStarter) = (a.id == starterID, b.id == starterID)
+        let starterIDs = StarterBoard.homeIDs
+        let (aStarter, bStarter) = (starterIDs.contains(a.id), starterIDs.contains(b.id))
         if aStarter != bStarter { return bStarter }
         if a.createdAt != b.createdAt { return a.createdAt > b.createdAt }
         return a.id.uuidString < b.id.uuidString

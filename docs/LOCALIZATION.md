@@ -51,20 +51,26 @@ fix it in the catalog (or add `comment:` in the code).
 
 ## Starter board in another language
 
-The starter board is content, not interface text, so it's a file of its own: copy
-`examples/starter.hum.json` to `hum-aac-ios/Resources/starter.<language>.hum.json` (for example
-`starter.es.hum.json` or `starter.pt-BR.hum.json`) and change only:
+The starter board is content, not interface text, so it's a file of its own. Copy the folder
+`examples/starter/` (its `hum.json` and `media/` pictures), and in the copy's `hum.json` change only:
 
 - each tile's `spokenText` and `label` (whole phrases, as a child says them),
-- the board's `name` ("Home" in that language),
+- each board's `name` ("Home", "Bath time"… in that language),
 - a tile's `symbol` only if the emoji doesn't fit the translated phrase.
 
-Never change an `id`, `row`, `column`, `function`, `linkedBoardID` or `hidden`, and don't add or remove
-tiles. A unit test (`StarterLanguageTests`) checks this. iCloud sync recognises an untouched starter by these
+Never change an `id`, `row`, `column`, `function`, `linkedBoardID`, `hidden` or `image`, and don't add or
+remove tiles. Then pack it into the app:
+
+```bash
+swift run --package-path Packages/HumConfig hum-config pack <copy> hum-aac-ios/Resources/starter.<language>.hum
+```
+
+(for example `starter.es.hum` or `starter.pt-BR.hum`). A unit test (`StarterLanguageTests`) checks this. iCloud sync recognises an untouched starter by these
 IDs, in every language.
 
 Hum picks the starter in the language its screens are shown in (`pt-BR`, then `pt`), so the starter's words
-match the first-run card that quotes three of them ("Let's go!", "All done", "Too loud"): translate that
+match the first-run card that quotes three of them ("Let's go!", "All done", "Too loud") and names the
+folders (going out, bath time, bedtime): translate that
 card with the same words.
 
 ## Emoji search words and praise phrases

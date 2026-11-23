@@ -64,7 +64,7 @@ final class FirstRunUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["How many tiles on a screen?"].waitForExistence(timeout: 3))
     }
 
-    /// Scenario: a parent picks 2 × 2 ("fewer, bigger tiles"). The starter board keeps its own 5 × 4 size,
+    /// Scenario: a parent picks 2 × 2 ("fewer, bigger tiles"). The starter board keeps its own 3 × 4 size,
     /// and its card says so before they choose it; new folders use 2 × 2 (HUM-003).
     @MainActor
     func testStarterCardSaysItsOwnSize() {
@@ -72,10 +72,10 @@ final class FirstRunUITests: XCTestCase {
         goToStartChoice(app, grid: "2 × 2")
         let starter = el(app, "firstRun.starter")
         XCTAssertTrue(starter.waitForExistence(timeout: 3))
-        XCTAssertTrue(starter.label.contains("5 × 4"), "The starter card says it's 5 × 4")
+        XCTAssertTrue(starter.label.contains("3 × 4"), "The starter card says it's 3 × 4")
         XCTAssertTrue(starter.label.contains("2 × 2"), "…and that new folders use the chosen size")
         starter.tap()
-        XCTAssertTrue(el(app, "tile.hi").waitForExistence(timeout: 5))
+        XCTAssertTrue(el(app, "tile.let's go").waitForExistence(timeout: 5))
     }
 
     /// Scenario: at the largest text size, the last step still shows the start buttons, and the footnote
@@ -107,17 +107,21 @@ final class FirstRunUITests: XCTestCase {
         XCTAssertFalse(el(app, "editGate").exists, "No board was made")
     }
 
-    /// Scenario: picking a bigger grid than the starter grows Home. Nothing moves, and the
-    /// protest tiles stay on Home.
+    /// Scenario: picking a bigger grid than the starter grows Home. Nothing moves, the protest tiles stay
+    /// on Home, and the Bedtime folder opens.
     @MainActor
     func testStarterBoardGrowsToABiggerChoiceWithoutMovingTiles() {
         let app = launchHum()
         goToStartChoice(app, grid: "4 × 5")
         el(app, "firstRun.starter").tap()
-        XCTAssertTrue(el(app, "tile.hi").waitForExistence(timeout: 5))
-        for label in ["no thank you", "stop", "all done", "break", "too loud", "help"] {
+        XCTAssertTrue(el(app, "tile.let's go").waitForExistence(timeout: 5))
+        for label in ["not that one", "stop", "all done", "break", "too loud", "help"] {
             XCTAssertTrue(el(app, "tile.\(label)").exists, "“\(label)” must be on Home")
         }
+        shot(app, "starter home")
+        el(app, "tile.night-night").tap()
+        XCTAssertTrue(el(app, "tile.one more book").waitForExistence(timeout: 5), "The Bedtime folder opens")
+        shot(app, "starter bedtime")
     }
 
     /// Scenario: the voice step lists voices with a play button each, and choosing one marks it.
@@ -164,7 +168,7 @@ final class FirstRunUITests: XCTestCase {
         shot(app, "extras")
         app.buttons["Next"].firstMatch.tap()
         el(app, "firstRun.starter").tap()
-        XCTAssertTrue(el(app, "tile.hi").waitForExistence(timeout: 5))
+        XCTAssertTrue(el(app, "tile.let's go").waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["What's said will show here."].exists, "The history box is on the child's screen")
     }
 }

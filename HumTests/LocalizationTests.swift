@@ -62,10 +62,10 @@ struct StarterLanguageTests {
     }
 
     @Test func everyLanguageHasTheSameBoard() throws {
-        let baseURL = try #require(Bundle.main.url(forResource: "starter.hum", withExtension: "json"))
-        let base = try #require(StarterBoard.load(baseURL))
+        let baseURL = try #require(Bundle.main.url(forResource: "starter", withExtension: "hum"))
+        let base = try #require(StarterBoard.load(baseURL)?.document)
         for (language, url) in StarterBoard.variantURLs(in: .main) {
-            let variant = try #require(StarterBoard.load(url), "starter.\(language).hum.json doesn't load")
+            let variant = try #require(StarterBoard.load(url)?.document, "starter.\(language).hum doesn't load")
             #expect(variant.boards.count == base.boards.count, "\(language): same boards")
             for (a, b) in zip(base.boards, variant.boards) {
                 #expect(a.id == b.id && a.rows == b.rows && a.columns == b.columns && a.isHome == b.isHome,
@@ -73,8 +73,8 @@ struct StarterLanguageTests {
                 #expect(a.tiles.map(\.id) == b.tiles.map(\.id), "\(language): same tiles, same order")
                 for (x, y) in zip(a.tiles, b.tiles) {
                     #expect(x.row == y.row && x.column == y.column && x.function == y.function
-                            && x.linkedBoardID == y.linkedBoardID && x.hidden == y.hidden,
-                            "\(language): tile \(x.label) keeps its spot, function and folder")
+                            && x.linkedBoardID == y.linkedBoardID && x.hidden == y.hidden && x.image == y.image,
+                            "\(language): tile \(x.label) keeps its spot, function, folder and picture")
                     #expect(!y.spokenText.isEmpty, "\(language): tile \(x.label) has words")
                 }
             }

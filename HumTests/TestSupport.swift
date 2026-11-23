@@ -9,14 +9,15 @@ import SwiftData
 /// has an open run-loop undo group crashes SwiftData at the next run-loop turn (in whatever test runs then).
 @MainActor private var liveModels: [AppModel] = []
 
-/// A fresh app model with an in-memory store, its own settings and no saved history.
+/// A fresh app model with an in-memory store, its own settings and no saved history. Its Home is Hum 1.0's
+/// starter (the sample data most tests were written around); `newStarter` loads today's starter instead.
 @MainActor
-func makeModel(starter: Bool = true) -> AppModel {
+func makeModel(starter: Bool = true, newStarter: Bool = false) -> AppModel {
     let defaults = UserDefaults(suiteName: "HumTests-\(UUID().uuidString)")!
     let model = AppModel(container: Persistence.makeContainer(inMemory: true),
                          settings: DeviceSettings(defaults: defaults),
                          history: SpeechHistory(fileURL: nil))
-    if starter { model.finishFirstRun(.starter) }
+    if starter { model.finishFirstRun(newStarter ? .starter : .legacyStarter) }
     liveModels.append(model)
     return model
 }
