@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased: after 1.0
+## 1.1.0
 
 - **New starter board:** a 3 × 4 Home with folders for getting out the door, bath time and bedtime, from
   the daily-routines example DPWonder contributed. Every tile now has an ARASAAC picture instead of an
